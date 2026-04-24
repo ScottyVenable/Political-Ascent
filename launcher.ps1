@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Political Ascent — Developer & Player launcher.
+    Political Ascent - Developer & Player launcher.
 
 .DESCRIPTION
     A stylised interactive launcher for Windows developers and players. Offers
@@ -71,16 +71,16 @@ $Script:RepoRoot = Split-Path -Parent $PSCommandPath
 function Write-Banner {
     Clear-Host
     Write-Host ""
-    Write-Host "  ╔══════════════════════════════════════════════════════════╗" -ForegroundColor $Theme.Muted
-    Write-Host "  ║                                                          ║" -ForegroundColor $Theme.Muted
-    Write-Host "  ║      " -NoNewline -ForegroundColor $Theme.Muted
+    Write-Host "  +----------------------------------------------------------+" -ForegroundColor $Theme.Muted
+    Write-Host "  |                                                          |" -ForegroundColor $Theme.Muted
+    Write-Host "  |      " -NoNewline -ForegroundColor $Theme.Muted
     Write-Host "P O L I T I C A L   A S C E N T" -NoNewline -ForegroundColor $Theme.Gold
-    Write-Host "             ║" -ForegroundColor $Theme.Muted
-    Write-Host "  ║      " -NoNewline -ForegroundColor $Theme.Muted
-    Write-Host "an american career  ·  turn-based politics" -NoNewline -ForegroundColor $Theme.Text
-    Write-Host "  ║" -ForegroundColor $Theme.Muted
-    Write-Host "  ║                                                          ║" -ForegroundColor $Theme.Muted
-    Write-Host "  ╚══════════════════════════════════════════════════════════╝" -ForegroundColor $Theme.Muted
+    Write-Host "             |" -ForegroundColor $Theme.Muted
+    Write-Host "  |      " -NoNewline -ForegroundColor $Theme.Muted
+    Write-Host "an american career  -  turn-based politics" -NoNewline -ForegroundColor $Theme.Text
+    Write-Host "  |" -ForegroundColor $Theme.Muted
+    Write-Host "  |                                                          |" -ForegroundColor $Theme.Muted
+    Write-Host "  +----------------------------------------------------------+" -ForegroundColor $Theme.Muted
     Write-Host ""
 }
 
@@ -97,22 +97,22 @@ function Write-Panel {
         default   { $Theme.Blue }
     }
     Write-Host ""
-    Write-Host " ┌─ $Title " -ForegroundColor $color -NoNewline
-    Write-Host ("─" * [Math]::Max(0, 55 - $Title.Length)) -ForegroundColor $color
+    Write-Host " +- $Title " -ForegroundColor $color -NoNewline
+    Write-Host ("-" * [Math]::Max(0, 55 - $Title.Length)) -ForegroundColor $color
     foreach ($line in $Body -split "`n") {
-        Write-Host " │ " -ForegroundColor $color -NoNewline
+        Write-Host " | " -ForegroundColor $color -NoNewline
         Write-Host $line -ForegroundColor $Theme.Text
     }
-    Write-Host " └$("─" * 58)" -ForegroundColor $color
+    Write-Host " +$("-" * 58)" -ForegroundColor $color
     Write-Host ""
 }
 
 function Show-Section {
     param([Parameter(Mandatory)][string]$Title)
     Write-Host ""
-    Write-Host " ── " -NoNewline -ForegroundColor $Theme.Muted
+    Write-Host " -- " -NoNewline -ForegroundColor $Theme.Muted
     Write-Host $Title -NoNewline -ForegroundColor $Theme.Gold
-    Write-Host " $("─" * [Math]::Max(0, 50 - $Title.Length))" -ForegroundColor $Theme.Muted
+    Write-Host " $("-" * [Math]::Max(0, 50 - $Title.Length))" -ForegroundColor $Theme.Muted
 }
 
 # ---------------------------------------------------------------------------
@@ -139,15 +139,19 @@ function Test-Preflight {
         $results += [pscustomobject]@{ Label = 'npm'; OK = $false; Detail = 'not found' }
     }
 
-    # Java (optional — only for Android)
+    # Java (optional - only for Android)
     try {
-        $javaVer = & java -version 2>&1 | Select-Object -First 1
-        $results += [pscustomobject]@{ Label = 'Java (for Android)'; OK = $LASTEXITCODE -eq 0; Detail = $javaVer }
+        # Capture the native command result before piping, otherwise Windows
+        # PowerShell can report a misleading exit status after Select-Object.
+        $javaOutput = & java -version 2>&1
+        $javaOk = $LASTEXITCODE -eq 0
+        $javaVer = $javaOutput | Select-Object -First 1
+        $results += [pscustomobject]@{ Label = 'Java (for Android)'; OK = $javaOk; Detail = $javaVer }
     } catch {
         $results += [pscustomobject]@{ Label = 'Java (for Android)'; OK = $false; Detail = 'not found (optional)' }
     }
 
-    # ANDROID_HOME (optional — only for Android)
+    # ANDROID_HOME (optional - only for Android)
     $androidHome = $env:ANDROID_HOME
     $results += [pscustomobject]@{
         Label  = 'ANDROID_HOME (for Android)'
@@ -164,7 +168,7 @@ function Test-Preflight {
     }
 
     foreach ($r in $results) {
-        $mark = if ($r.OK) { '✓' } else { '✗' }
+        $mark = if ($r.OK) { '[OK]' } else { '[X]' }
         $color = if ($r.OK) { $Theme.Success } else { $Theme.Danger }
         Write-Host "   $mark " -ForegroundColor $color -NoNewline
         Write-Host $r.Label.PadRight(28) -ForegroundColor $Theme.Text -NoNewline
@@ -188,10 +192,19 @@ function Invoke-LaunchCommand {
     Write-Host ""
 
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $commandName = $Command[0]
+    $commandArgs = @($Command | Select-Object -Skip 1)
 
     Push-Location $Script:RepoRoot
     try {
-        & $Command[0] @($Command | Select-Object -Skip 1)
+        # npm and npx are .cmd shims on Windows. Invoking them directly with
+        # PowerShell's call operator can corrupt the command name/arguments and
+        # yield false exit-code 1 failures (for example, "Unknown command: pm").
+        if ($env:OS -eq 'Windows_NT' -and $commandName -in @('npm', 'npx')) {
+            & cmd /c $commandName @commandArgs
+        } else {
+            & $commandName @commandArgs
+        }
         $exit = $LASTEXITCODE
     } finally {
         Pop-Location
@@ -200,9 +213,9 @@ function Invoke-LaunchCommand {
     $sw.Stop()
     $duration = "{0:N1}s" -f $sw.Elapsed.TotalSeconds
     if ($exit -eq 0) {
-        Write-Panel -Title "Done · $duration" -Tone 'success' -Body "$Label completed successfully."
+        Write-Panel -Title "Done - $duration" -Tone 'success' -Body "$Label completed successfully."
     } else {
-        Write-Panel -Title "Failed · $duration" -Tone 'danger' -Body "$Label exited with code $exit."
+        Write-Panel -Title "Failed - $duration" -Tone 'danger' -Body "$Label exited with code $exit."
     }
     return $exit
 }
@@ -215,8 +228,8 @@ $Script:Tasks = [ordered]@{
     'dev'                 = @{ Label = 'Run Vite dev server (web)';              Command = @('npm', 'run', 'dev') }
     'typecheck'           = @{ Label = 'Type-check';                             Command = @('npm', 'run', 'typecheck') }
     'test'                = @{ Label = 'Run tests (single pass)';                Command = @('npm', 'test') }
-    'test:watch'          = @{ Label = 'Run tests in watch mode';                Command = @('npx', 'vitest') }
-    'test:coverage'       = @{ Label = 'Run tests with coverage';                Command = @('npx', 'vitest', 'run', '--coverage') }
+    'test:watch'          = @{ Label = 'Run tests in watch mode';                Command = @('npm', 'run', 'test:watch') }
+    'test:coverage'       = @{ Label = 'Run tests with coverage';                Command = @('npm', 'run', 'test:coverage') }
     'build:web'           = @{ Label = 'Build web bundle';                       Command = @('npm', 'run', 'build:web') }
     'electron:dev'        = @{ Label = 'Run Electron (dev)';                     Command = @('npm', 'run', 'dev:electron') }
     'build:electron'      = @{ Label = 'Package Electron app';                   Command = @('npm', 'run', 'build:electron') }
@@ -277,7 +290,7 @@ $Script:Menu = @(
     @{ Key = 'preflight';             Label = '2. Pre-flight checks' }
     @{ Key = 'dev';                   Label = '3. Run dev server (web)' }
     @{ Key = 'typecheck';             Label = '4. Type-check' }
-    @{ Key = '__tests';               Label = '5. Tests …' }
+    @{ Key = '__tests';               Label = '5. Tests ...' }
     @{ Key = 'build:web';             Label = '6. Build web bundle' }
     @{ Key = 'electron:dev';          Label = '7. Run Electron (dev)' }
     @{ Key = 'build:electron';        Label = '8. Package Electron app' }
@@ -308,7 +321,7 @@ function Show-Menu {
         Show-Section $Title
         for ($i = 0; $i -lt $Items.Count; $i++) {
             if ($i -eq $selected) {
-                Write-Host "  ❯ " -ForegroundColor $Theme.Gold -NoNewline
+                Write-Host "  > " -ForegroundColor $Theme.Gold -NoNewline
                 Write-Host $Items[$i].Label -ForegroundColor $Theme.Gold
             } else {
                 Write-Host "    " -NoNewline
@@ -316,7 +329,7 @@ function Show-Menu {
             }
         }
         Write-Host ""
-        Write-Host "   ↑↓ navigate   ⏎ select   Esc/Q quit" -ForegroundColor $Theme.Muted
+        Write-Host "   Up/Down navigate   Enter select   Esc/Q quit" -ForegroundColor $Theme.Muted
 
         $keyInfo = [System.Console]::ReadKey($true)
         switch ($keyInfo.Key) {
@@ -339,14 +352,14 @@ function Start-InteractiveLauncher {
                 if ($t -ne '__back' -and $t -ne '__exit') {
                     Write-Banner
                     [void](Invoke-Task $t)
-                    Write-Host "   Press any key to return…" -ForegroundColor $Theme.Muted
+                    Write-Host "   Press any key to return..." -ForegroundColor $Theme.Muted
                     [void][System.Console]::ReadKey($true)
                 }
             }
             default {
                 Write-Banner
                 [void](Invoke-Task $choice)
-                Write-Host "   Press any key to return…" -ForegroundColor $Theme.Muted
+                Write-Host "   Press any key to return..." -ForegroundColor $Theme.Muted
                 [void][System.Console]::ReadKey($true)
             }
         }

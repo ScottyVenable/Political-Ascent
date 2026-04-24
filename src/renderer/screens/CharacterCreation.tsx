@@ -103,7 +103,7 @@ export function CharacterCreation(): JSX.Element {
             <label className="block mb-4">
               <span className="text-sm text-text-secondary">Name</span>
               <input
-                className="mt-1 w-full bg-bg-tertiary rounded px-3 py-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                className="mt-1 w-full bg-bg-tertiary rounded px-3 py-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-gold"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Jordan Whitaker"
@@ -137,7 +137,7 @@ export function CharacterCreation(): JSX.Element {
                   <div className="flex items-baseline justify-between mb-2">
                     <span className="capitalize font-headline text-text-primary">{key}</span>
                     <span className="font-mono text-accent-gold">
-                      {baseStats[key]} → <span className="text-accent-blue">{finalStats[key]}</span>
+                      {baseStats[key]} → <span className="text-accent-gold">{finalStats[key]}</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -195,7 +195,7 @@ export function CharacterCreation(): JSX.Element {
               <IdeologyCompass value={ideology} onChange={setIdeology} />
               <div className="text-sm text-text-secondary max-w-sm">
                 <p>Your ideology influences how legislators in each party react to you and which
-                  events/cards you'll naturally lean into. You can drift later, but this is your
+                  events/cards you&rsquo;ll naturally lean into. You can drift later, but this is your
                   starting posture.</p>
                 <p className="mt-3 font-mono text-xs">
                   x = {ideology.x.toFixed(2)} &middot; y = {ideology.y.toFixed(2)}

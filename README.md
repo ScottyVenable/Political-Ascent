@@ -182,4 +182,17 @@ docs/            GDD, Architecture, Roadmap, guides
 
 ## Contributing
 
-See `.github/COPILOT_INSTRUCTIONS.md` — the same standards apply to humans.
+Read these, in order:
+
+1. [AGENTS.md](AGENTS.md) — operating manual for AI agents and humans using them.
+2. [.github/COPILOT_INSTRUCTIONS.md](.github/COPILOT_INSTRUCTIONS.md) — coding standards.
+3. [docs/guides/CONTRIBUTING.md](docs/guides/CONTRIBUTING.md) — contributor workflow.
+4. [docs/guides/ICONS_AND_ASSETS.md](docs/guides/ICONS_AND_ASSETS.md) — **no emoji in shipped content**; icon and sprite sourcing rules.
+5. [docs/GDD.md](docs/GDD.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/ROADMAP.md](docs/ROADMAP.md) — design and plan.
+6. [docs/research/](docs/research/) — reference research (Victoria 3, CK3, Anno 1800, and cross-cutting patterns) that informs design decisions.
+
+## Testing
+
+- Unit: `npm test` (Vitest).
+- End-to-end + screenshots: `npm run test:e2e` (Playwright).
+- See `AGENTS.md` §5 for the full testing expectations, including screenshot suite requirements for any UI change.

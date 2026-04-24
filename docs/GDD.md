@@ -92,21 +92,21 @@ In-game editor for scenarios, politicians, events, cards, traits, and dialogue t
 ### 5.1 Backgrounds
 The player chooses one of three origin archetypes, each with unique stat distributions, starting resources, and narrative framing:
 
-#### 🔥 The Passionate Citizen
+#### The Passionate Citizen
 *"The system is broken. I'm going to fix it."*
 - **Stat Bonuses:** Charisma +2, Integrity +2, Connections −1, Wealth −2
 - **Starting Resources:** Grassroots support network, 1 Populist Card
 - **Unique Trait:** *Outsider's Mandate* — First election costs 20% less political capital, but establishment NPCs start at −10 relationship
 - **Narrative Flavor:** Motivated by a specific issue (chosen during creation). That issue becomes a personal quest thread.
 
-#### 🏛️ The Political Veteran
+#### The Political Veteran
 *"I've been building toward this my whole career."*
 - **Stat Bonuses:** Connections +3, Strategy +2, Charisma 0, Integrity −1
 - **Starting Resources:** Party favor network, 2 Procedure Cards, 1 Mentor NPC relationship
 - **Unique Trait:** *Institutional Memory* — Can call in favors once per month; knows where political skeletons are buried
 - **Narrative Flavor:** Carries the weight of past compromises. Certain legacy decisions can unlock or haunt them.
 
-#### 💼 The Business Executive
+#### The Business Executive
 *"I built something real. Politics is just another market."*
 - **Stat Bonuses:** Wealth +4, Connections +2, Charisma +1, Integrity −2
 - **Starting Resources:** Campaign war chest (+$500K), 2 Donor Cards, Corporate Lobby contact

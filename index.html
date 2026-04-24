@@ -3,8 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0F1117" />
+    <meta name="theme-color" content="#131919" />
     <title>Political Ascent</title>
+    <!--
+      Inria Serif is the game's primary typeface (titles + body) per the
+      Bloodborne-inspired reference in docs/reference images/UI-UX/.
+      Preconnect + crossorigin keeps first-paint fast. Fallbacks in the
+      Tailwind config cover offline builds and the Electron/Capacitor wraps.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inria+Serif:ital,wght@0,300;0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body class="bg-bg-primary text-text-primary">
     <div id="root"></div>
