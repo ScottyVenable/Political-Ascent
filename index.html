@@ -13,8 +13,15 @@
     -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Primary font:  Inria Serif  — titles, headings, body copy, flavour text.
+      Monospace:     IBM Plex Mono — data readouts (PC / AP / numbers / timestamps).
+      Loading both from a single stylesheet keeps the first paint fast; every
+      `font-mono` class in the app was rendering as Courier New before this
+      font was registered. See docs/UI_GAME_FEEL_PROPOSAL.md §3.
+    -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Inria+Serif:ital,wght@0,300;0,400;0,700;1,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inria+Serif:ital,wght@0,300;0,400;0,700;1,400&display=swap"
       rel="stylesheet"
     />
   </head>

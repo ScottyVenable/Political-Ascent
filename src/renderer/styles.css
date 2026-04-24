@@ -2,12 +2,207 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ────────────────────────────────────────────────────────────────
+   DESIGN TOKENS — exposed as CSS custom properties so plain CSS
+   (keyframes, scrollbar, vendor pseudo-elements) can reach the same
+   palette and motion vocabulary that Tailwind classes use.
+   See docs/UI_GAME_FEEL_PROPOSAL.md §4 and §5.
+   ──────────────────────────────────────────────────────────────── */
+:root {
+  /* Palette — mirrors tailwind.config.ts. Keep in sync. */
+  --pa-bg-primary: #0b1012;
+  --pa-bg-secondary: #131919;
+  --pa-bg-tertiary: #242f35;
+  --pa-accent-gold: #948161;
+  --pa-accent-blue: #1b353f;
+  --pa-accent-red: #8c2f2f;
+  --pa-text-primary: #d8d6cc;
+  --pa-text-secondary: #989a8f;
+  --pa-text-muted: #5f6158;
+
+  /* Easing vocabulary — three curves cover every animation.
+     "arrive" = fast-in, slow-out; feels like the object has momentum and
+     is coming to rest. Used for anything entering the scene.
+     "depart" = slow-in, fast-out; feels like something was released.
+     "standard" = symmetric; used for short state toggles (hover, focus).  */
+  --pa-ease-arrive: cubic-bezier(0.0, 0.0, 0.2, 1.0);
+  --pa-ease-depart: cubic-bezier(0.4, 0.0, 1.0, 1.0);
+  --pa-ease-standard: cubic-bezier(0.4, 0.0, 0.2, 1.0);
+
+  /* Duration tokens. */
+  --pa-dur-instant: 80ms;
+  --pa-dur-fast: 150ms;
+  --pa-dur-normal: 250ms;
+  --pa-dur-slow: 400ms;
+}
+
 html,
 body,
 #root {
   min-height: 100%;
 }
 
+/* The previous rule here hard-forced Inter, which silently defeated the
+   Tailwind `font-body` token on every element that did not explicitly opt
+   in. The game's primary typeface is Inria Serif; the shell inherits it. */
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inria Serif', Georgia, serif;
+  /* Opt in to OpenType features Inria Serif ships with — oldstyle figures
+     sit better in running prose than the default lining digits. */
+  font-feature-settings: 'onum' 1;
+}
+
+/* Numeric readouts keep lining figures and tabular widths so stat values
+   don't jitter horizontally when they change. Applied via font-mono. */
+.font-mono,
+[class*='font-mono'] {
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ANIMATION KEYFRAMES
+   ──────────────────────────────────────────────────────────────── */
+
+/* Panel enter: used by <main> when the active panel changes. */
+@keyframes pa-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-panel-enter {
+  animation: pa-panel-enter var(--pa-dur-slow) var(--pa-ease-arrive) both;
+}
+
+/* Pulse-gold: sits on elements that need player attention (a bill ready
+   to vote, an affordable card in hand). Opacity-only animation — no layout
+   or colour churn — so the compositor can run it cheaply. */
+@keyframes pa-pulse-gold {
+  from {
+    box-shadow: 0 0 0 rgba(148, 129, 97, 0);
+  }
+  to {
+    box-shadow: 0 0 10px rgba(148, 129, 97, 0.35);
+  }
+}
+.animate-pulse-gold {
+  animation: pa-pulse-gold 2s ease-in-out infinite alternate;
+}
+
+/* Toast enter/exit: slide in from the right edge. */
+@keyframes pa-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-toast-enter {
+  animation: pa-toast-enter var(--pa-dur-normal) var(--pa-ease-arrive) both;
+}
+
+/* Card pop-in: used by cards in hand when new ones are drawn. A small
+   translate + opacity rise, optionally staggered by inline delay. */
+@keyframes pa-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-card-enter {
+  animation: pa-card-enter var(--pa-dur-normal) var(--pa-ease-arrive) both;
+}
+
+/* Pip flash: a single pip on the resource row flashes when it fills. */
+@keyframes pa-pip-flash {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.animate-pip-flash {
+  animation: pa-pip-flash 200ms var(--pa-ease-standard);
+}
+
+/* Respect the OS-level reduced-motion preference. This is the single
+   knob that disables every animation we define above without per-component
+   wiring. See docs/UI_GAME_FEEL_PROPOSAL.md §5.1. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   GAME-STYLED SCROLLBAR
+   Applied by adding the `.game-scroll` class to overflow containers.
+   Webkit rules cover Electron + Chromium; Firefox falls back to the
+   standard `scrollbar-*` properties.
+   ──────────────────────────────────────────────────────────────── */
+.game-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.game-scroll::-webkit-scrollbar-track {
+  background: var(--pa-bg-primary);
+}
+.game-scroll::-webkit-scrollbar-thumb {
+  background: var(--pa-accent-gold);
+  border-radius: 2px;
+  opacity: 0.6;
+}
+.game-scroll::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--pa-accent-gold) 80%, white);
+}
+.game-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--pa-accent-gold) var(--pa-bg-primary);
+}
+
+/* ────────────────────────────────────────────────────────────────
+   FOCUS RING — gold outline, 2px offset. Applied globally to keyboard
+   users via :focus-visible; hidden from mouse users.
+   ──────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--pa-accent-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   UTILITY: diamond clip-path for stage-track nodes. Using a class
+   instead of repeating the clip-path declaration keeps stage markers
+   visually identical across every use site.
+   ──────────────────────────────────────────────────────────────── */
+.pa-diamond {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+/* Subtle paper-noise texture for main menu + modal backdrops. Pure CSS
+   so there is no image asset to ship. */
+.pa-noise {
+  background-image:
+    radial-gradient(rgba(216, 214, 204, 0.015) 1px, transparent 1px);
+  background-size: 3px 3px;
 }
