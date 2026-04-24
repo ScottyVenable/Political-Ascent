@@ -1,6 +1,7 @@
 import { useSettingsStore } from '@/store/settingsStore';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { Slider as StyledSlider } from '../components/Slider';
 import { useRouter } from '../router';
 
 export function Settings(): JSX.Element {
@@ -53,6 +54,11 @@ export function Settings(): JSX.Element {
   );
 }
 
+/**
+ * Labeled slider — wraps the shared styled `Slider` with a label row.
+ * Named locally to avoid confusion with the imported component; all
+ * visual behaviour (diamond thumb, gold fill) comes from the import.
+ */
 function Slider({
   label, value, onChange, min = 0, max = 100,
 }: {
@@ -66,9 +72,9 @@ function Slider({
     <label className="block mb-3">
       <div className="flex justify-between text-sm mb-1">
         <span className="text-text-secondary">{label}</span>
-        <span className="font-mono text-accent-gold">{value}</span>
+        <span className="font-mono text-accent-gold tabular-nums">{value}</span>
       </div>
-      <input type="range" min={min} max={max} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full" />
+      <StyledSlider value={value} min={min} max={max} onChange={onChange} ariaLabel={label} />
     </label>
   );
 }
