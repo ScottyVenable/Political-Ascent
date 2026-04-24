@@ -22,3 +22,6 @@ android/keystore.properties
 
 # Capacitor
 android/app/src/main/assets/public/
+
+coverage/
+coverage-final.json
