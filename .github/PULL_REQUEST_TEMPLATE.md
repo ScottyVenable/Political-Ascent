@@ -44,7 +44,7 @@
 
 ## Checklist
 
-- [ ] Branch name follows `exp--<version>--<feature>`.
+- [ ] Branch name follows `exp--<feature-kebab>` (no version prefix).
 - [ ] Base branch is `experimental/`.
 - [ ] No emoji in shipped game content (`src/**/*.tsx`, `src/data/**/*.json`).
 - [ ] No `Math.random()` in engine/systems/stores.

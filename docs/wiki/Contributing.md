@@ -4,12 +4,13 @@ Full contributor workflow is in
 [`docs/guides/CONTRIBUTING.md`](https://github.com/ScottyVenable/Political-Ascent/blob/development/docs/guides/CONTRIBUTING.md).
 This page is the high-level version.
 
-## Branch model
+## Branch model (simplified)
 
-- Long-lived: `development`, `experimental`, `release`.
-- Feature: `exp--<version>--<feature-kebab>`, e.g. `exp--0.1--legislation-ui`.
-- PRs target `experimental` first.
+- **Long-lived (exactly three):** `development`, `experimental`, `release`.
+- **Feature branches** are created on demand from `development` (or from `experimental` if continuing in-flight work) and named `exp--<feature-kebab>` — no pre-allocated per-milestone branches.
+- Every PR targets `experimental` first. `experimental` is the only branch that gets merged into `development`; `development` is the only branch promoted to `release`.
 - Never merge directly to `development` or `release`.
+- Delete feature branches once their PR is merged.
 
 ## Expectations per PR
 

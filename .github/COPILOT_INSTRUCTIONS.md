@@ -163,7 +163,7 @@ interface PopulationGroup {
 ### When Adding a New Feature:
 1. Check the GDD (`docs/GDD.md`) for design spec
 2. Check the Architecture doc (`docs/ARCHITECTURE.md`) for patterns
-3. Create the feature branch: `exp--0.1--feature-name`
+3. Create the feature branch on demand: `exp--<feature-kebab>` (off `development`, or off `experimental` for follow-up work). No pre-allocated milestone branches.
 4. Write the TypeScript interface/types first
 5. Write the engine/system logic with tests
 6. Build the Zustand store additions

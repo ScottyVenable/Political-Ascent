@@ -25,7 +25,7 @@ If any two documents conflict:
 - No `Math.random()` in engine/systems/stores. Use `SeededRNG`.
 - No React in `src/engine/` or `src/systems/`.
 - No `any`. No hardcoded game content (use JSON in `src/data/`).
-- Branch from `development`: `exp--<version>--<feature>`. Open PRs against `experimental/`. Never merge directly to `development` or `release`.
+- Branch on demand: `exp--<feature-kebab>` off `development` (or `experimental` for follow-up work). Open PRs against `experimental`. Never merge directly to `development` or `release`. Delete feature branches after merge.
 - Every PR includes tests (Vitest) and, for UI changes, Playwright screenshots reviewed by the agent.
 - Every PR updates the relevant docs, the GitHub Project card, and the Wiki if applicable.
 - Extensive commenting is required. Code is written for the Lead Director to learn from; assume a smart reader unfamiliar with game-development idioms.

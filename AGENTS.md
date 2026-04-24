@@ -26,7 +26,7 @@ You are responsible — as a co-creative director — for noticing when the UI, 
 3. **No React imports** in `src/engine/` or `src/systems/`.
 4. **No `any`.** Narrow `unknown` or define the type.
 5. **No hardcoded game content.** Events, cards, bills, traits, scenarios, achievements live in JSON under `src/data/`.
-6. **No direct merges to `development` or `release`.** Every change is a PR from `exp--<version>--<feature>` into `experimental/` first, then merged forward per `.github/COPILOT_INSTRUCTIONS.md`.
+6. **No direct merges to `development` or `release`.** Every change is a PR from a feature branch (`exp--<feature-kebab>`) into `experimental` first, then merged forward per `.github/COPILOT_INSTRUCTIONS.md`.
 7. **No bypassing safety checks.** Never `git push --force`, `git commit --no-verify`, or skip CI unless the Lead Director explicitly authorises.
 8. **No new dependencies without approval.** Propose, justify bundle-size impact, wait for approval.
 9. **No AI-generated image assets** committed to the repo. Code generation is allowed and governed by this file; image generation is not. (See `docs/guides/ICONS_AND_ASSETS.md` §5.)
@@ -204,8 +204,8 @@ If any fails, fix it before committing unless the Lead Director authorises a fol
 
 ## 7. How you open pull requests
 
-1. **Branch name:** `exp--<version>--<feature-kebab>`, e.g. `exp--0.1--legislation-vote-ui`.
-2. **Base branch:** `experimental/` (never `development` or `release` directly).
+1. **Branch name:** `exp--<feature-kebab>`, e.g. `exp--legislation-vote-ui`. Create the branch on demand off `development` (or off `experimental` when continuing in-flight work). Do not pre-create per-milestone branches. Delete the feature branch after merge.
+2. **Base branch:** `experimental` (never `development` or `release` directly).
 3. **Title:** matches the primary commit subject.
 4. **Description must include:**
    - Summary (what/why).

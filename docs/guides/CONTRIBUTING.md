@@ -8,7 +8,7 @@ Read these before your first PR:
 
 ## Workflow
 
-1. Branch from `development`: `exp--<version>--<feature-name>` (e.g. `exp--0.1--legislation-vote-ui`).
+1. Create a feature branch on demand: `exp--<feature-kebab>` (e.g. `exp--legislation-vote-ui`). Branch off `development`, or off `experimental` when continuing in-flight work. No pre-allocated per-milestone branches.
 2. Run `npm install`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run test:e2e` locally before opening a PR.
 3. Follow the commit format: `feat(scope): ...`, `fix(scope): ...`, etc. See [COPILOT_INSTRUCTIONS §Commit Format](../../.github/COPILOT_INSTRUCTIONS.md).
 4. Scopes: `engine`, `legislation`, `congress`, `population`, `economy`, `cards`, `quests`, `skills`, `ui`, `character`, `dialogue`, `save`, `settings`, `android`, `docs`, `ci`, `agents`.
