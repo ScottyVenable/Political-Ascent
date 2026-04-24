@@ -1,6 +1,11 @@
 # POLITICAL ASCENT — GitHub Copilot Agent Instructions
 # Place this file at: .github/COPILOT_INSTRUCTIONS.md
 
+> **Read first:** [AGENTS.md](../AGENTS.md) is the operating manual for all AI agents on this project
+> (planning, testing, Playwright screenshot suite, PR workflow, Project board + Wiki upkeep, co-creative
+> director role). This file covers the **coding standards**. On conflict: `AGENTS.md` wins for behaviour,
+> this file wins for coding rules.
+
 ---
 
 ## ROLE
@@ -240,14 +245,32 @@ All new content must have:
 
 ## WHAT TO NEVER DO
 
-- ❌ Never use `Math.random()` — use seeded RNG
-- ❌ Never mutate Zustand state outside of store actions
-- ❌ Never import React in engine or system files
-- ❌ Never hardcode game content (events, cards, text) in TypeScript — it belongs in JSON
-- ❌ Never skip types — no `any`, no unannotated function signatures
-- ❌ Never merge to `development` or `release` directly — always PR from feature branch
-- ❌ Never delete save file compatibility without a migration path
-- ❌ Never add dependencies without discussing with Lead Director first
+- Never use `Math.random()` — use seeded RNG (`src/utils/random.ts`).
+- Never mutate Zustand state outside of store actions.
+- Never import React in engine or system files.
+- Never hardcode game content (events, cards, text) in TypeScript — it belongs in JSON under `src/data/`.
+- Never skip types — no `any`, no unannotated function signatures.
+- Never merge to `development` or `release` directly — always PR from feature branch into `experimental/`.
+- Never delete save file compatibility without a migration path.
+- Never add dependencies without discussing with the Lead Director first.
+- Never put emoji in shipped game content. Use the `<Icon />` component backed by approved open-source icon sets. See [docs/guides/ICONS_AND_ASSETS.md](../docs/guides/ICONS_AND_ASSETS.md).
+- Never commit AI-generated image assets.
+- Never force-push, `--no-verify`, or merge your own PR without Lead Director approval.
+
+## VISUAL ASSET POLICY
+
+All in-game visuals (icons, sprites, portraits, UI frames, backgrounds) come from approved open-source
+sources with license files vendored under `src/assets/licenses/` and attribution in
+`docs/about/CREDITS.md`. Emoji are banned in shipped game content. Full rules and approved sources:
+[docs/guides/ICONS_AND_ASSETS.md](../docs/guides/ICONS_AND_ASSETS.md).
+
+## TESTING POLICY (summary)
+
+- Unit tests: Vitest, co-located with source (`foo.ts` ↔ `foo.test.ts`).
+- End-to-end + screenshot tests: Playwright, under `tests/e2e/`.
+- UI-affecting PRs must capture screenshots at 1280×720, 1440×900, 1920×1080 and the agent must
+  *analyse* them in the PR description.
+- Full testing expectations are in [AGENTS.md §5](../AGENTS.md).
 
 ---
 

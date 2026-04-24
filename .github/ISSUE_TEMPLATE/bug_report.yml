@@ -1,0 +1,76 @@
+name: Bug report
+description: A defect in the game, engine, UI, or tooling.
+title: "bug: <short summary>"
+labels: ["type:bug", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill every field. Bugs without repro steps get closed.
+  - type: input
+    id: version
+    attributes:
+      label: Version / branch
+      description: e.g. `0.1.0-alpha.1` or branch name.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Repro steps
+      description: Numbered steps that reproduce the bug.
+      placeholder: |
+        1. Launch the game
+        2. Start a new game with the Modern America scenario
+        3. Open the Legislation panel
+        4. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence (screenshots, Playwright trace, save file, console log)
+      description: Drag and drop files or paste links. Playwright traces are strongly preferred for UI bugs.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node version, browser (if web), Electron version, Android version.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - engine
+        - legislation
+        - congress
+        - population
+        - economy
+        - cards
+        - quests
+        - skills
+        - ui
+        - character
+        - dialogue
+        - save
+        - settings
+        - android
+        - docs
+        - ci
+        - other
+    validations:
+      required: true
