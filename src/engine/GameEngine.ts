@@ -89,6 +89,10 @@ class GameEngineImpl implements GameEngineAPI {
     EventEngine.registerEvents(bundle.events);
     QuestSystem.register(bundle.quests);
     AchievementEngine.registerAchievements(bundle.achievements);
+    // Legislation needs access to the bill catalogue (for per-template
+    // stage-duration overrides) without importing GameEngine itself, which
+    // would create a module cycle.
+    LegislationSystem.registerTemplates(bundle.billTemplates);
     log.info('data registered', {
       scenarios: bundle.scenarios.length,
       cards: bundle.cards.length,
@@ -184,6 +188,11 @@ class GameEngineImpl implements GameEngineAPI {
       TimeEngine.onDaily(() => {
         EventEngine.checkDailyTriggers();
         QuestSystem.dailyUpdate();
+        // Legislative clock: bills march through committee → floor → vote
+        // on a per-day basis. Without this hook, bills would be frozen in
+        // whichever stage they were drafted into. See
+        // docs/research/pacing-legislative-timeline-2026-04.md.
+        LegislationSystem.dailyUpdate();
       }),
       TimeEngine.onWeekly(() => {
         PopulationSystem.weeklyUpdate();
