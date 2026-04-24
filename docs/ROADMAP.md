@@ -1,4 +1,6 @@
 # POLITICAL ASCENT — Development Roadmap
+
+**Branching:** Feature branches are created on demand as `exp--<feature-kebab>` and deleted after merge. The long-lived branches are `development`, `experimental`, and `release`.
 **Lead Director:** [Your Name] | **Engine Version:** 0.1
 
 ---
@@ -19,7 +21,6 @@ v1.0        ← Launch candidate
 ## v0.1 — MVP (Current Sprint)
 
 ### Milestone 0: Project Setup
-**Branch:** `exp--0.1--project-setup`
 
 - [ ] Initialize Electron + Vite + React + TypeScript project
 - [ ] Configure Tailwind CSS
@@ -38,7 +39,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 1: Core Types & Architecture
-**Branch:** `exp--0.1--core-types`
 
 - [ ] Define all TypeScript interfaces (`GameState`, `Character`, `WorldState`, etc.)
 - [ ] Set up all Zustand stores (empty, typed)
@@ -56,7 +56,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 2: Main Menu & App Shell
-**Branch:** `exp--0.1--app-shell`
 
 - [ ] Main Menu screen (New Game, Load Game, Settings, Quit)
 - [ ] Settings screen (Gameplay, Audio, Display, Accessibility)
@@ -74,7 +73,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 3: Character Creation
-**Branch:** `exp--0.1--character-system`
 
 - [ ] Character creation multi-step screen
   - [ ] Step 1: Choose background (Citizen / Veteran / Executive)
@@ -93,7 +91,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 4: Scenario & World Loading
-**Branch:** `exp--0.1--scenario-system`
 
 - [ ] Scenario select screen (list of scenarios, Modern America initially)
 - [ ] `modern-america-2024/scenario.json` — full scenario definition
@@ -109,7 +106,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 5: Time System
-**Branch:** `exp--0.1--time-system`
 
 - [ ] `TimeEngine.ts` — tick loop, date advancement
 - [ ] Speed controls: Pause / 1× / 2× / 4× / Skip to event
@@ -124,7 +120,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 6: Action Point System
-**Branch:** `exp--0.1--action-system`
 
 - [ ] AP tracking in game store
 - [ ] AP display in top bar (current / max)
@@ -139,7 +134,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 7: Main Dashboard
-**Branch:** `exp--0.1--dashboard`
 
 - [ ] Dashboard panel (home screen inside game)
 - [ ] Approval rating widget (sparkline chart)
@@ -155,7 +149,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 8: Population System
-**Branch:** `exp--0.1--population-sim`
 
 - [ ] `PopulationSystem.ts` — weekly update logic
 - [ ] Population groups defined (8–10 groups for MVP)
@@ -173,7 +166,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 9: Legislation System
-**Branch:** `exp--0.1--legislation-ui`
 
 - [ ] `LegislationSystem.ts` — bill lifecycle logic
 - [ ] Bill draft screen (template picker, custom edit)
@@ -194,7 +186,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 10: Congress Chamber
-**Branch:** `exp--0.1--congress-chamber`
 
 - [ ] `CongressSystem.ts` — legislator logic, relationship updates
 - [ ] Seat grid component (Senate: 100 seats, House: 435 seats)
@@ -211,7 +202,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 11: Event System
-**Branch:** `exp--0.1--event-system`
 
 - [ ] `EventEngine.ts` — trigger evaluation, event selection, resolution
 - [ ] `global-events.json` — 15+ generic events
@@ -227,7 +217,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 12: Card System
-**Branch:** `exp--0.1--card-system`
 
 - [ ] `CardSystem.ts` — draw, play, effect resolution
 - [ ] `starter-deck.json` — 15 starter cards across all types
@@ -244,7 +233,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 13: Quest System
-**Branch:** `exp--0.1--quest-system`
 
 - [ ] `QuestSystem.ts` — quest tracking, objective evaluation, rewards
 - [ ] `starter-quests.json` — 5 starter quests
@@ -259,7 +247,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 14: Economy Dashboard
-**Branch:** `exp--0.1--economy-dashboard`
 
 - [ ] `EconomySystem.ts` — weekly/monthly/annual update logic
 - [ ] `economy.json` in Modern America scenario
@@ -274,7 +261,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 15: Skill Tree
-**Branch:** `exp--0.1--skill-tree`
 
 - [ ] `SkillSystem.ts` — XP, leveling, skill point allocation
 - [ ] 3 skill paths for MVP (Oratory, Legislative, Strategist)
@@ -288,7 +274,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 16: Save System
-**Branch:** `exp--0.1--save-system`
 
 - [ ] `electron-store` setup for save files
 - [ ] Save game (manual + auto-save on week end)
@@ -303,7 +288,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 17: Achievements
-**Branch:** `exp--0.1--achievements`
 
 - [ ] `AchievementEngine.ts` — condition checking, unlock tracking
 - [ ] `achievements.json` — 10 MVP achievements
@@ -316,7 +300,6 @@ v1.0        ← Launch candidate
 ---
 
 ### Milestone 18: Polish & QA Pass
-**Branch:** `exp--0.1--polish`
 
 - [ ] Consistent typography + color usage audit
 - [ ] All loading states handled (skeleton screens)

@@ -1,0 +1,36 @@
+name: UI regression
+description: Visual or UX defect surfaced by Playwright screenshot review or playtest.
+title: "ui: <short summary>"
+labels: ["type:bug", "area:ui", "status:triage"]
+body:
+  - type: input
+    id: screen
+    attributes:
+      label: Screen / panel affected
+      description: e.g. Dashboard, Legislation Hub, Congress Chamber, Character Creation step 3.
+    validations:
+      required: true
+  - type: textarea
+    id: before
+    attributes:
+      label: Expected appearance / behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: after
+    attributes:
+      label: Actual appearance / behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots (before / after)
+      description: Attach the Playwright screenshot(s) and any manual captures. Include viewport size.
+    validations:
+      required: true
+  - type: textarea
+    id: analysis
+    attributes:
+      label: Agent analysis notes
+      description: What did screenshot review flag? Information hierarchy, colour usage, icon source, spacing, etc.

@@ -1,0 +1,21 @@
+name: Chore
+description: Tooling, refactor, tests-only, dependency update, CI work.
+title: "chore: <short summary>"
+labels: ["type:chore", "status:triage"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+    validations:
+      required: true
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risk / blast radius
