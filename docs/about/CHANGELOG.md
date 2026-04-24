@@ -5,6 +5,12 @@ All notable changes to Political Ascent are recorded here.
 ## [Unreleased]
 
 ### Added
+- **Dashboard situation-room redesign** (closes #39). Replaces the 2×2 generic-metrics grid with:
+  - A KPI strip (Approval · GDP · Unemployment · Deficit) using the mono `text-data-lg` scale and a tiny trend glyph.
+  - A primary **Focus card** that answers "what needs my attention right now?" — resolved from an `resolveFocus(event, pendingBills)` helper with priority `event > bill at vote > furthest-along pending > quiet`. Each state ships one gold CTA.
+  - An ambient **The Press** news column to the right of the focus.
+  - A bottom row pairing an **Identity** card (ideology compass + label) with a **This Week** agenda whose rows double as nav shortcuts.
+  - 4 new unit tests covering the focus-resolver priority contract.
 - **Game-feel foundation pass** (`docs/research/game-feel-foundation-2026-04.md`).
   - Loaded IBM Plex Mono (was silently missing; all numeric readouts rendered as Courier New on Windows).
   - Removed the global `body { font-family: Inter }` override in `src/renderer/styles.css` that was defeating the Tailwind `font-body` token system-wide. Body now inherits Inria Serif.
