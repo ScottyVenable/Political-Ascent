@@ -206,6 +206,16 @@ const ICONS = {
       <path d="M12 5v14M5 12h14" />
     </>
   ),
+  /**
+   * Hamburger — three stacked rules. Used by the mobile top bar to open
+   * the navigation drawer when the sidebar is hidden below the `md`
+   * breakpoint (see `Sidebar.tsx`).
+   */
+  menu: (
+    <>
+      <path d="M4 6h16M4 12h16M4 18h16" />
+    </>
+  ),
 } as const satisfies Record<string, IconPath>;
 
 /** Public union of every valid icon id. Generated from the registry. */

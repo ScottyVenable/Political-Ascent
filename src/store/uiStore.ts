@@ -32,6 +32,13 @@ interface UIState {
   modals: ModalState[];
   toasts: ToastMessage[];
   contextPanelOpen: boolean;
+  /**
+   * Whether the navigation sidebar is open as a drawer on mobile
+   * (viewports below the `md` breakpoint). On ≥md screens the sidebar
+   * is always visible and this flag is ignored by the renderer. Default
+   * `false` so the main content owns the viewport on first load.
+   */
+  sidebarOpen: boolean;
 }
 
 interface UIStoreActions {
@@ -42,6 +49,8 @@ interface UIStoreActions {
   pushToast: (toast: Omit<ToastMessage, 'id' | 'createdAt'>) => void;
   dismissToast: (id: string) => void;
   setContextPanelOpen: (open: boolean) => void;
+  /** Open/close the mobile navigation drawer. */
+  setSidebarOpen: (open: boolean) => void;
 }
 
 type Store = UIState & UIStoreActions;
@@ -52,10 +61,15 @@ export const useUIStore = create<Store>()(
     modals: [],
     toasts: [],
     contextPanelOpen: true,
+    sidebarOpen: false,
 
     setActivePanel: (panel) =>
       set((s) => {
         s.activePanel = panel;
+        // Selecting a panel while the mobile drawer is open should close
+        // it — otherwise the drawer would obscure the content the player
+        // just navigated to.
+        s.sidebarOpen = false;
       }),
 
     openModal: (modal) =>
@@ -91,6 +105,11 @@ export const useUIStore = create<Store>()(
     setContextPanelOpen: (open) =>
       set((s) => {
         s.contextPanelOpen = open;
+      }),
+
+    setSidebarOpen: (open) =>
+      set((s) => {
+        s.sidebarOpen = open;
       }),
   })),
 );

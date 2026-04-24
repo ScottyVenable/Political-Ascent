@@ -42,6 +42,42 @@ body,
   min-height: 100%;
 }
 
+/* ────────────────────────────────────────────────────────────────
+   MOBILE / CAPACITOR SAFE-AREA AND VIEWPORT HELPERS
+   ----------------------------------------------------------------
+   On Android (Capacitor) and iOS WebView the rendered area can be
+   covered by the system status bar, notch, and gesture home bar.
+   `viewport-fit=cover` in index.html opts the WebView in to the
+   `env(safe-area-inset-*)` variables; these rules surface them for
+   the rest of the stylesheet.
+
+   `#root` inherits `100dvh` so that when the Android URL bar /
+   in-app browser chrome collapses, the grid shell stretches with it
+   instead of leaving a white strip at the bottom (a classic pitfall
+   of `100vh` on mobile Chromium). Electron and desktop browsers are
+   unaffected because dvh == vh there.
+   ──────────────────────────────────────────────────────────────── */
+#root {
+  min-height: 100dvh;
+  /* Reserve the home-indicator inset so the BottomBar does not sit
+     underneath the Android gesture pill on modern devices. The Game
+     shell also applies this via inline style for its grid wrapper. */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Prevent iOS/Android pull-to-refresh from yanking on the game view
+   and avoid accidental text-selection during quick taps on interactive
+   elements. Desktop is unaffected because these properties are
+   no-ops on a mouse-driven pointer. */
+html,
+body {
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* The previous rule here hard-forced Inter, which silently defeated the
    Tailwind `font-body` token on every element that did not explicitly opt
    in. The game's primary typeface is Inria Serif; the shell inherits it. */

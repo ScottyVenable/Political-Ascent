@@ -79,11 +79,11 @@ function BottomBarImpl(): JSX.Element {
 
   return (
     <footer
-      className="h-[72px] bg-bg-secondary border-t border-rule px-5 grid items-center"
+      className="h-[72px] bg-bg-secondary border-t border-rule px-3 md:px-5 grid items-center gap-2"
       style={{ gridTemplateColumns: '1fr auto 1fr' }}
     >
       {/* ─── LEFT: Speed controls ─────────────────────────────── */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1 md:gap-1.5">
         {SPEEDS.map((s) => {
           // "Active" = the engine is currently running at this speed.
           // Pause is active both when explicitly paused and when speed
@@ -99,7 +99,9 @@ function BottomBarImpl(): JSX.Element {
               aria-pressed={isActive}
               onClick={() => TimeEngine.setSpeed(s.value)}
               className={
-                'w-10 h-10 rounded-sm flex items-center justify-center ' +
+                // 44×44 on phones (WCAG tap-target), 40×40 on desktop so
+                // the row of four still fits the 72px footer comfortably.
+                'w-11 h-11 md:w-10 md:h-10 rounded-sm flex items-center justify-center ' +
                 'transition-all duration-instant active:translate-y-px ' +
                 (isActive
                   ? 'bg-accent-gold text-bg-primary shadow-glow-gold'
@@ -115,11 +117,15 @@ function BottomBarImpl(): JSX.Element {
 
       {/* ─── CENTER: Week readout ─────────────────────────────── */}
       <div className="flex flex-col items-center leading-none">
-        <span className="font-mono text-data-lg text-text-primary tabular-nums">
+        <span className="font-mono text-data md:text-data-lg text-text-primary tabular-nums">
           WEEK {week}
         </span>
+        {/* Verbose "of 52 · Month Year" subtitle trims to just the year
+            on narrow viewports — the month is already shown in the
+            TopBar (MMM YYYY) so we do not duplicate it on phones. */}
         <span className="font-mono text-label uppercase tracking-widest text-text-muted mt-1">
-          of 52 · {monthName} {date.year}
+          <span className="hidden sm:inline">of 52 · {monthName} {date.year}</span>
+          <span className="sm:hidden">of 52 · {date.year}</span>
         </span>
       </div>
 

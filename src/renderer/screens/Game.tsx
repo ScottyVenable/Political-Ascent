@@ -84,18 +84,25 @@ export function Game(): JSX.Element {
   return (
     // Three-row grid: the top and bottom rows have fixed pixel heights
     // (48px shell + 72px command strip) so the middle row inherits
-    // `1fr` and can scroll internally. `h-screen` guarantees the layout
-    // fills the viewport regardless of content height.
+    // `1fr` and can scroll internally. `h-[100dvh]` uses the dynamic
+    // viewport unit so Android/iOS URL bars and gesture bars do not
+    // steal the last row of content the way `100vh` would. The
+    // padding-bottom safe-area inset handles devices whose gesture bar
+    // overlaps the rendered area (newer Android + iOS home-bar).
     <div
-      className="bg-bg-primary text-text-primary grid h-screen"
-      style={{ gridTemplateRows: '48px 1fr 72px' }}
+      className="bg-bg-primary text-text-primary grid w-full"
+      style={{
+        gridTemplateRows: '48px 1fr 72px',
+        height: '100dvh',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
     >
       <TopBar />
-      <div className="flex overflow-hidden">
+      <div className="flex overflow-hidden relative">
         <Sidebar />
         <main
           key={activePanel}
-          className="flex-1 overflow-y-auto game-scroll p-5 md:p-6 animate-panel-enter"
+          className="flex-1 overflow-y-auto game-scroll p-3 sm:p-4 md:p-6 animate-panel-enter"
         >
           {activePanel === 'dashboard' && <DashboardPanel />}
           {activePanel === 'legislation' && <LegislationPanel />}

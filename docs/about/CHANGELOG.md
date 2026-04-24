@@ -5,6 +5,14 @@ All notable changes to Political Ascent are recorded here.
 ## [Unreleased]
 
 ### Added
+- **Mobile layout optimization for Android (Capacitor) builds.** The in-game shell now functions on phone-sized viewports (≈360–420px) so the packaged APK is playable on device:
+  - `Sidebar` is a permanent 192px column at `md` (≥768px) and a slide-in drawer below it, with a backdrop that dismisses on tap and auto-closes when a panel is selected. 44×44 tap targets on phones (WCAG 2.5.5).
+  - `TopBar` gains a hamburger button under `md` and hides the `LV N · X XP` chip + `AP` text label below `sm` so the three zones (identity / date / resources) all fit on a 360px viewport.
+  - `BottomBar` uses 44×44 speed buttons on phones, tightens padding, and collapses the "of 52 · <Month> <Year>" subtitle to "of 52 · <Year>" below `sm` (the month is already in the TopBar).
+  - `Game` shell switches from `100vh` to `100dvh` so Android's collapsing URL bar and iOS home-bar do not leave a blank strip at the bottom; `env(safe-area-inset-*)` is applied on `#root` and the grid wrapper so the BottomBar clears the Android gesture pill.
+  - `styles.css` disables overscroll pull-to-refresh, tap-highlight, and iOS text-size autosizing inside the game WebView.
+  - `uiStore` gains `sidebarOpen` + `setSidebarOpen`; `setActivePanel` auto-closes the drawer.
+  - New `menu` (hamburger) icon in the Icon registry.
 - **Congress hemicycle redesign** (closes #41). Replaces the flat `SeatGrid` with a semi-circular parliament layout:
   - New `Hemicycle` component. Pure `layoutHemicycle(legislators, width)` computes seat positions across rows (`rows = max(3, round(sqrt(n/3.2)))` → ~4 for Senate/100, ~10 for House/435), radii from 0.45·cy to 0.95·cy, capacity proportional to arc length, exact seat distribution via Hamilton remainders.
   - Seats are ordered left-to-right by `ideology.x` — the leftmost physical seat goes to the most-left-wing legislator and vice versa, so the chamber always reads D · I · R.

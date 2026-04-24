@@ -1,7 +1,9 @@
 import { memo } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useCharacterStore } from '@/store/characterStore';
+import { useUIStore } from '@/store/uiStore';
 import { ResourcePips } from './ResourcePips';
+import { Icon } from './Icon';
 
 /**
  * TopBar — slim, fixed header showing identity, date, and political resources.
@@ -19,6 +21,15 @@ import { ResourcePips } from './ResourcePips';
  * The bar is fixed at 48px tall (`h-12`); that is the single vertical
  * budget chosen in the proposal so every screen has the same vertical
  * canvas below it.
+ *
+ * Mobile behaviour:
+ *   - A hamburger button prefixes the left zone below the `md`
+ *     breakpoint. It toggles the navigation drawer (Sidebar.tsx).
+ *   - Horizontal padding tightens (px-3 → px-5 on ≥md) and the
+ *     secondary "LV N · X XP" label is hidden under 380px-ish
+ *     viewports via `hidden xs:inline` equivalents (we use arbitrary
+ *     Tailwind responsive `sm:` here since Tailwind's default `sm` is
+ *     640px — below that is phone territory).
  */
 const MONTH_ABBREV = [
   'JAN',
@@ -48,23 +59,39 @@ function TopBarImpl(): JSX.Element {
   const level = useCharacterStore((s) => s.level);
   const xp = useCharacterStore((s) => s.xp);
 
+  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
+
   // 1-indexed month → 0-indexed lookup. Defensive clamp in case a save
   // file carries a bad value.
   const monthAbbrev = MONTH_ABBREV[Math.max(0, Math.min(11, date.month - 1))];
 
   return (
     <header
-      className="h-12 bg-bg-secondary border-b border-rule px-5 grid items-center"
+      className="h-12 bg-bg-secondary border-b border-rule px-3 md:px-5 grid items-center gap-2"
       style={{ gridTemplateColumns: '1fr auto 1fr' }}
     >
-      {/* ─── LEFT: Identity ──────────────────────────────────── */}
-      <div className="flex items-baseline gap-3 min-w-0">
-        <span className="font-headline text-sm text-accent-gold truncate">
-          {name || 'Senator'}
-        </span>
-        <span className="font-mono text-label text-text-muted shrink-0">
-          LV {level} · {xp} XP
-        </span>
+      {/* ─── LEFT: Identity (+ hamburger on mobile) ──────────── */}
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          type="button"
+          aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+          aria-expanded={sidebarOpen}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="md:hidden w-9 h-9 -ml-1 shrink-0 flex items-center justify-center rounded-sm text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/60 transition-colors duration-instant"
+        >
+          <Icon name="menu" size={18} />
+        </button>
+        <div className="flex items-baseline gap-3 min-w-0">
+          <span className="font-headline text-sm text-accent-gold truncate">
+            {name || 'Senator'}
+          </span>
+          {/* XP/level chip hides under ~640px — keeps the left zone
+              readable on phones where the date column is the priority. */}
+          <span className="hidden sm:inline font-mono text-label text-text-muted shrink-0">
+            LV {level} · {xp} XP
+          </span>
+        </div>
       </div>
 
       {/* ─── CENTER: Date ────────────────────────────────────── */}
@@ -78,7 +105,7 @@ function TopBarImpl(): JSX.Element {
       </div>
 
       {/* ─── RIGHT: Resources ────────────────────────────────── */}
-      <div className="flex items-center justify-end gap-5">
+      <div className="flex items-center justify-end gap-3 md:gap-5">
         <div className="flex items-baseline gap-1.5">
           <span className="font-mono text-data text-accent-gold tabular-nums">
             {pc}
@@ -87,7 +114,9 @@ function TopBarImpl(): JSX.Element {
         </div>
         <div className="flex items-center gap-1.5">
           <ResourcePips value={ap} max={apMax} tone="gold" label="Action Points" />
-          <span className="font-mono text-label text-text-muted">AP</span>
+          {/* "AP" label is redundant next to the pip row on phones where
+              horizontal room is tight; keep it from `sm` up. */}
+          <span className="hidden sm:inline font-mono text-label text-text-muted">AP</span>
         </div>
       </div>
     </header>
