@@ -52,7 +52,7 @@ export function CardsPanel(): JSX.Element {
             >
               <p className="text-sm text-text-secondary mb-2">{def.description}</p>
               {def.flavorText && (
-                <p className="text-xs italic text-text-muted mb-3 font-flavor">"{def.flavorText}"</p>
+                <p className="text-xs italic text-text-muted mb-3 font-flavor">&ldquo;{def.flavorText}&rdquo;</p>
               )}
               <div className="flex items-center justify-between text-xs mb-3">
                 <span className={`font-mono ${canPay ? 'text-accent-gold' : 'text-status-danger'}`}>
