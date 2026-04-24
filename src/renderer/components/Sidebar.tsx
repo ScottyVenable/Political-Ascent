@@ -116,7 +116,7 @@ function SidebarImpl(): JSX.Element {
             content. */}
         <div
           onClick={() => setSidebarOpen(false)}
-          aria-hidden
+          aria-hidden={true}
           className={
             'fixed inset-0 z-40 bg-black/60 transition-opacity duration-200 ' +
             (sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none')
