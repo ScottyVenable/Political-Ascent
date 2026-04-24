@@ -24,6 +24,43 @@ See `docs/GDD.md` for the full game design, `docs/ARCHITECTURE.md` for the techn
 - **npm** 10+
 - **Java 17 + Android SDK** (only if building Android APK)
 - **Gradle** (bundled wrapper used; system install not required)
+- **PowerShell 5.1+** (for the `launcher.ps1` helper on Windows; optional)
+
+---
+
+## PowerShell launcher (Windows)
+
+A stylised interactive launcher is provided at `launcher.ps1`.
+
+```powershell
+# Interactive menu
+.\launcher.ps1
+
+# Non-interactive — run a specific task
+.\launcher.ps1 -Task dev
+.\launcher.ps1 -Task build:win
+.\launcher.ps1 -Task preflight
+```
+
+Tasks available via `-Task`:
+
+| Task                    | What it does                              |
+|-------------------------|-------------------------------------------|
+| `install`               | `npm install`                             |
+| `preflight`             | Check Node/npm/Java/ANDROID_HOME          |
+| `dev`                   | Start Vite dev server                     |
+| `typecheck`             | Run TypeScript type-check                 |
+| `test`                  | Run the Vitest suite                      |
+| `test:watch`            | Vitest in watch mode                      |
+| `test:coverage`         | Vitest with coverage                      |
+| `build:web`             | Build the web bundle                      |
+| `electron:dev`          | Run Electron in dev mode                  |
+| `build:electron`        | Package Electron (cross-platform)         |
+| `build:win`             | Package Windows NSIS installer + portable |
+| `build:android`         | Build Android debug APK                   |
+| `build:android-release` | Build Android release APK                 |
+| `clean`                 | Remove build artefacts                    |
+| `docs`                  | Open the `docs/` folder                   |
 
 ---
 
@@ -50,6 +87,14 @@ Open http://localhost:5173 to play in a browser during development.
 ---
 
 ## Desktop build (Electron)
+
+Windows installer (NSIS) + portable:
+
+```bash
+npm run build:win
+```
+
+Cross-platform (macOS/Linux in CI; platform targets configured in `electron-builder.yml`):
 
 ```bash
 npm run build:electron

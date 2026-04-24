@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Political Ascent</string>
+    <string name="title_activity_main">Political Ascent</string>
+    <string name="package_name">com.politicalascent.game</string>
+    <string name="custom_url_scheme">com.politicalascent.game</string>
+</resources>

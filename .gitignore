@@ -16,6 +16,8 @@ android/app/build/
 android/local.properties
 android/app/release/
 android/app/debug/
+android/keystore.properties
+*.jks
 *.keystore
 
 # Capacitor
