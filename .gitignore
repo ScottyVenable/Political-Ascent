@@ -1,0 +1,22 @@
+node_modules/
+dist/
+dist-electron/
+bin/
+*.log
+.DS_Store
+.vscode/
+.idea/
+profiles/saves/*.json
+!profiles/saves/.gitkeep
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/release/
+android/app/debug/
+*.keystore
+
+# Capacitor
+android/app/src/main/assets/public/

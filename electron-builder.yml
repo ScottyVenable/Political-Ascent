@@ -1,0 +1,23 @@
+appId: com.politicalascent.game
+productName: Political Ascent
+directories:
+  output: bin
+  buildResources: data/media/icons
+files:
+  - dist/**
+  - dist-electron/**
+  - package.json
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  category: public.app-category.games
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+  category: Game
