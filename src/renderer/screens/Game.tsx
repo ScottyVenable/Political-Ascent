@@ -7,6 +7,7 @@ import { EventEngine } from '@/engine/EventEngine';
 import { GameEngine } from '@/engine/GameEngine';
 import { TopBar } from '../components/TopBar';
 import { Sidebar } from '../components/Sidebar';
+import { BottomBar } from '../components/BottomBar';
 import { ModalShell } from '../components/ModalShell';
 import { Button } from '../components/Button';
 
@@ -21,19 +22,35 @@ import { SkillsPanel } from '../panels/SkillsPanel';
 import { CharacterPanel } from '../panels/CharacterPanel';
 
 /**
- * Game shell — holds the game-world layout (top bar, sidebar, active panel).
+ * Game shell — holds the game-world layout.
  *
- * The active panel is selected from uiStore; TimeEngine is started when the
- * game mounts and stopped when it unmounts. Global keyboard shortcuts are
- * bound here:
- *   space - toggle pause
- *   1-4   - set speed
+ * Layout (UI_GAME_FEEL_PROPOSAL §7.1):
+ *
+ *   ┌──────────────── TopBar (48px) ────────────────┐
+ *   │  Identity · Date · Political resources         │
+ *   ├──────────────────────────────────────────────── │
+ *   │ Sidebar │    Main panel (scroll region)        │
+ *   │ (192px) │    animate-panel-enter keyed on id   │
+ *   │         │                                      │
+ *   ├──────────────── BottomBar (72px) ──────────────┤
+ *   │  Speed ·  Week/Year · (hand peek, reserved)    │
+ *   └───────────────────────────────────────────────┘
+ *
+ * The `key={activePanel}` on the <main> element triggers the
+ * panel-enter animation every time the player switches panels — React
+ * tears down the old subtree and the new one enters with the
+ * fade-up-in declared in `styles.css`.
+ *
+ * Global keyboard shortcuts:
+ *   Space  → toggle pause
+ *   1-4    → set speed
  */
 export function Game(): JSX.Element {
   const activePanel = useUIStore((s) => s.activePanel);
   const activeEvents = useWorldStore((s) => s.activeEvents);
 
-  // Global keyboard shortcuts.
+  // Global keyboard shortcuts. Bound once on mount; individual selectors
+  // inside the panels handle their own local shortcuts.
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
       if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
@@ -46,6 +63,7 @@ export function Game(): JSX.Element {
         return;
       }
       if (e.key === '1' || e.key === '2' || e.key === '3' || e.key === '4') {
+        // Legacy key map: "3" remaps to 2× for historical muscle memory.
         const map: Record<string, 1 | 2 | 4> = { '1': 1, '2': 2, '3': 2, '4': 4 };
         useGameStore.getState().setPaused(false);
         TimeEngine.setSpeed(map[e.key]);
@@ -64,11 +82,21 @@ export function Game(): JSX.Element {
   }, []);
 
   return (
-    <div className="min-h-screen bg-bg-primary flex flex-col">
+    // Three-row grid: the top and bottom rows have fixed pixel heights
+    // (48px shell + 72px command strip) so the middle row inherits
+    // `1fr` and can scroll internally. `h-screen` guarantees the layout
+    // fills the viewport regardless of content height.
+    <div
+      className="bg-bg-primary text-text-primary grid h-screen"
+      style={{ gridTemplateRows: '48px 1fr 72px' }}
+    >
       <TopBar />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main
+          key={activePanel}
+          className="flex-1 overflow-y-auto game-scroll p-5 md:p-6 animate-panel-enter"
+        >
           {activePanel === 'dashboard' && <DashboardPanel />}
           {activePanel === 'legislation' && <LegislationPanel />}
           {activePanel === 'congress' && <CongressPanel />}
@@ -80,6 +108,7 @@ export function Game(): JSX.Element {
           {activePanel === 'character' && <CharacterPanel />}
         </main>
       </div>
+      <BottomBar />
       {activeEvents.length > 0 && <EventModal />}
     </div>
   );
