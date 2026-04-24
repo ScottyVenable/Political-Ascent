@@ -5,6 +5,7 @@ import { GameEngine } from '@/engine/GameEngine';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { IdeologyCompass } from '../components/IdeologyCompass';
+import { Slider } from '../components/Slider';
 import { useRouter } from '../router';
 import { useCharacterStore } from '@/store/characterStore';
 
@@ -142,14 +143,16 @@ export function CharacterCreation(): JSX.Element {
                   </div>
                   <div className="flex items-center gap-2">
                     <Button size="sm" variant="secondary" onClick={() => setStat(key, -1)} aria-label={`Decrease ${key}`}>−</Button>
-                    <input
-                      type="range"
-                      min={1}
-                      max={10}
-                      value={baseStats[key]}
-                      onChange={(e) => setBaseStats((s) => ({ ...s, [key]: Number(e.target.value) }))}
-                      className="flex-1"
-                    />
+                    <div className="flex-1">
+                      <Slider
+                        min={1}
+                        max={10}
+                        value={baseStats[key]}
+                        onChange={(v) => setBaseStats((s) => ({ ...s, [key]: v }))}
+                        segments={10}
+                        ariaLabel={`${key} stat value`}
+                      />
+                    </div>
                     <Button size="sm" variant="secondary" onClick={() => setStat(key, +1)} aria-label={`Increase ${key}`}>+</Button>
                   </div>
                 </div>
