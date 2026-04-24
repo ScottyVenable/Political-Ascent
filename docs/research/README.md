@@ -14,6 +14,7 @@ This folder contains design research used to inform the systems, UX, and feel of
 | [comparative-systems.md](comparative-systems.md) | Tropico 6, Democracy 4, Suzerain, Frostpunk, Stellaris | Cross-cutting patterns: decisions-over-time, faction tension, crisis cadence, approval loops |
 | [ui-ux-patterns.md](ui-ux-patterns.md) | Multi-source UI study | Tooltips, information density, map modes, event modals, onboarding |
 | [political-simulation-fidelity.md](political-simulation-fidelity.md) | Academic & sim notes | How much realism is "enough"; abstraction principles for legislative process |
+| [ui-audit-2026-04.md](ui-audit-2026-04.md) | Bloodborne-inspired theme audit | Per-screen walkthrough of the alpha build, theme-pass fixes, deferred polish items |
 
 ## How to add a research entry
 

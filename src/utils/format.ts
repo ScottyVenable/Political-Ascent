@@ -38,6 +38,54 @@ export function formatCurrency(n: number): string {
   return `$${n.toFixed(0)}`;
 }
 
+/**
+ * Compact USD formatting for values already expressed in billions of dollars
+ * (how the economy system stores GDP, deficit, debt, trade balance).
+ *
+ * Examples:
+ *   formatBillionsUSD(1700)    → "$1.7T"   (deficit)
+ *   formatBillionsUSD(34000)   → "$34.0T"  (debt)
+ *   formatBillionsUSD(-900)    → "-$900B"  (trade)
+ *   formatBillionsUSD(42)      → "$42B"
+ *   formatBillionsUSD(0.4)     → "$400M"
+ *
+ * Previously the dashboard rendered raw `$34000B` which is technically
+ * correct but reads as noise; compacting to `$34.0T` restores scannability.
+ */
+export function formatBillionsUSD(n: number): string {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(1)}T`;
+  if (abs >= 1) return `${sign}$${Math.round(abs)}B`;
+  if (abs > 0) return `${sign}$${Math.round(abs * 1000)}M`;
+  return '$0';
+}
+
+/**
+ * Humanize a political-compass coordinate pair into a short, readable label.
+ *
+ * The compass is a (x, y) pair in [-1, 1]:
+ *   - x: economic axis (−1 = left, +1 = right)
+ *   - y: social axis (−1 = libertarian, +1 = authoritarian)
+ *
+ * Values within `centerThreshold` of the origin on BOTH axes return
+ * "Centrist"; otherwise we pick a quadrant label. This is purely for UI
+ * display — the engine always uses the raw coordinates.
+ */
+export function describeIdeology(
+  x: number,
+  y: number,
+  centerThreshold = 0.15,
+): string {
+  if (Math.abs(x) <= centerThreshold && Math.abs(y) <= centerThreshold) {
+    return 'Centrist';
+  }
+  const economic = x < 0 ? 'Left' : 'Right';
+  const social = y < 0 ? 'Libertarian' : 'Authoritarian';
+  // Two-word quadrant labels: "Libertarian Left", "Authoritarian Right", etc.
+  return `${social} ${economic}`;
+}
+
 /** `67` → `67%`. */
 export function formatPercent(n: number, decimals = 0): string {
   return `${n.toFixed(decimals)}%`;

@@ -16,7 +16,12 @@ export interface BarProps {
 }
 
 const TONE: Record<NonNullable<BarProps['tone']>, string> = {
-  neutral: 'bg-accent-blue',
+  // `neutral` is the default tone used by population stats, approval bars,
+  // and anywhere the bar is not carrying tonal meaning. The previous blue
+  // fought the rest of the gold-accented UI; gold is now the neutral tone
+  // and the other semantic tones (success/warning/danger) take over when
+  // the bar's *meaning* is tonal.
+  neutral: 'bg-accent-gold',
   success: 'bg-status-success',
   warning: 'bg-status-warning',
   danger: 'bg-status-danger',

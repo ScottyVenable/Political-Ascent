@@ -27,30 +27,47 @@ const log = createLogger('dataLoader');
  * Validation here is intentionally lightweight: we confirm required fields
  * exist and types look right, and log a warning on mismatch. Hard failures
  * only occur for structurally unusable data (missing `id` fields, etc.).
+ *
+ * IMPORTANT — Vite glob semantics:
+ * `import.meta.glob` is a compile-time primitive. Its FIRST ARGUMENT must be
+ * a string LITERAL so Vite can statically resolve the file set at build time.
+ * Passing the pattern through a helper function (e.g. `importGlob(pattern)`)
+ * defeats the static analysis and silently returns an empty map, which in
+ * turn makes the game boot with zero scenarios, cards, events, etc.
+ * We therefore inline every glob call below with a literal pattern.
  */
 export function loadAllData(): DataBundle {
-  const cards = normalizeArray<CardDefinition>(importGlob('/src/data/cards/*.json'), ['id', 'name', 'type'])
+  // Flat content bundles.
+  const cardModules = import.meta.glob('/src/data/cards/*.json', { eager: true, import: 'default' });
+  const traitModules = import.meta.glob('/src/data/traits/*.json', { eager: true, import: 'default' });
+  const eventModules = import.meta.glob('/src/data/events/*.json', { eager: true, import: 'default' });
+  const questModules = import.meta.glob('/src/data/quests/*.json', { eager: true, import: 'default' });
+  const achievementModules = import.meta.glob('/src/data/achievements/*.json', { eager: true, import: 'default' });
+  const legislationModules = import.meta.glob('/src/data/legislation/*.json', { eager: true, import: 'default' });
+
+  const cards = normalizeArray<CardDefinition>(cardModules, ['id', 'name', 'type'])
     .map((c) => ({ ...c, id: c.id as unknown as CardId }));
 
-  const traits = normalizeArray<TraitDefinition>(importGlob('/src/data/traits/*.json'), ['id', 'name'])
+  const traits = normalizeArray<TraitDefinition>(traitModules, ['id', 'name'])
     .map((t) => ({ ...t, id: t.id as unknown as TraitId }));
 
-  const events = normalizeArray<GameEventDefinition>(importGlob('/src/data/events/*.json'), ['id', 'title', 'options'])
+  const events = normalizeArray<GameEventDefinition>(eventModules, ['id', 'title', 'options'])
     .map((e) => ({ ...e, id: e.id as unknown as EventId }));
 
-  const quests = normalizeArray<QuestDefinition>(importGlob('/src/data/quests/*.json'), ['id', 'title', 'objectives'])
+  const quests = normalizeArray<QuestDefinition>(questModules, ['id', 'title', 'objectives'])
     .map((q) => ({ ...q, id: q.id as unknown as QuestId }));
 
-  const achievements = normalizeArray<AchievementDefinition>(importGlob('/src/data/achievements/*.json'), ['id', 'name'])
+  const achievements = normalizeArray<AchievementDefinition>(achievementModules, ['id', 'name'])
     .map((a) => ({ ...a, id: a.id as unknown as AchievementId }));
 
-  const billTemplates = normalizeArray<BillTemplate>(importGlob('/src/data/legislation/*.json'), ['id', 'title']);
+  const billTemplates = normalizeArray<BillTemplate>(legislationModules, ['id', 'title']);
 
-  // Scenarios and their assets are nested per-folder.
-  const scenarioFiles = importGlob('/src/data/scenarios/*/scenario.json');
-  const populationFiles = importGlob('/src/data/scenarios/*/population.json');
-  const economyFiles = importGlob('/src/data/scenarios/*/economy.json');
-  const legislatorFiles = importGlob('/src/data/scenarios/*/legislators.json');
+  // Scenarios and their assets are nested per-folder. Each literal glob
+  // below is a separate statically-resolvable Vite call.
+  const scenarioFiles = import.meta.glob('/src/data/scenarios/*/scenario.json', { eager: true, import: 'default' });
+  const populationFiles = import.meta.glob('/src/data/scenarios/*/population.json', { eager: true, import: 'default' });
+  const economyFiles = import.meta.glob('/src/data/scenarios/*/economy.json', { eager: true, import: 'default' });
+  const legislatorFiles = import.meta.glob('/src/data/scenarios/*/legislators.json', { eager: true, import: 'default' });
 
   const scenarios: ScenarioDefinition[] = [];
   const populationsByScenario: Record<string, PopulationGroup[]> = {};
@@ -121,20 +138,12 @@ export function loadAllData(): DataBundle {
   return bundle;
 }
 
-/** Vite-friendly eager glob wrapper (works in tests too). */
-function importGlob(pattern: string): Record<string, unknown> {
-  // import.meta.glob is a Vite compile-time primitive; typed loosely here.
-  const metaGlob = (import.meta as unknown as {
-    glob: (p: string, opts: { eager: true; import: string }) => Record<string, unknown>;
-  }).glob;
-  if (typeof metaGlob !== 'function') return {};
-  try {
-    return metaGlob(pattern, { eager: true, import: 'default' });
-  } catch {
-    return {};
-  }
-}
-
+/**
+ * Unwrap a module record when an eager glob was taken WITHOUT `import: 'default'`.
+ * With `import: 'default'` (our default) modules ARE the JSON payload; when the
+ * option is omitted the module is `{ default: payload }`. This helper covers
+ * both cases so tests that hand-craft module maps keep working.
+ */
 function unwrap(mod: unknown): unknown {
   if (mod && typeof mod === 'object' && 'default' in mod) {
     return (mod as { default: unknown }).default;

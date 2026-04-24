@@ -15,10 +15,22 @@ export interface SeatGridProps {
   chamber: 'senate' | 'house' | 'both';
 }
 
-const PARTY_COLOR: Record<string, string> = {
-  D: 'bg-accent-blue',
-  R: 'bg-accent-red',
+// Party dot colours — kept as explicit hex values so they stay distinct
+// without falling back on the saturated primary-blue / primary-red that
+// clashed with the gold-on-teal theme. These tones are lifted enough to
+// read as discrete dots against `bg-bg-secondary`, but desaturated enough
+// to sit alongside the gold accent without shouting.
+//   D = muted steel-blue, R = muted brick, I = theme gold.
+const PARTY_DOT_STYLE: Record<string, string> = {
+  D: 'bg-[#5A7A8A]',
+  R: 'bg-[#A85958]',
   I: 'bg-accent-gold',
+};
+
+const PARTY_TEXT_STYLE: Record<string, string> = {
+  D: 'text-[#7B9BAB]',
+  R: 'text-[#C07A79]',
+  I: 'text-accent-gold',
 };
 
 function SeatDot({
@@ -30,7 +42,7 @@ function SeatDot({
   onHover: (l: Legislator | null) => void;
   onSelect?: (l: Legislator) => void;
 }): JSX.Element {
-  const cls = PARTY_COLOR[legislator.party] ?? 'bg-text-muted';
+  const cls = PARTY_DOT_STYLE[legislator.party] ?? 'bg-text-muted';
   return (
     <button
       type="button"
@@ -70,7 +82,7 @@ function SeatGridImpl(props: SeatGridProps): JSX.Element {
       {hover && (
         <div className="sticky bottom-0 text-xs font-mono bg-bg-tertiary rounded p-2 border border-bg-tertiary">
           <span className="text-accent-gold">{hover.name}</span>{' '}
-          <span className={hover.party === 'D' ? 'text-accent-blue' : hover.party === 'R' ? 'text-accent-red' : 'text-accent-gold'}>
+          <span className={PARTY_TEXT_STYLE[hover.party] ?? 'text-text-muted'}>
             ({hover.party}-{hover.state}
             {hover.district !== undefined ? `-${hover.district}` : ''})
           </span>
