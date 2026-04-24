@@ -1,0 +1,20 @@
+{
+  "id": "modern-america-2024",
+  "title": "Modern America — 2025",
+  "description": "You take your seat at the dawn of a turbulent administration. The nation is divided, the economy is wobbling, and both parties are gearing up for the next cycle. Will you steer the ship, or be run aground?",
+  "startDate": { "year": 2025, "month": 1, "day": 6 },
+  "playerPosition": "senator",
+  "playerState": "CA",
+  "partyConfig": { "playerParty": "configurable" },
+  "startingConditions": {
+    "politicalCapital": 50,
+    "actionPointsMax": 6,
+    "relationships": {}
+  },
+  "availableEvents": ["evt-budget-crisis", "evt-media-storm", "evt-industry-lobbyist", "evt-mass-protest", "evt-constituent-letter"],
+  "victoryConditions": [
+    { "id": "vc-10-bills", "description": "Pass 10 bills through the Senate." },
+    { "id": "vc-approval-60", "description": "Maintain a nationwide average happiness of 60 for a full year." }
+  ],
+  "summary": "A divided capital. A fragile economy. A first term."
+}

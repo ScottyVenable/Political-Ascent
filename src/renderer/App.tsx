@@ -1,32 +1,53 @@
 /**
- * Top-level application shell.
- *
- * This is a placeholder landing screen used while the MainMenu,
- * CharacterCreation, ScenarioSelect and Game screens are still being
- * implemented. It renders Tailwind-styled content so `npm run dev` produces
- * something visible end-to-end, and verifies the design-system palette
- * defined in `tailwind.config.ts`.
+ * Top-level application shell — routes between screens and wires global
+ * providers (Modal / Toast). Data is loaded once on mount.
  */
+import { useEffect, useState } from 'react';
+import { useRouter } from './router';
+import { GameEngine } from '@/engine/GameEngine';
+import { loadAllData } from '@/engine/dataLoader';
+import { MainMenu } from './screens/MainMenu';
+import { CharacterCreation } from './screens/CharacterCreation';
+import { ScenarioSelect } from './screens/ScenarioSelect';
+import { Game } from './screens/Game';
+import { Settings } from './screens/Settings';
+import { Achievements } from './screens/Achievements';
+import { ToastRoot } from './components/ToastRoot';
+
 export function App(): JSX.Element {
+  const route = useRouter((s) => s.route);
+  const [ready, setReady] = useState(false);
+
+  // Load all JSON data once. Runs in both Electron and browser — idempotent.
+  useEffect(() => {
+    try {
+      const bundle = loadAllData();
+      GameEngine.registerData(bundle);
+    } catch (err) {
+      // Don't block the UI; the main menu will surface the issue on click.
+      // eslint-disable-next-line no-console
+      console.error('dataLoader failed:', err);
+    }
+    setReady(true);
+  }, []);
+
+  if (!ready) {
+    return (
+      <main className="min-h-screen bg-bg-primary text-text-primary flex items-center justify-center">
+        <p className="font-headline text-accent-gold animate-pulse">Loading…</p>
+      </main>
+    );
+  }
+
   return (
-    <main className="min-h-screen bg-bg-primary text-text-primary flex items-center justify-center p-8">
-      <section className="max-w-2xl w-full bg-bg-secondary rounded-lg p-8 shadow-xl border border-bg-tertiary">
-        <h1 className="font-headline text-4xl font-bold text-accent-gold mb-2">
-          Political Ascent
-        </h1>
-        <p className="font-flavor text-text-secondary italic mb-6">
-          Power is compromise; principle is exhaustion.
-        </p>
-        <p className="text-text-primary mb-4">
-          v0.1 alpha scaffolding — the game shell is under construction.
-        </p>
-        <ul className="font-mono text-sm text-text-secondary space-y-1">
-          <li>• Engine: partial</li>
-          <li>• Systems: partial</li>
-          <li>• Content: pending</li>
-          <li>• UI: in progress</li>
-        </ul>
-      </section>
-    </main>
+    <>
+      {route === 'main-menu' && <MainMenu />}
+      {route === 'character-creation' && <CharacterCreation />}
+      {route === 'scenario-select' && <ScenarioSelect />}
+      {route === 'game' && <Game />}
+      {route === 'settings' && <Settings />}
+      {route === 'achievements' && <Achievements />}
+      <ToastRoot />
+    </>
   );
 }

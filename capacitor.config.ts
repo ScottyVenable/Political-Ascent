@@ -4,7 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.politicalascent.game',
   appName: 'Political Ascent',
   webDir: 'dist',
-  bundledWebRuntime: false,
   android: {
     allowMixedContent: false,
     captureInput: true,

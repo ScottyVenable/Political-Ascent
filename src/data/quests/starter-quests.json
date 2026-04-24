@@ -1,0 +1,76 @@
+[
+  {
+    "id": "quest-first-bill",
+    "type": "issue",
+    "title": "Your First Bill",
+    "description": "Pass any bill through the Senate to establish yourself.",
+    "objectives": [
+      {
+        "id": "obj-pass-any",
+        "description": "Pass 1 bill.",
+        "check": { "type": "flag", "flag": "any-bill-passed", "value": true },
+        "completed": false
+      }
+    ],
+    "rewardEffects": [
+      { "type": "resource", "resource": "politicalCapital", "value": 30 },
+      { "type": "resource", "resource": "xp", "value": 100 }
+    ],
+    "prerequisites": []
+  },
+  {
+    "id": "quest-economy-repair",
+    "type": "political",
+    "title": "Fix the Economy",
+    "description": "Pass a bill tagged 'economy'.",
+    "objectives": [
+      {
+        "id": "obj-econ-bill",
+        "description": "Pass a bill with the 'economy' tag.",
+        "check": { "type": "pass_bill", "tags": ["economy"] },
+        "completed": false
+      }
+    ],
+    "rewardEffects": [
+      { "type": "resource", "resource": "politicalCapital", "value": 40 },
+      { "type": "resource", "resource": "xp", "value": 150 }
+    ],
+    "prerequisites": []
+  },
+  {
+    "id": "quest-take-the-floor",
+    "type": "political",
+    "title": "Take the Floor",
+    "description": "Reach Charisma 7 through experience and skill unlocks.",
+    "objectives": [
+      {
+        "id": "obj-charisma-7",
+        "description": "Charisma ≥ 7.",
+        "check": { "type": "stat", "stat": "charisma", "operator": "gte", "value": 7 },
+        "completed": false
+      }
+    ],
+    "rewardEffects": [
+      { "type": "resource", "resource": "politicalCapital", "value": 25 }
+    ],
+    "prerequisites": []
+  },
+  {
+    "id": "quest-legacy",
+    "type": "legacy",
+    "title": "Seize the Moment",
+    "description": "Play the Constitutional Moment card.",
+    "objectives": [
+      {
+        "id": "obj-constitutional",
+        "description": "Flag: constitutional-moment-seized",
+        "check": { "type": "flag", "flag": "constitutional-moment-seized", "value": true },
+        "completed": false
+      }
+    ],
+    "rewardEffects": [
+      { "type": "resource", "resource": "xp", "value": 500 }
+    ],
+    "prerequisites": ["quest-first-bill"]
+  }
+]

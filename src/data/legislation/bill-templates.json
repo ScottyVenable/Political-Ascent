@@ -1,0 +1,171 @@
+[
+  {
+    "id": "bill-working-families-tax-credit",
+    "title": "Working Families Tax Credit",
+    "description": "Expanded refundable credit for families with combined income under $75k.",
+    "tags": ["economy", "taxation"],
+    "budgetImpact": -120,
+    "pcCost": { "committee": 10, "floor": 15, "vote": 10 },
+    "opposition": 40,
+    "implementationDays": 30,
+    "effects": [
+      { "type": "group_happiness", "group": "working-class", "value": 6 },
+      { "type": "economy", "metric": "gdpGrowth", "value": 0.2 },
+      { "type": "economy", "metric": "deficit", "value": 120 },
+      { "type": "flag", "flag": "any-bill-passed", "value": true }
+    ],
+    "affectedGroups": ["working-class"]
+  },
+  {
+    "id": "bill-healthcare-expansion",
+    "title": "Healthcare Access Act",
+    "description": "Expand subsidies and cap prescription prices.",
+    "tags": ["healthcare"],
+    "budgetImpact": -200,
+    "pcCost": { "committee": 15, "floor": 20, "vote": 15 },
+    "opposition": 55,
+    "implementationDays": 60,
+    "effects": [
+      { "type": "group_happiness", "group": "retirees", "value": 5 },
+      { "type": "group_happiness", "group": "working-class", "value": 3 },
+      { "type": "economy", "metric": "deficit", "value": 200 },
+      { "type": "flag", "flag": "any-bill-passed", "value": true }
+    ],
+    "affectedGroups": ["retirees", "working-class"]
+  },
+  {
+    "id": "bill-infrastructure-investment",
+    "title": "National Infrastructure Investment",
+    "description": "Ten-year investment in roads, rail, and broadband.",
+    "tags": ["infrastructure", "economy"],
+    "budgetImpact": -350,
+    "pcCost": { "committee": 12, "floor": 18, "vote": 12 },
+    "opposition": 35,
+    "implementationDays": 90,
+    "effects": [
+      { "type": "economy", "metric": "gdpGrowth", "value": 0.4 },
+      { "type": "economy", "metric": "unemployment", "value": -0.3 },
+      { "type": "economy", "metric": "deficit", "value": 350 },
+      { "type": "group_happiness", "group": "rural-voters", "value": 4 },
+      { "type": "flag", "flag": "any-bill-passed", "value": true }
+    ],
+    "affectedGroups": ["rural-voters", "working-class"]
+  },
+  {
+    "id": "bill-education-funding",
+    "title": "Universal Pre-K & Student Aid",
+    "description": "Expand Pre-K programs and federal student aid.",
+    "tags": ["education"],
+    "budgetImpact": -180,
+    "pcCost": { "committee": 10, "floor": 15, "vote": 10 },
+    "opposition": 40,
+    "implementationDays": 60,
+    "effects": [
+      { "type": "group_happiness", "group": "students", "value": 8 },
+      { "type": "group_happiness", "group": "professionals", "value": 3 },
+      { "type": "economy", "metric": "deficit", "value": 180 },
+      { "type": "flag", "flag": "any-bill-passed", "value": true }
+    ],
+    "affectedGroups": ["students", "professionals"]
+  },
+  {
+    "id": "bill-small-business-relief",
+    "title": "Small Business Relief Act",
+    "description": "Tax credits and loan guarantees for small businesses.",
+    "tags": ["economy", "taxation"],
+    "budgetImpact": -90,
+    "pcCost": { "committee": 8, "floor": 12, "vote": 8 },
+    "opposition": 25,
+    "implementationDays": 30,
+    "effects": [
+      { "type": "group_happiness", "group": "business-owners", "value": 7 },
+      { "type": "economy", "metric": "gdpGrowth", "value": 0.15 },
+      { "type": "economy", "metric": "deficit", "value": 90 },
+      { "type": "flag", "flag": "any-bill-passed", "value": true }
+    ],
+    "affectedGroups": ["business-owners"]
+  },
+  {
+    "id": "bill-defense-modernization",
+    "title": "Defense Modernization Act",
+    "description": "Increased investment in cyber and autonomous platforms.",
+    "tags": ["defense"],
+    "budgetImpact": -250,
+    "pcCost": { "committee": 12, "floor": 18, "vote": 12 },
+    "opposition": 30,
+    "implementationDays": 120,
+    "effects": [
+      { "type": "group_happiness", "group": "rural-voters", "value": 3 },
+      { "type": "economy", "metric": "deficit", "value": 250 },
+      { "type": "flag", "flag": "any-bill-passed", "value": true }
+    ],
+    "affectedGroups": ["rural-voters"]
+  },
+  {
+    "id": "bill-climate-resilience",
+    "title": "Climate Resilience Act",
+    "description": "Fund coastal defense, grid hardening, and carbon capture R&D.",
+    "tags": ["environment", "infrastructure"],
+    "budgetImpact": -220,
+    "pcCost": { "committee": 15, "floor": 20, "vote": 15 },
+    "opposition": 50,
+    "implementationDays": 180,
+    "effects": [
+      { "type": "group_happiness", "group": "students", "value": 6 },
+      { "type": "group_happiness", "group": "professionals", "value": 3 },
+      { "type": "economy", "metric": "deficit", "value": 220 },
+      { "type": "flag", "flag": "any-bill-passed", "value": true }
+    ],
+    "affectedGroups": ["students", "professionals"]
+  },
+  {
+    "id": "bill-criminal-justice-reform",
+    "title": "Criminal Justice Reform",
+    "description": "Sentencing reform, reentry grants, and police training.",
+    "tags": ["criminal_justice", "civil_rights"],
+    "budgetImpact": -80,
+    "pcCost": { "committee": 12, "floor": 18, "vote": 12 },
+    "opposition": 55,
+    "implementationDays": 90,
+    "effects": [
+      { "type": "group_happiness", "group": "students", "value": 4 },
+      { "type": "group_happiness", "group": "working-class", "value": 2 },
+      { "type": "flag", "flag": "any-bill-passed", "value": true }
+    ],
+    "affectedGroups": ["students", "working-class"]
+  },
+  {
+    "id": "bill-trade-reset",
+    "title": "Strategic Trade Reset",
+    "description": "Tariff recalibration focused on critical supply chains.",
+    "tags": ["trade", "economy"],
+    "budgetImpact": 20,
+    "pcCost": { "committee": 10, "floor": 15, "vote": 10 },
+    "opposition": 45,
+    "implementationDays": 120,
+    "effects": [
+      { "type": "economy", "metric": "trade", "value": 150 },
+      { "type": "economy", "metric": "inflation", "value": 0.2 },
+      { "type": "group_happiness", "group": "business-owners", "value": -2 },
+      { "type": "group_happiness", "group": "working-class", "value": 3 },
+      { "type": "flag", "flag": "any-bill-passed", "value": true }
+    ],
+    "affectedGroups": ["working-class", "business-owners"]
+  },
+  {
+    "id": "bill-immigration-reform",
+    "title": "Immigration & Border Reform",
+    "description": "Pathway-to-citizenship with expanded enforcement funding.",
+    "tags": ["immigration"],
+    "budgetImpact": -140,
+    "pcCost": { "committee": 15, "floor": 25, "vote": 20 },
+    "opposition": 70,
+    "implementationDays": 180,
+    "effects": [
+      { "type": "group_happiness", "group": "professionals", "value": 3 },
+      { "type": "group_happiness", "group": "rural-voters", "value": -3 },
+      { "type": "flag", "flag": "any-bill-passed", "value": true }
+    ],
+    "affectedGroups": ["professionals", "rural-voters"]
+  }
+]

@@ -1,0 +1,76 @@
+{
+  "groups": [
+    {
+      "id": "working-class",
+      "name": "Working Class",
+      "size": 28,
+      "happiness": 45,
+      "radicalism": 25,
+      "income": 42,
+      "loyalty": 0,
+      "activism": 35,
+      "ideologyBias": -0.3,
+      "tags": ["working", "industrial"]
+    },
+    {
+      "id": "professionals",
+      "name": "Professionals",
+      "size": 22,
+      "happiness": 58,
+      "radicalism": 10,
+      "income": 78,
+      "loyalty": 5,
+      "activism": 40,
+      "ideologyBias": 0.0,
+      "tags": ["professional"]
+    },
+    {
+      "id": "business-owners",
+      "name": "Business Owners",
+      "size": 9,
+      "happiness": 55,
+      "radicalism": 8,
+      "income": 120,
+      "loyalty": 0,
+      "activism": 30,
+      "ideologyBias": 0.4,
+      "tags": ["business"]
+    },
+    {
+      "id": "retirees",
+      "name": "Retirees",
+      "size": 17,
+      "happiness": 52,
+      "radicalism": 12,
+      "income": 55,
+      "loyalty": 0,
+      "activism": 45,
+      "ideologyBias": 0.15,
+      "tags": ["retired"]
+    },
+    {
+      "id": "rural-voters",
+      "name": "Rural Voters",
+      "size": 14,
+      "happiness": 40,
+      "radicalism": 28,
+      "income": 48,
+      "loyalty": 0,
+      "activism": 38,
+      "ideologyBias": 0.35,
+      "tags": ["rural"]
+    },
+    {
+      "id": "students",
+      "name": "Students & Youth",
+      "size": 10,
+      "happiness": 42,
+      "radicalism": 38,
+      "income": 22,
+      "loyalty": 0,
+      "activism": 55,
+      "ideologyBias": -0.35,
+      "tags": ["students"]
+    }
+  ]
+}

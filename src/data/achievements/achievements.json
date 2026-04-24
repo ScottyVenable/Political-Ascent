@@ -1,0 +1,102 @@
+[
+  {
+    "id": "ach-freshman",
+    "category": "legislative",
+    "name": "Freshman",
+    "description": "Pass your first bill.",
+    "isSecret": false,
+    "conditions": [
+      { "type": "flag", "flag": "any-bill-passed", "value": true }
+    ]
+  },
+  {
+    "id": "ach-quiet-earner",
+    "category": "political",
+    "name": "Quiet Earner",
+    "description": "Amass significant political capital.",
+    "isSecret": false,
+    "conditions": [
+      { "type": "flag", "flag": "pc-100", "value": true }
+    ]
+  },
+  {
+    "id": "ach-charmer",
+    "category": "political",
+    "name": "Chamber Charmer",
+    "description": "Reach Charisma 8.",
+    "isSecret": false,
+    "conditions": [
+      { "type": "stat", "stat": "charisma", "operator": "gte", "value": 8 }
+    ]
+  },
+  {
+    "id": "ach-strategist",
+    "category": "political",
+    "name": "Strategist",
+    "description": "Reach Strategy 8.",
+    "isSecret": false,
+    "conditions": [
+      { "type": "stat", "stat": "strategy", "operator": "gte", "value": 8 }
+    ]
+  },
+  {
+    "id": "ach-principled",
+    "category": "political",
+    "name": "Principled Voice",
+    "description": "Reach Integrity 8.",
+    "isSecret": false,
+    "conditions": [
+      { "type": "stat", "stat": "integrity", "operator": "gte", "value": 8 }
+    ]
+  },
+  {
+    "id": "ach-constitutional",
+    "category": "legislative",
+    "name": "Constitutional Moment",
+    "description": "Seize a defining legacy moment.",
+    "isSecret": false,
+    "conditions": [
+      { "type": "flag", "flag": "constitutional-moment-seized", "value": true }
+    ]
+  },
+  {
+    "id": "ach-man-of-the-people",
+    "category": "population",
+    "name": "Man of the People",
+    "description": "Demonstrate loyalty with the working class.",
+    "isSecret": false,
+    "conditions": [
+      { "type": "flag", "flag": "working-class-loyal", "value": true }
+    ]
+  },
+  {
+    "id": "ach-deep-bench",
+    "category": "political",
+    "name": "Deep Bench",
+    "description": "Unlock 5 skills.",
+    "isSecret": false,
+    "conditions": [
+      { "type": "flag", "flag": "skills-5-unlocked", "value": true }
+    ]
+  },
+  {
+    "id": "ach-dark-arts",
+    "category": "dark",
+    "name": "Whisper in the Dark",
+    "description": "Deploy a whisper campaign.",
+    "isSecret": true,
+    "conditions": [
+      { "type": "flag", "flag": "scandal-in-play", "value": true }
+    ]
+  },
+  {
+    "id": "ach-untouchable",
+    "category": "political",
+    "name": "Untouchable",
+    "description": "Reach level 5.",
+    "isSecret": false,
+    "conditions": [
+      { "type": "flag", "flag": "level-5", "value": true }
+    ]
+  }
+]
