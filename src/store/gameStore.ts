@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import type { GameState, GameSpeed, ScenarioId } from '@/types';
+import { addDays } from '@/utils/date';
 
 /**
  * Master game state: time, speed, resources, meta flags.
@@ -57,10 +58,13 @@ export const useGameStore = create<Store>()(
 
     advanceDay: () =>
       set((s) => {
-        // Date math is handled by addDays in TimeEngine; the store just
-        // bumps bookkeeping counters driven from the engine.
-        const newDay = s.currentDate.day + 1;
-        s.currentDate = { ...s.currentDate, day: newDay };
+        // Properly roll day → month → year. TimeEngine normally drives this,
+        // but callers that invoke advanceDay directly (tests, step-debug) still
+        // need the full rollover instead of an unbounded `day` counter.
+        const next = addDays(s.currentDate, 1);
+        s.currentDate = next;
+        s.month = next.month;
+        s.year = next.year;
       }),
 
     addPoliticalCapital: (delta) =>

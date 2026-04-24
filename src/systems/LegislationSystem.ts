@@ -48,7 +48,7 @@ class LegislationSystemImpl implements LegislationSystemAPI {
     return bill;
   }
 
-  advanceStage(billId) {
+  advanceStage(billId: BillId) {
     const world = useWorldStore.getState();
     const bill = world.pendingLegislation.find((b) => b.id === billId);
     if (!bill) return { ok: false, newStage: 'failed' as BillStage, reason: 'Bill not found' };
@@ -76,7 +76,7 @@ class LegislationSystemImpl implements LegislationSystemAPI {
     return { ok: true, newStage: nextStage };
   }
 
-  resolveVote(billId) {
+  resolveVote(billId: BillId) {
     const world = useWorldStore.getState();
     const bill = world.pendingLegislation.find((b) => b.id === billId);
     if (!bill) return { passed: false, yea: 0, nay: 0 };

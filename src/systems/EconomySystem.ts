@@ -34,10 +34,13 @@ export const EconomySystem: EconomySystemAPI = {
 
   monthlyReport() {
     const world = useWorldStore.getState();
-    const snapshot = { ...world.economy, history: [] as EconomicState['history'] };
+    // `metrics` is `Omit<EconomicState, 'history'>` — strip history explicitly
+    // rather than nesting snapshots of snapshots.
+    const { history: _history, ...metrics } = world.economy;
+    void _history;
     world.appendEconomySnapshot({
       date: useGameStore.getState().currentDate,
-      metrics: { ...snapshot, history: [] },
+      metrics,
     });
   },
 
