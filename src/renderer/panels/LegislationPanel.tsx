@@ -1,18 +1,35 @@
 import { useMemo, useState } from 'react';
 import { GameEngine } from '@/engine/GameEngine';
-import { LegislationSystem } from '@/systems/LegislationSystem';
+import {
+  LegislationSystem,
+  EXPEDITE_PC_COST,
+  STAGE_DURATION_DAYS,
+} from '@/systems/LegislationSystem';
 import { useWorldStore } from '@/store/worldStore';
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
+import { toEpochDays } from '@/utils/date';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import type { BillId, BillTemplate } from '@/types';
+import { Bar } from '../components/Bar';
+import type { Bill, BillId, BillStage, BillTemplate } from '@/types';
 
 /**
- * LegislationPanel — draft, advance, and vote on bills.
+ * LegislationPanel — draft, track, expedite, and vote on bills.
  *
- * Stage advance and vote resolution are performed here by calling
- * `LegislationSystem` directly; all store writes happen inside that module.
+ * After the April 2026 pacing pass, bills progress through committee →
+ * floor debate → vote on a day-by-day clock driven by
+ * `LegislationSystem.dailyUpdate`. The player has two levers in this panel:
+ *
+ *  1. **Draft** — introduce a new bill into committee. A forecast badge
+ *     shows the estimated passage chance so the player can decide whether
+ *     the bill is worth the PC investment *before* spending political
+ *     capital on it.
+ *  2. **Expedite** — skip the remainder of the current stage's clock by
+ *     paying PC. Rarely the right move early in a term, often the right
+ *     move near election day.
+ *
+ * Time alone will carry a bill to a vote. PC only accelerates.
  */
 export function LegislationPanel(): JSX.Element {
   const templates = useMemo(() => GameEngine.getBillTemplates(), []);
@@ -20,7 +37,12 @@ export function LegislationPanel(): JSX.Element {
   const passed = useWorldStore((s) => s.passedLegislation);
   const failed = useWorldStore((s) => s.failedLegislation);
   const pc = useGameStore((s) => s.politicalCapital);
+  const currentDate = useGameStore((s) => s.currentDate);
   const pushToast = useUIStore((s) => s.pushToast);
+
+  // Today's monotonic day index. Re-derived from `currentDate` on each
+  // render so the progress bars advance the moment the clock ticks.
+  const today = toEpochDays(currentDate);
 
   const [tab, setTab] = useState<'draft' | 'pending' | 'archive'>('pending');
 
@@ -30,12 +52,10 @@ export function LegislationPanel(): JSX.Element {
     setTab('pending');
   }
 
-  function advance(id: BillId): void {
-    const res = LegislationSystem.advanceStage(id);
+  function expedite(id: BillId): void {
+    const res = LegislationSystem.expediteStage(id);
     if (!res.ok) {
-      pushToast({ message: res.reason ?? 'Cannot advance', severity: 'warning', ttl: 3000 });
-    } else if (res.newStage === 'vote') {
-      pushToast({ message: 'Bill reached floor vote', severity: 'info', ttl: 3000 });
+      pushToast({ message: res.reason ?? 'Cannot expedite', severity: 'warning', ttl: 3000 });
     }
   }
 
@@ -43,12 +63,21 @@ export function LegislationPanel(): JSX.Element {
     const res = LegislationSystem.resolveVote(id);
     pushToast({
       message: res.passed
-        ? `PASSED ${res.yea}–${res.nay}`
-        : `FAILED ${res.yea}–${res.nay}`,
+        ? `PASSED ${res.yea}\u2013${res.nay}`
+        : `FAILED ${res.yea}\u2013${res.nay}`,
       severity: res.passed ? 'success' : 'danger',
       ttl: 4000,
     });
   }
+
+  // Sort drafts descending by estimated passage chance so the player's
+  // best options surface first.
+  const rankedTemplates = useMemo(() => {
+    return [...templates].sort(
+      (a, b) =>
+        LegislationSystem.estimatePassageChance(b) - LegislationSystem.estimatePassageChance(a),
+    );
+  }, [templates]);
 
   return (
     <div>
@@ -66,48 +95,57 @@ export function LegislationPanel(): JSX.Element {
 
       {tab === 'draft' && (
         <div className="grid md:grid-cols-2 gap-3">
-          {templates.map((t) => (
-            <Card key={t.id} title={t.title} accent="blue">
-              <p className="text-sm text-text-secondary mb-2">{t.description}</p>
-              <div className="text-xs text-text-muted flex flex-wrap gap-2 mb-3">
-                {t.tags.map((tag) => (
-                  <span key={tag} className="bg-bg-tertiary rounded px-2 py-0.5">{tag}</span>
-                ))}
-                <span className="ml-auto">Opposition {t.opposition}</span>
-              </div>
-              <Button variant="primary" size="sm" onClick={() => draft(t)}>
-                Draft
-              </Button>
-            </Card>
-          ))}
+          {rankedTemplates.map((t) => {
+            const chance = LegislationSystem.estimatePassageChance(t);
+            const totalDays =
+              (t.stageDurations?.committee ?? STAGE_DURATION_DAYS.committee) +
+              (t.stageDurations?.floor_debate ?? STAGE_DURATION_DAYS.floor_debate) +
+              (t.stageDurations?.vote ?? STAGE_DURATION_DAYS.vote);
+            return (
+              <Card key={t.id} title={t.title} accent="gold">
+                <p className="text-sm text-text-secondary mb-2">{t.description}</p>
+                <div className="text-xs text-text-muted flex flex-wrap gap-2 mb-3">
+                  {t.tags.map((tag) => (
+                    <span key={tag} className="bg-bg-tertiary rounded px-2 py-0.5">
+                      {tag}
+                    </span>
+                  ))}
+                  <span className="ml-auto">Opposition {t.opposition}</span>
+                </div>
+                <div className="flex items-center gap-3 mb-3 text-xs">
+                  <span
+                    className={`px-2 py-0.5 rounded font-mono ${chanceToneClass(chance)}`}
+                    title="Estimated passage probability based on current Senate composition, relationships, and opposition."
+                  >
+                    Forecast: {Math.round(chance * 100)}% pass
+                  </span>
+                  <span className="text-text-muted">~{totalDays} days to vote</span>
+                </div>
+                <Button variant="primary" size="sm" onClick={() => draft(t)}>
+                  Draft
+                </Button>
+              </Card>
+            );
+          })}
         </div>
       )}
 
       {tab === 'pending' && (
         <div className="space-y-3">
           {pending.length === 0 && (
-            <p className="text-sm text-text-muted italic">No bills in flight. Draft one to get started.</p>
+            <p className="text-sm text-text-muted italic">
+              No bills in flight. Draft one to get started.
+            </p>
           )}
           {pending.map((b) => (
-            <Card key={b.id} title={b.title} subtitle={`Stage: ${b.stage}`} accent="gold">
-              <p className="text-sm text-text-secondary mb-3">{b.description}</p>
-              <div className="flex items-center gap-3 text-xs text-text-muted mb-3">
-                <span>Opposition: {b.opposition}</span>
-                <span>PC invested: {b.pcInvested}</span>
-                <span>Support: {b.supportVotes} / Oppose: {b.opposeVotes}</span>
-              </div>
-              <div className="flex gap-2">
-                {b.stage !== 'vote' ? (
-                  <Button size="sm" variant="primary" onClick={() => advance(b.id)} disabled={pc < 10}>
-                    Advance stage
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="gold" onClick={() => vote(b.id)}>
-                    Call the vote
-                  </Button>
-                )}
-              </div>
-            </Card>
+            <PendingBillCard
+              key={b.id}
+              bill={b}
+              today={today}
+              pc={pc}
+              onExpedite={() => expedite(b.id)}
+              onVote={() => vote(b.id)}
+            />
           ))}
         </div>
       )}
@@ -117,14 +155,14 @@ export function LegislationPanel(): JSX.Element {
           {passed.map((b) => (
             <Card key={b.id} title={b.title} subtitle="Passed" accent="gold">
               <p className="text-xs text-text-muted">
-                Yea {b.supportVotes} – Nay {b.opposeVotes}
+                Yea {b.supportVotes} &ndash; Nay {b.opposeVotes}
               </p>
             </Card>
           ))}
           {failed.map((b) => (
             <Card key={b.id} title={b.title} subtitle="Failed" accent="red">
               <p className="text-xs text-text-muted">
-                Yea {b.supportVotes} – Nay {b.opposeVotes}
+                Yea {b.supportVotes} &ndash; Nay {b.opposeVotes}
               </p>
             </Card>
           ))}
@@ -135,6 +173,129 @@ export function LegislationPanel(): JSX.Element {
       )}
     </div>
   );
+}
+
+/**
+ * Visual card for an in-flight bill. Split out from the main component so
+ * each card can memoise its progress math without re-rendering neighbours.
+ */
+function PendingBillCard({
+  bill,
+  today,
+  pc,
+  onExpedite,
+  onVote,
+}: {
+  bill: Bill;
+  today: number;
+  pc: number;
+  onExpedite: () => void;
+  onVote: () => void;
+}): JSX.Element {
+  const clocked = (['committee', 'floor_debate', 'vote'] as const).includes(
+    bill.stage as 'committee' | 'floor_debate' | 'vote',
+  );
+
+  // Derive progress numbers. Legacy saves without timers render with a
+  // 0% bar; LegislationSystem.dailyUpdate will seed the timer on the next
+  // tick and progress will appear.
+  const totalDays =
+    bill.stageEnteredOnDay !== undefined && bill.stageEndsOnDay !== undefined
+      ? bill.stageEndsOnDay - bill.stageEnteredOnDay
+      : 0;
+  const elapsed =
+    bill.stageEnteredOnDay !== undefined ? Math.max(0, today - bill.stageEnteredOnDay) : 0;
+  const remaining =
+    bill.stageEndsOnDay !== undefined ? Math.max(0, bill.stageEndsOnDay - today) : 0;
+
+  const forecast = LegislationSystem.estimatePassageChance(bill);
+  const stageKey = bill.stage as keyof typeof EXPEDITE_PC_COST;
+  const pcCost = clocked ? EXPEDITE_PC_COST[stageKey] : 0;
+  const canExpedite = clocked && pc >= pcCost;
+
+  return (
+    <Card title={bill.title} subtitle={stageLabel(bill.stage)} accent="gold">
+      <p className="text-sm text-text-secondary mb-3">{bill.description}</p>
+
+      {clocked && totalDays > 0 && (
+        <div className="mb-3">
+          <Bar
+            value={elapsed}
+            max={totalDays}
+            tone="gold"
+            label={`${stageLabel(bill.stage)} \u00b7 day ${elapsed} of ${totalDays}`}
+            valueLabel={remaining === 0 ? 'ready' : `${remaining} days left`}
+          />
+        </div>
+      )}
+
+      <div className="flex items-center gap-3 text-xs text-text-muted mb-3 flex-wrap">
+        <span className={`px-2 py-0.5 rounded font-mono ${chanceToneClass(forecast)}`}>
+          Forecast: {Math.round(forecast * 100)}%
+        </span>
+        <span>Opposition: {bill.opposition}</span>
+        <span>PC invested: {bill.pcInvested}</span>
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        {bill.stage === 'vote' ? (
+          <Button size="sm" variant="primary" onClick={onVote}>
+            Call the vote now
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={onExpedite}
+            disabled={!canExpedite}
+            title={
+              canExpedite
+                ? `Skip the remaining ${remaining} days by spending ${pcCost} PC.`
+                : `Needs ${pcCost} PC to expedite.`
+            }
+          >
+            Expedite ({pcCost} PC)
+          </Button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * Maps passage probability to a tone class. Neutral grey in the uncertain
+ * band (30&ndash;70%), success green for a likely pass, danger red for a
+ * likely failure.
+ */
+function chanceToneClass(chance: number): string {
+  if (chance >= 0.7) return 'bg-status-success/20 text-status-success';
+  if (chance <= 0.3) return 'bg-status-danger/20 text-status-danger';
+  return 'bg-bg-tertiary text-text-secondary';
+}
+
+function stageLabel(stage: BillStage): string {
+  switch (stage) {
+    case 'committee':
+      return 'Committee';
+    case 'floor_debate':
+      return 'Floor Debate';
+    case 'vote':
+      return 'Scheduled Vote';
+    case 'draft':
+      return 'Drafting';
+    case 'signed':
+      return 'Signed';
+    case 'vetoed':
+      return 'Vetoed';
+    case 'implementing':
+      return 'Implementing';
+    case 'enacted':
+      return 'Enacted';
+    case 'failed':
+      return 'Failed';
+    default:
+      return stage;
+  }
 }
 
 function TabButton({
