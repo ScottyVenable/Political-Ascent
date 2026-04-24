@@ -16,6 +16,8 @@ const log = createLogger('AchievementEngine');
 export interface AchievementEngineAPI {
   registerAchievements(defs: readonly AchievementDefinition[]): void;
   check(): void;
+  /** Return the full list of registered achievement definitions. */
+  all(): AchievementDefinition[];
 }
 
 class AchievementEngineImpl implements AchievementEngineAPI {
@@ -24,6 +26,10 @@ class AchievementEngineImpl implements AchievementEngineAPI {
   registerAchievements(defs: readonly AchievementDefinition[]): void {
     for (const d of defs) this.registry.set(d.id, d);
     log.info('registered', { count: defs.length });
+  }
+
+  all(): AchievementDefinition[] {
+    return Array.from(this.registry.values());
   }
 
   check(): void {

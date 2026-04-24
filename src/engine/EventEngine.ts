@@ -24,6 +24,7 @@ export interface EventEngineAPI {
   registerEvents(defs: readonly GameEventDefinition[]): void;
   checkDailyTriggers(): void;
   resolveOption(eventInstanceId: string, optionId: string): void;
+  findDefinition(eventId: string): GameEventDefinition | undefined;
 }
 
 class EventEngineImpl implements EventEngineAPI {
@@ -34,6 +35,10 @@ class EventEngineImpl implements EventEngineAPI {
   registerEvents(defs: readonly GameEventDefinition[]): void {
     for (const d of defs) this.registry.set(d.id, d);
     log.info('registered', { count: defs.length });
+  }
+
+  findDefinition(eventId: string): GameEventDefinition | undefined {
+    return this.registry.get(eventId);
   }
 
   checkDailyTriggers(): void {
