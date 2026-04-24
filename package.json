@@ -21,9 +21,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.electron.json",
     "cap:sync": "cap sync android",
     "cap:open:android": "cap open android",
-    "android:assemble": "cd android && ./gradlew assembleDebug",
+    "android:assemble": "cd android && gradlew.bat assembleDebug",
     "android:build": "npm run build:web && npm run cap:sync && npm run android:assemble",
-    "android:release": "cd android && ./gradlew assembleRelease"
+    "android:release": "cd android && gradlew.bat assembleRelease"
   },
   "dependencies": {
     "@capacitor/android": "^6.1.2",
