@@ -15,6 +15,7 @@ This folder contains design research used to inform the systems, UX, and feel of
 | [ui-ux-patterns.md](ui-ux-patterns.md) | Multi-source UI study | Tooltips, information density, map modes, event modals, onboarding |
 | [political-simulation-fidelity.md](political-simulation-fidelity.md) | Academic & sim notes | How much realism is "enough"; abstraction principles for legislative process |
 | [ui-audit-2026-04.md](ui-audit-2026-04.md) | Bloodborne-inspired theme audit | Per-screen walkthrough of the alpha build, theme-pass fixes, deferred polish items |
+| [game-feel-foundation-2026-04.md](game-feel-foundation-2026-04.md) | UI game-feel foundation pass | Typography fixes, design tokens, Icon system, shell restructure (TopBar/Sidebar/BottomBar) |
 
 ## How to add a research entry
 

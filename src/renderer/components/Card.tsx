@@ -1,30 +1,55 @@
 import type { PropsWithChildren, HTMLAttributes } from 'react';
 
-/** Card — a rounded, dark panel used to group related UI. */
+/**
+ * Card — a ruled panel used to group related UI.
+ *
+ * Visual language (UI_GAME_FEEL_PROPOSAL §6.1):
+ *   - Sharp corners (`rounded-sm`) instead of the previous 8px radius;
+ *     reads as an institutional document rather than a web widget.
+ *   - Accent colour is expressed as a *left bar* (3px border-left), not
+ *     a full outline. The bar is what catches the eye; the rest of the
+ *     card stays quiet.
+ *   - Header is separated from the body by a hairline rule
+ *     (`border-b border-rule`) rather than whitespace alone — reads as
+ *     "title bar of a dossier".
+ *   - No drop-shadow. Elevation in this UI comes from colour contrast
+ *     (bg-secondary on bg-primary), not soft shadows.
+ */
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   title?: string;
   subtitle?: string;
   accent?: 'blue' | 'red' | 'gold';
 }
 
-const ACCENT: Record<NonNullable<CardProps['accent']>, string> = {
-  blue: 'border-accent-blue/40',
-  red: 'border-accent-red/40',
-  gold: 'border-accent-gold/40',
+// Per-accent styles for the left bar + the header-rule tint. Keeping
+// these as full class strings (rather than interpolating colour names)
+// ensures Tailwind's JIT scanner picks them up at build time.
+const ACCENT_BAR: Record<NonNullable<CardProps['accent']>, string> = {
+  gold: 'border-l-[3px] border-l-accent-gold',
+  blue: 'border-l-[3px] border-l-accent-blue',
+  red: 'border-l-[3px] border-l-accent-red',
 };
 
 export function Card(props: PropsWithChildren<CardProps>): JSX.Element {
   const { title, subtitle, accent, className = '', children, ...rest } = props;
-  const borderCls = accent ? ACCENT[accent] : 'border-bg-tertiary';
+  const accentCls = accent ? ACCENT_BAR[accent] : '';
   return (
     <div
-      className={`bg-bg-secondary rounded-lg border ${borderCls} p-4 shadow-md ${className}`}
+      className={`bg-bg-secondary rounded-sm border border-rule ${accentCls} p-4 ${className}`}
       {...rest}
     >
       {(title || subtitle) && (
-        <header className="mb-3">
-          {title && <h3 className="font-headline text-lg font-bold text-text-primary">{title}</h3>}
-          {subtitle && <p className="text-xs text-text-secondary">{subtitle}</p>}
+        <header className="mb-3 pb-2 border-b border-rule">
+          {title && (
+            <h3 className="font-headline text-card-title text-text-primary">
+              {title}
+            </h3>
+          )}
+          {subtitle && (
+            <p className="font-mono text-[0.6875rem] uppercase tracking-wider text-text-muted mt-0.5">
+              {subtitle}
+            </p>
+          )}
         </header>
       )}
       {children}
