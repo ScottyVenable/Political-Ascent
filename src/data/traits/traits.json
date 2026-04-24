@@ -1,0 +1,82 @@
+[
+  {
+    "id": "grassroots-organizer",
+    "name": "Grassroots Organizer",
+    "description": "You started in a church basement. Volunteers answer your call.",
+    "nativeBackground": "citizen",
+    "effectSummary": "+15% population happiness gains from Town Hall and Grassroots cards.",
+    "tags": ["origin", "social"]
+  },
+  {
+    "id": "scandal-survivor",
+    "name": "Scandal Survivor",
+    "description": "You've been to the mountaintop of bad press and lived.",
+    "nativeBackground": "citizen",
+    "effectSummary": "Scandals hit your approval 25% less.",
+    "tags": ["resilience"]
+  },
+  {
+    "id": "ideological-purist",
+    "name": "Ideological Purist",
+    "description": "You don't compromise. It costs you allies and wins you believers.",
+    "nativeBackground": "citizen",
+    "effectSummary": "Legislation votes gain +0.1 from ideologically-aligned legislators.",
+    "tags": ["principled"]
+  },
+  {
+    "id": "veteran-orator",
+    "name": "Veteran Orator",
+    "description": "Your voice carries where others break.",
+    "nativeBackground": "veteran",
+    "effectSummary": "+1 Charisma on character creation.",
+    "tags": ["charisma"]
+  },
+  {
+    "id": "dealmaker",
+    "name": "Dealmaker",
+    "description": "You find the seam in every caucus room.",
+    "nativeBackground": "veteran",
+    "effectSummary": "+5% passage chance for bills with >1 policy tag.",
+    "tags": ["strategy"]
+  },
+  {
+    "id": "iron-will",
+    "name": "Iron Will",
+    "description": "Fatigue is a rumor.",
+    "nativeBackground": "veteran",
+    "effectSummary": "+2 max Action Points.",
+    "tags": ["stamina"]
+  },
+  {
+    "id": "old-money",
+    "name": "Old Money",
+    "description": "Generations of capital. Generations of expectations.",
+    "nativeBackground": "executive",
+    "effectSummary": "Donor Dinner cards yield +50% PC.",
+    "tags": ["wealth"]
+  },
+  {
+    "id": "media-darling",
+    "name": "Media Darling",
+    "description": "The cameras love you. The stations too.",
+    "nativeBackground": "executive",
+    "effectSummary": "+1 happiness gained from all Media cards.",
+    "tags": ["media"]
+  },
+  {
+    "id": "pragmatist",
+    "name": "Pragmatist",
+    "description": "Principle is for after the vote count.",
+    "nativeBackground": "executive",
+    "effectSummary": "Opposition penalty reduced 10% on bills.",
+    "tags": ["strategy"]
+  },
+  {
+    "id": "street-smart",
+    "name": "Street Smart",
+    "description": "You see the angle before the angle sees you.",
+    "nativeBackground": null,
+    "effectSummary": "+5% chance to detect hidden scandals.",
+    "tags": ["universal"]
+  }
+]

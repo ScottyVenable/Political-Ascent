@@ -1,0 +1,239 @@
+[
+  {
+    "id": "evt-budget-crisis",
+    "type": "crisis",
+    "title": "Budget Cliff Looms",
+    "description": "A stopgap funding bill expires in two weeks. The Hill is paralyzed.",
+    "triggerConditions": [
+      { "type": "random", "chancePerDay": 0.01 },
+      { "type": "week", "mod": 4 }
+    ],
+    "weight": 1,
+    "isRepeatable": true,
+    "options": [
+      {
+        "id": "opt-compromise",
+        "label": "Broker a compromise",
+        "costs": { "pc": 15, "ap": 2 },
+        "requirements": [],
+        "outcomes": [
+          {
+            "weight": 70,
+            "effects": [
+              { "type": "group_happiness", "group": "professionals", "value": 4 },
+              { "type": "resource", "resource": "xp", "value": 40 }
+            ],
+            "flavor": "Everyone takes a small win home. The lights stay on."
+          },
+          {
+            "weight": 30,
+            "effects": [
+              { "type": "economy", "metric": "gdpGrowth", "value": -0.1 }
+            ],
+            "flavor": "The deal falls apart at 3am. Markets wobble."
+          }
+        ]
+      },
+      {
+        "id": "opt-play-hardball",
+        "label": "Refuse to yield — dare them to shut it down",
+        "costs": { "pc": 8, "ap": 1 },
+        "requirements": [],
+        "outcomes": [
+          {
+            "weight": 50,
+            "effects": [
+              { "type": "group_happiness", "group": "rural-voters", "value": 5 },
+              { "type": "group_happiness", "group": "working-class", "value": -4 }
+            ],
+            "flavor": "Your base cheers. The cafeteria staff wait for back pay."
+          },
+          {
+            "weight": 50,
+            "effects": [
+              { "type": "economy", "metric": "gdpGrowth", "value": -0.2 },
+              { "type": "economy", "metric": "unemployment", "value": 0.3 }
+            ],
+            "flavor": "A two-week shutdown reverberates. Headlines are brutal."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "evt-media-storm",
+    "type": "crisis",
+    "title": "Hit Piece on the Front Page",
+    "description": "A reporter dug up an old vote and spun it. Your office is under siege.",
+    "triggerConditions": [
+      { "type": "random", "chancePerDay": 0.005 }
+    ],
+    "weight": 1,
+    "isRepeatable": true,
+    "options": [
+      {
+        "id": "opt-counter-narrative",
+        "label": "Hit back with a counter-narrative",
+        "costs": { "pc": 10, "ap": 1 },
+        "requirements": [],
+        "outcomes": [
+          {
+            "weight": 60,
+            "effects": [
+              { "type": "group_happiness", "group": "students", "value": 2 },
+              { "type": "resource", "resource": "xp", "value": 25 }
+            ],
+            "flavor": "Your op-ed lands. The story moves on by Friday."
+          },
+          {
+            "weight": 40,
+            "effects": [
+              { "type": "group_happiness", "group": "professionals", "value": -3 }
+            ],
+            "flavor": "It looks defensive. The discourse drags on."
+          }
+        ]
+      },
+      {
+        "id": "opt-stay-silent",
+        "label": "Let it pass",
+        "costs": {},
+        "requirements": [],
+        "outcomes": [
+          {
+            "weight": 50,
+            "effects": [
+              { "type": "group_happiness", "group": "retirees", "value": -1 }
+            ],
+            "flavor": "Your silence is taken as admission. The clip loops all week."
+          },
+          {
+            "weight": 50,
+            "effects": [],
+            "flavor": "A bigger story breaks. The wave passes you by."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "evt-industry-lobbyist",
+    "type": "opportunity",
+    "title": "Lobbyist at the Door",
+    "description": "A smooth-talking industry rep asks for fifteen minutes.",
+    "triggerConditions": [
+      { "type": "random", "chancePerDay": 0.008 }
+    ],
+    "weight": 1,
+    "isRepeatable": true,
+    "options": [
+      {
+        "id": "opt-accept",
+        "label": "Hear them out",
+        "costs": { "ap": 1 },
+        "requirements": [],
+        "outcomes": [
+          {
+            "weight": 100,
+            "effects": [
+              { "type": "resource", "resource": "politicalCapital", "value": 12 },
+              { "type": "group_happiness", "group": "business-owners", "value": 2 },
+              { "type": "stat", "target": "integrity", "value": 0 }
+            ],
+            "flavor": "A quiet promise. A quiet benefit. The machine keeps turning."
+          }
+        ]
+      },
+      {
+        "id": "opt-decline",
+        "label": "Send them away",
+        "costs": {},
+        "requirements": [],
+        "outcomes": [
+          {
+            "weight": 100,
+            "effects": [
+              { "type": "stat", "target": "integrity", "value": 1 },
+              { "type": "group_happiness", "group": "students", "value": 1 }
+            ],
+            "flavor": "Your staff exhales. The lobbyist will be back."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "evt-mass-protest",
+    "type": "population",
+    "title": "Crowds Gather at the Capitol",
+    "description": "Thousands march for working-class relief. The press expects a statement.",
+    "triggerConditions": [
+      { "type": "group_happiness", "group": "working-class", "operator": "lt", "value": 35 }
+    ],
+    "weight": 1,
+    "isRepeatable": true,
+    "options": [
+      {
+        "id": "opt-address-crowd",
+        "label": "Address the crowd",
+        "costs": { "pc": 5, "ap": 2 },
+        "requirements": [],
+        "outcomes": [
+          {
+            "weight": 100,
+            "effects": [
+              { "type": "group_happiness", "group": "working-class", "value": 6 },
+              { "type": "resource", "resource": "xp", "value": 40 }
+            ],
+            "flavor": "Your voice cracks once. Nobody minds."
+          }
+        ]
+      },
+      {
+        "id": "opt-stay-away",
+        "label": "Stay out of it",
+        "costs": {},
+        "requirements": [],
+        "outcomes": [
+          {
+            "weight": 100,
+            "effects": [
+              { "type": "group_happiness", "group": "working-class", "value": -3 }
+            ],
+            "flavor": "The absence is noticed."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "evt-constituent-letter",
+    "type": "personal",
+    "title": "A Letter from Home",
+    "description": "A handwritten note from a ninety-year-old constituent who's been writing you since before you were elected.",
+    "triggerConditions": [
+      { "type": "random", "chancePerDay": 0.004 }
+    ],
+    "weight": 1,
+    "isRepeatable": true,
+    "options": [
+      {
+        "id": "opt-reply",
+        "label": "Write back personally",
+        "costs": { "ap": 1 },
+        "requirements": [],
+        "outcomes": [
+          {
+            "weight": 100,
+            "effects": [
+              { "type": "group_happiness", "group": "retirees", "value": 3 },
+              { "type": "stat", "target": "integrity", "value": 1 },
+              { "type": "resource", "resource": "xp", "value": 15 }
+            ],
+            "flavor": "She tells her whole block."
+          }
+        ]
+      }
+    ]
+  }
+]

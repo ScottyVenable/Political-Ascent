@@ -1,14 +1,15 @@
 import type { EconomicState } from '@/types';
 import { useGameStore } from '@/store/gameStore';
 import { useWorldStore } from '@/store/worldStore';
+import { SeededRNG } from '@/utils/random';
 
 /**
  * EconomySystem — advances macro-economic metrics weekly/monthly.
  *
  * The model is intentionally simple for MVP:
- *  - GDP growth has a small weekly noise.
+ *  - GDP growth has a small seeded-random weekly drift.
  *  - Unemployment tracks inverse of GDP with lag.
- *  - Inflation drifts based on debt/deficit trajectory.
+ *  - Inflation drifts based on deficit trajectory.
  *  - Debt compounds with deficit annually.
  */
 export interface EconomySystemAPI {
@@ -21,8 +22,10 @@ export const EconomySystem: EconomySystemAPI = {
   weeklyUpdate() {
     const world = useWorldStore.getState();
     const e = world.economy;
-    // Small stochastic drift. Weekly delta is small — roughly ±0.02% on GDP.
-    const drift = (Math.sin(useGameStore.getState().week) + Math.cos(useGameStore.getState().week * 2)) * 0.02;
+    const week = useGameStore.getState().week;
+    // Deterministic per-week drift via SeededRNG — reproducible from saves.
+    const rng = new SeededRNG(world.seed + week * 13);
+    const drift = (rng.next() - 0.5) * 0.06; // ±0.03% on GDP per week
 
     const next: Partial<EconomicState> = {
       gdpGrowth: clamp(e.gdpGrowth + drift, -4, 6),

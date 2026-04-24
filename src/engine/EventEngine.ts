@@ -7,6 +7,7 @@ import type {
 } from '@/types';
 import { useGameStore } from '@/store/gameStore';
 import { useWorldStore } from '@/store/worldStore';
+import { useCharacterStore } from '@/store/characterStore';
 import { SeededRNG, weightedRandom } from '@/utils/random';
 import { applyEffects } from './applyEffect';
 import { makeId } from '@/utils/id';
@@ -28,6 +29,7 @@ export interface EventEngineAPI {
 class EventEngineImpl implements EventEngineAPI {
   private registry = new Map<string, GameEventDefinition>();
   private firedOnce = new Set<string>();
+  private resolveCounter = 0;
 
   registerEvents(defs: readonly GameEventDefinition[]): void {
     for (const d of defs) this.registry.set(d.id, d);
@@ -69,8 +71,9 @@ class EventEngineImpl implements EventEngineAPI {
     if (option.costs.pc) useGameStore.getState().addPoliticalCapital(-option.costs.pc);
     if (option.costs.ap) useGameStore.getState().spendAP(option.costs.ap);
 
-    // Select weighted outcome.
-    const rng = new SeededRNG(world.seed + Date.now());
+    // Select weighted outcome deterministically from world seed + event chain counter.
+    this.resolveCounter += 1;
+    const rng = new SeededRNG(world.seed + this.resolveCounter * 97);
     const outcome: WeightedOutcome = weightedRandom(option.outcomes, rng);
     applyEffects(outcome.effects);
 
@@ -111,9 +114,12 @@ class EventEngineImpl implements EventEngineAPI {
         const g = world.population.find((p) => p.id === c.group);
         return g ? compare(g.happiness, c.operator, c.value) : false;
       }
-      case 'stat':
-        // Stat conditions on player character could be added here; MVP skips.
-        return true;
+      case 'stat': {
+        const stats = useCharacterStore.getState().stats as unknown as Record<string, number>;
+        const val = stats[c.stat];
+        if (typeof val !== 'number') return false;
+        return compare(val, c.operator, c.value);
+      }
     }
   }
 }

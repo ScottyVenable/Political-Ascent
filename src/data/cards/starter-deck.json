@@ -1,0 +1,157 @@
+[
+  {
+    "id": "card-fundraiser",
+    "name": "Donor Dinner",
+    "type": "resource",
+    "rarity": "common",
+    "description": "A quiet evening with the party faithful. Raise political capital.",
+    "flavorText": "Smile for the cameras. Shake every hand.",
+    "cost": 0,
+    "effects": [{ "type": "resource", "resource": "politicalCapital", "value": 12 }],
+    "tags": ["fundraising"]
+  },
+  {
+    "id": "card-town-hall",
+    "name": "Town Hall",
+    "type": "action",
+    "rarity": "common",
+    "description": "Meet constituents directly. Small happiness boost to one group.",
+    "cost": 5,
+    "effects": [
+      { "type": "group_happiness", "group": "working-class", "value": 3 },
+      { "type": "resource", "resource": "xp", "value": 25 }
+    ],
+    "tags": ["constituents"]
+  },
+  {
+    "id": "card-tv-interview",
+    "name": "TV Interview",
+    "type": "action",
+    "rarity": "common",
+    "description": "A primetime slot. Professionals take notice.",
+    "cost": 5,
+    "effects": [
+      { "type": "group_happiness", "group": "professionals", "value": 3 },
+      { "type": "stat", "target": "charisma", "value": 0 }
+    ],
+    "tags": ["media"]
+  },
+  {
+    "id": "card-whisper-campaign",
+    "name": "Whisper Campaign",
+    "type": "sabotage",
+    "rarity": "uncommon",
+    "description": "Plant a rumor about a rival. Costs political capital; risky.",
+    "cost": 15,
+    "effects": [
+      { "type": "flag", "flag": "scandal-in-play", "value": true }
+    ],
+    "tags": ["dark"]
+  },
+  {
+    "id": "card-endorsement",
+    "name": "Celebrity Endorsement",
+    "type": "boost",
+    "rarity": "uncommon",
+    "description": "Temporary groundswell from an unlikely ally.",
+    "cost": 10,
+    "effects": [
+      { "type": "group_happiness", "group": "students", "value": 5 },
+      { "type": "resource", "resource": "politicalCapital", "value": 8 }
+    ],
+    "tags": ["media"]
+  },
+  {
+    "id": "card-back-channel",
+    "name": "Back Channel",
+    "type": "relationship",
+    "rarity": "uncommon",
+    "description": "Strengthen a confidential tie in the Senate.",
+    "cost": 8,
+    "effects": [
+      { "type": "resource", "resource": "politicalCapital", "value": 6 }
+    ],
+    "tags": ["diplomacy"]
+  },
+  {
+    "id": "card-press-briefing",
+    "name": "Press Briefing",
+    "type": "action",
+    "rarity": "common",
+    "description": "Shape the morning news cycle in your favor.",
+    "cost": 4,
+    "effects": [
+      { "type": "group_happiness", "group": "retirees", "value": 2 },
+      { "type": "resource", "resource": "xp", "value": 15 }
+    ],
+    "tags": ["media"]
+  },
+  {
+    "id": "card-grassroots-push",
+    "name": "Grassroots Push",
+    "type": "action",
+    "rarity": "uncommon",
+    "description": "Mobilize volunteers in your home state.",
+    "cost": 10,
+    "effects": [
+      { "type": "group_happiness", "group": "rural-voters", "value": 4 },
+      { "type": "group_happiness", "group": "working-class", "value": 2 }
+    ],
+    "tags": ["constituents"]
+  },
+  {
+    "id": "card-industry-favor",
+    "name": "Industry Favor",
+    "type": "resource",
+    "rarity": "rare",
+    "description": "Pull in a quiet favor. Buy political capital — but lose a little integrity.",
+    "cost": 0,
+    "effects": [
+      { "type": "resource", "resource": "politicalCapital", "value": 25 },
+      { "type": "stat", "target": "integrity", "value": -1 }
+    ],
+    "tags": ["fundraising", "dark"]
+  },
+  {
+    "id": "card-grand-speech",
+    "name": "Grand Speech",
+    "type": "boost",
+    "rarity": "rare",
+    "description": "A defining moment on the floor. Everyone listens.",
+    "cost": 18,
+    "effects": [
+      { "type": "group_happiness", "group": "students", "value": 3 },
+      { "type": "group_happiness", "group": "professionals", "value": 3 },
+      { "type": "group_happiness", "group": "working-class", "value": 3 },
+      { "type": "resource", "resource": "xp", "value": 60 }
+    ],
+    "tags": ["oratory"]
+  },
+  {
+    "id": "card-bipartisan-dinner",
+    "name": "Bipartisan Dinner",
+    "type": "relationship",
+    "rarity": "rare",
+    "description": "Build a bridge across the aisle. Slow but real gains.",
+    "cost": 12,
+    "effects": [
+      { "type": "resource", "resource": "politicalCapital", "value": 10 },
+      { "type": "resource", "resource": "xp", "value": 30 }
+    ],
+    "tags": ["diplomacy"]
+  },
+  {
+    "id": "card-constitutional-moment",
+    "name": "Constitutional Moment",
+    "type": "legislation",
+    "rarity": "legendary",
+    "description": "Seize the narrative. Legacy-defining.",
+    "cost": 30,
+    "effects": [
+      { "type": "flag", "flag": "constitutional-moment-seized", "value": true },
+      { "type": "resource", "resource": "politicalCapital", "value": 20 },
+      { "type": "resource", "resource": "xp", "value": 150 }
+    ],
+    "tags": ["legacy"]
+  }
+]
