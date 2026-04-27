@@ -206,3 +206,139 @@ body {
     radial-gradient(rgba(216, 214, 204, 0.015) 1px, transparent 1px);
   background-size: 3px 3px;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   RARITY TREATMENTS — CARD VISUAL LANGUAGE
+   ────────────────────────────────────────────────────────────────
+   Cards declare a rarity (`common` … `prismatic`). The treatment is
+   driven entirely by these utility classes so any card surface
+   (hand row, collection grid, pack reveal) renders consistently.
+
+   The five-tier ladder mirrors the deckbuilder vocabulary players
+   already know from games like Hearthstone or Slay the Spire:
+     common    — flat, no glow
+     uncommon  — green hairline
+     rare      — institutional teal-blue with soft glow
+     epic      — purple, pronounced glow
+     legendary — gold, animated shimmer
+     prismatic — animated rainbow border, the "you got something" tier
+   ──────────────────────────────────────────────────────────────── */
+
+.rarity-common {
+  --rarity-color: #5f6158;
+  --rarity-glow: rgba(0, 0, 0, 0);
+}
+.rarity-uncommon {
+  --rarity-color: #6b8f5a;
+  --rarity-glow: rgba(107, 143, 90, 0.35);
+}
+.rarity-rare {
+  --rarity-color: #4a7a96;
+  --rarity-glow: rgba(74, 122, 150, 0.45);
+}
+.rarity-epic {
+  --rarity-color: #9b6dbf;
+  --rarity-glow: rgba(155, 109, 191, 0.55);
+}
+.rarity-legendary {
+  --rarity-color: #c9a84c;
+  --rarity-glow: rgba(201, 168, 76, 0.65);
+}
+.rarity-prismatic {
+  --rarity-color: #d8d6cc;
+  --rarity-glow: rgba(216, 214, 204, 0.55);
+}
+
+.rarity-frame {
+  border: 1px solid var(--rarity-color);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  transition: box-shadow var(--pa-dur-normal) var(--pa-ease-standard),
+    transform var(--pa-dur-normal) var(--pa-ease-standard);
+  position: relative;
+}
+.rarity-frame:hover,
+.rarity-frame:focus-visible {
+  box-shadow: 0 0 14px var(--rarity-glow);
+  transform: translateY(-2px);
+}
+
+/* Legendary shimmer — a slow, low-amplitude border-color animation that
+   reads as "this card is special" without becoming a strobe. */
+@keyframes pa-legendary-shimmer {
+  0%, 100% { box-shadow: 0 0 8px var(--rarity-glow); }
+  50%      { box-shadow: 0 0 18px var(--rarity-glow); }
+}
+.rarity-legendary.rarity-frame {
+  animation: pa-legendary-shimmer 3.2s ease-in-out infinite;
+}
+
+/* Prismatic — an animated conic-gradient overlay. We set it as the
+   border via a pseudo-element so the card body's content stays crisp. */
+@keyframes pa-prismatic-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.rarity-prismatic.rarity-frame {
+  border-color: transparent;
+  background-clip: padding-box;
+}
+.rarity-prismatic.rarity-frame::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    #c9a84c, #9b6dbf, #4a7a96, #6b8f5a, #c9a84c
+  );
+  animation: pa-prismatic-spin 6s linear infinite;
+  filter: blur(0.5px);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CARD PACK OPENING — ANIMATIONS
+   ──────────────────────────────────────────────────────────────── */
+
+/* Pack idle shake — three quick wiggles before the burst. */
+@keyframes pa-pack-shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  20%      { transform: translateX(-3px) rotate(-1.5deg); }
+  40%      { transform: translateX(3px)  rotate(1.5deg); }
+  60%      { transform: translateX(-2px) rotate(-1deg); }
+  80%      { transform: translateX(2px)  rotate(1deg); }
+}
+.animate-pack-shake {
+  animation: pa-pack-shake 0.6s ease-in-out;
+}
+
+/* Pack burst — quick scale-up + fade, used as the "reveal" trigger. */
+@keyframes pa-pack-burst {
+  0%   { transform: scale(1);    opacity: 1; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1.4);  opacity: 0; }
+}
+.animate-pack-burst {
+  animation: pa-pack-burst 350ms var(--pa-ease-depart) forwards;
+}
+
+/* Card flip-reveal — used per-card during the reveal phase. */
+@keyframes pa-card-reveal {
+  from { transform: rotateY(90deg) translateY(20px); opacity: 0; }
+  to   { transform: rotateY(0deg)  translateY(0);    opacity: 1; }
+}
+.animate-card-reveal {
+  animation: pa-card-reveal 360ms var(--pa-ease-arrive) both;
+  transform-style: preserve-3d;
+  perspective: 800px;
+}
+
+/* Tooltip enter — used by the extended tooltip portal. Subtle so the
+   tooltip never feels like a popup ad. */
+@keyframes pa-tooltip-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-tooltip-enter {
+  animation: pa-tooltip-enter 120ms var(--pa-ease-arrive) both;
+}

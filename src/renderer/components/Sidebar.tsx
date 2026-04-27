@@ -31,6 +31,7 @@ const PANELS: readonly PanelEntry[] = [
   { id: 'economy', label: 'Economy', icon: 'economy' },
   { id: 'quests', label: 'Quests', icon: 'quests' },
   { id: 'cards', label: 'Cards', icon: 'cards' },
+  { id: 'collection', label: 'Collection', icon: 'cards' },
   { id: 'skills', label: 'Skills', icon: 'skills' },
   { id: 'character', label: 'Character', icon: 'character' },
 ];

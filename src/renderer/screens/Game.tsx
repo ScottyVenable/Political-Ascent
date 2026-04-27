@@ -18,6 +18,7 @@ import { PopulationPanel } from '../panels/PopulationPanel';
 import { EconomyPanel } from '../panels/EconomyPanel';
 import { QuestsPanel } from '../panels/QuestsPanel';
 import { CardsPanel } from '../panels/CardsPanel';
+import { CollectionPanel } from '../panels/CollectionPanel';
 import { SkillsPanel } from '../panels/SkillsPanel';
 import { CharacterPanel } from '../panels/CharacterPanel';
 
@@ -104,6 +105,7 @@ export function Game(): JSX.Element {
           {activePanel === 'economy' && <EconomyPanel />}
           {activePanel === 'quests' && <QuestsPanel />}
           {activePanel === 'cards' && <CardsPanel />}
+          {activePanel === 'collection' && <CollectionPanel />}
           {activePanel === 'skills' && <SkillsPanel />}
           {activePanel === 'character' && <CharacterPanel />}
         </main>

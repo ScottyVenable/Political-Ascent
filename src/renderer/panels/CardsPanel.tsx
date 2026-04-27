@@ -2,7 +2,7 @@ import { useCharacterStore } from '@/store/characterStore';
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
 import { CardSystem } from '@/systems/CardSystem';
-import { Card as UICard } from '../components/Card';
+import { CardFace } from '../components/CardFace';
 import { Button } from '../components/Button';
 
 /**
@@ -38,32 +38,14 @@ export function CardsPanel(): JSX.Element {
         <p className="text-sm text-text-muted italic">Your hand is empty. Cards are drawn at the start of each week.</p>
       )}
 
-      <div className="grid md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {hand.map((inst) => {
           const def = CardSystem.getDefinition(inst.cardId);
           if (!def) return null;
           const canPay = pc >= def.cost;
           return (
-            <UICard
-              key={inst.instanceId}
-              title={def.name}
-              subtitle={`${def.type} · ${def.rarity}`}
-              accent={def.rarity === 'rare' || def.rarity === 'legendary' ? 'gold' : 'blue'}
-            >
-              <p className="text-sm text-text-secondary mb-2">{def.description}</p>
-              {def.flavorText && (
-                <p className="text-xs italic text-text-muted mb-3 font-flavor">&ldquo;{def.flavorText}&rdquo;</p>
-              )}
-              <div className="flex items-center justify-between text-xs mb-3">
-                <span className={`font-mono ${canPay ? 'text-accent-gold' : 'text-status-danger'}`}>
-                  Cost: {def.cost} PC
-                </span>
-                <div className="flex flex-wrap gap-1 justify-end">
-                  {def.tags.map((t) => (
-                    <span key={t} className="bg-bg-tertiary text-text-muted rounded px-1.5 py-0.5">{t}</span>
-                  ))}
-                </div>
-              </div>
+            <div key={inst.instanceId} className="flex flex-col gap-2">
+              <CardFace def={def} state={canPay ? 'playable' : 'locked'} />
               <div className="flex gap-2">
                 <Button size="sm" variant="primary" disabled={!canPay} onClick={() => play(inst.instanceId)}>
                   Play
@@ -72,7 +54,7 @@ export function CardsPanel(): JSX.Element {
                   Discard
                 </Button>
               </div>
-            </UICard>
+            </div>
           );
         })}
       </div>

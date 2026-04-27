@@ -5,6 +5,21 @@ All notable changes to Political Ascent are recorded here.
 ## [Unreleased]
 
 ### Added
+- **Card rarity, pack-opening, and stats system** (`exp--cards-and-tooltips`).
+  - `CardRarity` union (`common | uncommon | rare | epic | legendary | prismatic`) with deterministic seeded distribution per pack template (`src/engine/cardPackEngine.ts`, 10 unit tests).
+  - Optional `stats` block on `CardDefinition`: `power`, `cooldownWeeks`, `usesPerGame`, `level`, `factionAffinity`, `factionBonusMultiplier`. Backwards compatible — legacy cards continue to load.
+  - 4 new high-rarity starter cards: `card-coalition-builder` (epic relationship), `card-shadow-broker` (epic sabotage), `card-floor-takeover` (epic legislation), `card-statesman` (prismatic wild).
+  - New **Collection** panel (`src/renderer/panels/CollectionPanel.tsx`) with pack store (4 templates: Starter, Precinct, Press Cycle, Legislative) and rarity-filtered grid.
+  - `CardFace` component (`src/renderer/components/CardFace.tsx`) shared between Cards/Collection/pack-opening: rarity-tinted frame, icon header, PC/AP cost cluster, description, optional stats strip (`StatPill` for Power/CD/Uses), flavour text, type tags.
+  - **Pack-opening animation** (`src/renderer/components/CardPackOpening.tsx`): pure-CSS shake → burst → reveal-grid → settled phase machine. Honors `prefers-reduced-motion`.
+  - Rarity CSS (`styles.css`): per-rarity colour + glow tokens, legendary box-shadow shimmer, prismatic conic-gradient `::before` spin, `pa-card-reveal` keyframe.
+- **Extended Tooltip system** — Paradox-style hover tooltips (Victoria 3 / Crusader Kings III pattern).
+  - `src/renderer/components/tooltip/`: `ExtendedTooltip` (portal, 500ms openDelay, viewport clamp, role="tooltip", Shift-to-pin, Esc to close); `registry` for term definitions; `glossary` seed file with `political-capital`, `action-points`, `alignment-bonuses`, plus card/legislation cross-links; 5 unit tests.
+  - Tooltip content schema supports nested term-link bullet lists, See-also lists, italic summaries, and multi-paragraph prose body.
+  - Wired into `TopBar` (PC and AP clusters) and `CardFace` (every card hover surfaces full definition).
+  - Term references inside tooltip body open follow-up tooltips on hover (graph traversal).
+- **Playwright coverage**: `tests/e2e/cards-and-tooltip.spec.ts` — 9 passing tests across `1280×720`, `1440×900`, `1920×1080` viewports with committed snapshots: Collection screen, PC tooltip, pack-open reveal.
+
 - **Congress hemicycle redesign** (closes #41). Replaces the flat `SeatGrid` with a semi-circular parliament layout:
   - New `Hemicycle` component. Pure `layoutHemicycle(legislators, width)` computes seat positions across rows (`rows = max(3, round(sqrt(n/3.2)))` → ~4 for Senate/100, ~10 for House/435), radii from 0.45·cy to 0.95·cy, capacity proportional to arc length, exact seat distribution via Hamilton remainders.
   - Seats are ordered left-to-right by `ideology.x` — the leftmost physical seat goes to the most-left-wing legislator and vice versa, so the chamber always reads D · I · R.

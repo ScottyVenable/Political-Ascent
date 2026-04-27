@@ -20,6 +20,12 @@ const log = createLogger('CardSystem');
  */
 export interface CardSystemAPI {
   register(defs: readonly CardDefinition[]): void;
+  /**
+   * Drop every registered definition. Used by tests to keep the
+   * registry hermetic between cases. Production code should never
+   * need this.
+   */
+  clear(): void;
   /** Get a registered definition by id. */
   getDefinition(cardId: CardId): CardDefinition | undefined;
   allDefinitions(): CardDefinition[];
@@ -39,6 +45,10 @@ class CardSystemImpl implements CardSystemAPI {
   register(defs: readonly CardDefinition[]): void {
     for (const d of defs) this.registry.set(d.id, d);
     log.info('registered', { count: defs.length });
+  }
+
+  clear(): void {
+    this.registry.clear();
   }
 
   getDefinition(cardId: CardId): CardDefinition | undefined {

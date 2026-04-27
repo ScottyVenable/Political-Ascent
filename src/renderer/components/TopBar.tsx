@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useCharacterStore } from '@/store/characterStore';
 import { ResourcePips } from './ResourcePips';
+import { ExtendedTooltip } from './tooltip';
 
 /**
  * TopBar — slim, fixed header showing identity, date, and political resources.
@@ -79,16 +80,20 @@ function TopBarImpl(): JSX.Element {
 
       {/* ─── RIGHT: Resources ────────────────────────────────── */}
       <div className="flex items-center justify-end gap-5">
-        <div className="flex items-baseline gap-1.5">
-          <span className="font-mono text-data text-accent-gold tabular-nums">
-            {pc}
-          </span>
-          <span className="font-mono text-label text-text-muted">PC</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <ResourcePips value={ap} max={apMax} tone="gold" label="Action Points" />
-          <span className="font-mono text-label text-text-muted">AP</span>
-        </div>
+        <ExtendedTooltip term="political-capital">
+          <div tabIndex={0} className="flex items-baseline gap-1.5 cursor-help focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm">
+            <span className="font-mono text-data text-accent-gold tabular-nums">
+              {pc}
+            </span>
+            <span className="font-mono text-label text-text-muted">PC</span>
+          </div>
+        </ExtendedTooltip>
+        <ExtendedTooltip term="action-points">
+          <div tabIndex={0} className="flex items-center gap-1.5 cursor-help focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm">
+            <ResourcePips value={ap} max={apMax} tone="gold" label="Action Points" />
+            <span className="font-mono text-label text-text-muted">AP</span>
+          </div>
+        </ExtendedTooltip>
       </div>
     </header>
   );

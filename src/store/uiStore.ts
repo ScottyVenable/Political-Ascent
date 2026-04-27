@@ -9,6 +9,7 @@ export type PanelId =
   | 'economy'
   | 'quests'
   | 'cards'
+  | 'collection'
   | 'skills'
   | 'character';
 
