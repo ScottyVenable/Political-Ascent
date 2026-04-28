@@ -6,6 +6,16 @@ All notable changes to Political Ascent are recorded here.
 
 ### Added
 
+- **Save and load** (`exp--save-load`, todo#36). Real save/load lands at last.
+  - New `src/engine/SaveSystem.ts` — single-source serialiser. Versioned envelope (`meta.schemaVersion = 1`) wrapping a snapshot of `gameStore`, `characterStore`, and `worldStore`. Schema mismatches refuse to load with a clear reason instead of silently corrupting state. Storage is platform-aware: Electron writes through the existing `pa:save:*` IPC bridge to `electron-store`; browser/Capacitor falls back to `localStorage` under the `pa:save:` prefix.
+  - **Developer-mode tagging** wired up (todo#21 follow-through): saves taken while `useDevStore.enabled` is true carry `meta.developer = true`. The Load UI surfaces a red `DEV` chip on those rows.
+  - **`<SaveLoadModal />` component** with shared slot-list rendering for both modes. Save mode adds a "create new save" row with a name field; both modes offer overwrite and delete with `alertdialog` confirmations. Newest first, corrupt slots sink to the bottom with the schema error inline.
+  - **Wiring**: Main Menu now has a `Load Game` button that opens the modal in load mode and routes to `game` after a successful load. The in-game `BottomBar` gains `Save` / `Load` / `Menu` buttons in its previously-empty right slot. Opening either modal pauses the simulation; closing leaves it paused so the player chooses when to resume.
+  - **`docs/guides/SAVE_FORMAT.md`** rewritten to match the shipped schema.
+  - 7 Vitest cases in `SaveSystem.test.ts` cover round-trip through localStorage, schema-version refusal, missing-slot reporting, deletion, store restoration, and developer-mode tagging.
+
+### Added
+
 - **Cards panel — drag-to-play, drop indicator, playable glow** (`exp--card-play-polish`, todo#33). The hand panel now feels like a TCG instead of a list with arrows.
   - **Drag-to-play drop zone** at the top of the hand: dragging a card onto it triggers the same play flow as the per-card Play button. Failure surfaces as a toast (existing behaviour). Click on the zone surfaces a hint toast for keyboard/mouse users so the discoverability doesn't depend on a hover.
   - **Insertion indicator** — when a drag is in flight the row currently being hovered renders a left-edge gold bar. Absolutely-positioned so it never reflows the grid.

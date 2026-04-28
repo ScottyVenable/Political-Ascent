@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Button } from '../components/Button';
+import { SaveLoadModal } from '../components/SaveLoadModal';
 import { useRouter } from '../router';
 
 /**
@@ -7,6 +9,10 @@ import { useRouter } from '../router';
  */
 export function MainMenu(): JSX.Element {
   const navigate = useRouter((s) => s.navigate);
+  // Local state for the load-game modal. Lives on the menu rather
+  // than a global slot because the menu is the only entry point and
+  // we want it to evaporate on navigation away.
+  const [loadOpen, setLoadOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-bg-primary flex flex-col">
@@ -25,6 +31,14 @@ export function MainMenu(): JSX.Element {
         <div className="flex flex-col gap-3 w-56">
           <Button variant="primary" size="lg" onClick={() => navigate('character-creation')}>
             New Game
+          </Button>
+          <Button
+            variant="secondary"
+            size="lg"
+            onClick={() => setLoadOpen(true)}
+            data-testid="main-menu-load"
+          >
+            Load Game
           </Button>
           <Button variant="secondary" size="lg" onClick={() => navigate('achievements')}>
             Achievements
@@ -47,6 +61,14 @@ export function MainMenu(): JSX.Element {
       <footer className="relative text-center text-xs text-text-muted py-4">
         v0.1.0-alpha.1 · Political Ascent — a turn-based political career sim
       </footer>
+
+      {loadOpen && (
+        <SaveLoadModal
+          mode="load"
+          onClose={() => setLoadOpen(false)}
+          onLoaded={() => navigate('game')}
+        />
+      )}
     </div>
   );
 }

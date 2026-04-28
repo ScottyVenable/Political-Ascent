@@ -1,7 +1,10 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { TimeEngine } from '@/engine/TimeEngine';
 import { Icon, type IconName } from './Icon';
+import { Button } from './Button';
+import { SaveLoadModal, type SaveLoadMode } from './SaveLoadModal';
+import { useRouter } from '../router';
 import type { GameSpeed } from '@/types';
 
 /**
@@ -73,6 +76,16 @@ function BottomBarImpl(): JSX.Element {
   const date = useGameStore((s) => s.currentDate);
   const speed = useGameStore((s) => s.speed);
   const isPaused = useGameStore((s) => s.isPaused);
+  const navigate = useRouter((s) => s.navigate);
+
+  // Save/load modal mode. `null` while closed; opening pauses the
+  // simulation so the player isn't fighting the clock while choosing
+  // a slot. The previous speed is restored when the modal closes.
+  const [saveLoad, setSaveLoad] = useState<SaveLoadMode | null>(null);
+  const openSaveLoad = (mode: SaveLoadMode): void => {
+    TimeEngine.setSpeed(0);
+    setSaveLoad(mode);
+  };
 
   const monthName = MONTH_FULL[Math.max(0, Math.min(11, date.month - 1))];
   const week = weekOfYear(date);
@@ -131,11 +144,54 @@ function BottomBarImpl(): JSX.Element {
         </span>
       </div>
 
-      {/* ─── RIGHT: Reserved for hand peek ─────────────────────
-          A horizontal row of card chips will land here in the
-          cards-as-physical-objects follow-up PR. For now this zone is
-          intentionally empty so the layout budget is reserved. */}
-      <div />
+      {/* ─── RIGHT: Game-management buttons ─────────────
+          Save / Load / Main Menu. Kept compact so the speed
+          buttons retain visual primacy on the bottom bar; on phones
+          we collapse the labels to icons via `sm:inline`. Closes
+          docs/todo.md item 36 (and previews item 38 by giving the
+          player a way out of the run). */}
+      <div className="flex items-center justify-end gap-1 sm:gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => openSaveLoad('save')}
+          data-testid="bottombar-save"
+          aria-label="Save game"
+        >
+          <span className="hidden sm:inline">Save</span>
+          <span className="sm:hidden" aria-hidden>S</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => openSaveLoad('load')}
+          data-testid="bottombar-load"
+          aria-label="Load game"
+        >
+          <span className="hidden sm:inline">Load</span>
+          <span className="sm:hidden" aria-hidden>L</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            TimeEngine.setSpeed(0);
+            navigate('main-menu');
+          }}
+          data-testid="bottombar-main-menu"
+          aria-label="Return to main menu"
+        >
+          <span className="hidden sm:inline">Menu</span>
+          <span className="sm:hidden" aria-hidden>M</span>
+        </Button>
+      </div>
+
+      {saveLoad && (
+        <SaveLoadModal
+          mode={saveLoad}
+          onClose={() => setSaveLoad(null)}
+        />
+      )}
     </footer>
   );
 }
