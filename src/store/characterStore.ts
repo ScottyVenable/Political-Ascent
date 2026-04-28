@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import type { CharacterState, CoreStats, Background, IdeologyPoint, TraitId } from '@/types';
+import { DEFAULT_AVATAR_ID } from '@/data/avatars';
 
 interface CharacterStoreActions {
   setCharacter: (character: CharacterState) => void;
@@ -9,6 +10,8 @@ interface CharacterStoreActions {
   addXP: (amount: number) => void;
   spendSkillPoint: (skillId: string) => boolean;
   setIdeology: (ideology: IdeologyPoint) => void;
+  /** Pick an avatar preset id. See `src/data/avatars`. */
+  setAvatar: (avatarId: string) => void;
   reset: () => void;
 }
 
@@ -18,6 +21,7 @@ const BLANK: CharacterState = {
   id: '',
   name: '',
   background: 'citizen' as Background,
+  avatarId: DEFAULT_AVATAR_ID,
   stats: { charisma: 5, strategy: 5, connections: 5, integrity: 5, wealth: 5, stamina: 5 },
   traits: [],
   ideology: { x: 0, y: 0 },
@@ -83,6 +87,11 @@ export const useCharacterStore = create<Store>()(
     setIdeology: (ideology) =>
       set((s) => {
         s.ideology = ideology;
+      }),
+
+    setAvatar: (avatarId) =>
+      set((s) => {
+        s.avatarId = avatarId;
       }),
 
     reset: () => set(() => ({ ...BLANK })),

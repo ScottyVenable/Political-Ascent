@@ -544,7 +544,7 @@ function IdentityCard({
   return (
     <Card title={name || 'Senator'} subtitle={`LV ${level} · ${xp} XP`} className="md:col-span-2">
       <div className="flex gap-4 items-center">
-        <IdeologyCompass value={ideology} size={120} label={false} />
+        <IdeologyCompass value={ideology} size={120} label={false} showReferenceFigures={false} />
         <div className="flex-1">
           <div className="font-mono text-label uppercase tracking-widest text-text-muted">
             Ideology

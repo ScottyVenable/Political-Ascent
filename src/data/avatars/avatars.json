@@ -1,0 +1,61 @@
+{
+  "$schemaVersion": 1,
+  "presets": [
+    {
+      "id": "civic-organizer",
+      "label": "Civic Organizer",
+      "description": "Grassroots advocate. Bullhorn over boardroom.",
+      "icon": "flag",
+      "accent": "accent-gold"
+    },
+    {
+      "id": "veteran-officer",
+      "label": "Veteran Officer",
+      "description": "Disciplined leadership. Service before self.",
+      "icon": "trophy",
+      "accent": "accent-blue"
+    },
+    {
+      "id": "policy-wonk",
+      "label": "Policy Wonk",
+      "description": "Lives in the footnotes. Reads the bill.",
+      "icon": "legislation",
+      "accent": "accent-blue"
+    },
+    {
+      "id": "executive",
+      "label": "Executive",
+      "description": "Boardroom polish. Donor rolodex.",
+      "icon": "economy",
+      "accent": "accent-red"
+    },
+    {
+      "id": "scholar",
+      "label": "Scholar",
+      "description": "Ideologue with a syllabus. Theory into practice.",
+      "icon": "book",
+      "accent": "accent-gold"
+    },
+    {
+      "id": "statesman",
+      "label": "Statesman",
+      "description": "Old-school institutionalist. Marble-and-pillar gravitas.",
+      "icon": "congress",
+      "accent": "accent-gold"
+    },
+    {
+      "id": "voice-of-the-people",
+      "label": "Voice of the People",
+      "description": "Tribune of the demos. Speaks the room into a chant.",
+      "icon": "population",
+      "accent": "accent-red"
+    },
+    {
+      "id": "agitator",
+      "label": "Agitator",
+      "description": "Sparks first, asks later. The protest, not the press release.",
+      "icon": "alert",
+      "accent": "accent-red"
+    }
+  ]
+}

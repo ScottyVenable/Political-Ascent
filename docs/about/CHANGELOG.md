@@ -6,6 +6,8 @@ All notable changes to Political Ascent are recorded here.
 
 ### Added
 
+- **Character panel optimisation + avatar presets + reference-figure relocation** (`exp--character-panel`, todo#6, todo#9, todo#10). New `<AvatarMedallion />` and `<AvatarPicker />` components plus a curated 8-entry preset registry under `src/data/avatars/` (icon-glyph medallions, no AI-generated portraits per AGENTS.md §2.9). Character creation now opens with a live avatar preview alongside the name field and a preset picker beneath the background tiles. The Character panel is rebuilt around a hero header (avatar + name + background blurb + change-avatar toggle), separate Stats / Traits / Progression cards, and a full-width ideology compass that now shows the historical reference figures (FDR, Reagan, Sanders, Thatcher, etc.). The dashboard mini-compass explicitly hides reference figures so the two surfaces don't compete. New `setAvatar` action on `characterStore`. 11 unit tests + 1 Playwright smoke (`tests/e2e/character-panel.spec.ts`).
+
 - **Right-click context menus on cards and timeline** (`exp--right-click-menus`, todo#5). New `<ContextMenu />` portal component + `useContextMenu` hook deliver lightweight, viewport-clamped contextual menus. Cards in the hand expose Play / Copy ID / Discard. Timeline entries expose Open detail (when the entry has a `relatedEntity`) and Copy headline. Menus close on Escape, outside pointerdown, scroll, or resize, and re-clamp into the viewport after layout. 7 unit tests + 1 Playwright smoke (`tests/e2e/right-click-menus.spec.ts`).
 
 ### Fixed

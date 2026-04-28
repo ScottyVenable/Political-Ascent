@@ -9,6 +9,9 @@ import { Slider } from '../components/Slider';
 import { ExtendedTooltip } from '../components/tooltip';
 import { useRouter } from '../router';
 import { useCharacterStore } from '@/store/characterStore';
+import { AvatarPicker } from '../components/AvatarPicker';
+import { AvatarMedallion } from '../components/AvatarMedallion';
+import { DEFAULT_AVATAR_ID } from '@/data/avatars';
 
 /**
  * Map a CoreStats key to its glossary tooltip term id. Keeping this as a
@@ -51,6 +54,7 @@ export function CharacterCreation(): JSX.Element {
   });
   const [traits, setTraits] = useState<TraitId[]>([]);
   const [ideology, setIdeology] = useState<IdeologyPoint>({ x: 0, y: 0 });
+  const [avatarId, setAvatarId] = useState<string>(DEFAULT_AVATAR_ID);
 
   const finalStats = useMemo(
     () => CharacterSystem.applyBackgroundBonuses(baseStats, background),
@@ -93,6 +97,7 @@ export function CharacterCreation(): JSX.Element {
       id: `pc-${Date.now()}`,
       name: name.trim(),
       background,
+      avatarId,
       stats: finalStats,
       traits,
       ideology,
@@ -120,16 +125,22 @@ export function CharacterCreation(): JSX.Element {
 
         {step === 0 && (
           <Card title="Identity" subtitle="Who are you, and where did you come from?">
-            <label className="block mb-4">
-              <span className="text-sm text-text-secondary">Name</span>
-              <input
-                className="mt-1 w-full bg-bg-tertiary rounded px-3 py-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-gold"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Jordan Whitaker"
-                autoFocus
-              />
-            </label>
+            <div className="flex items-start gap-4 mb-4">
+              {/* Live avatar preview — updates as the player picks a
+                  preset below. Sized to be the visual anchor of the
+                  step without dominating the form. */}
+              <AvatarMedallion avatarId={avatarId} size={72} />
+              <label className="block flex-1">
+                <span className="text-sm text-text-secondary">Name</span>
+                <input
+                  className="mt-1 w-full bg-bg-tertiary rounded px-3 py-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-gold"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Jordan Whitaker"
+                  autoFocus
+                />
+              </label>
+            </div>
             <div className="grid md:grid-cols-3 gap-3">
               {(['citizen', 'veteran', 'executive'] as const).map((bg) => (
                 <button
@@ -145,6 +156,16 @@ export function CharacterCreation(): JSX.Element {
                   <p className="text-xs text-text-secondary mt-2">{backgroundBlurb(bg)}</p>
                 </button>
               ))}
+            </div>
+            <div className="mt-5">
+              <h4 className="font-headline text-sm text-text-secondary uppercase tracking-wide mb-2">
+                Avatar
+              </h4>
+              <p className="text-xs text-text-muted mb-3">
+                Pick a preset that fits the candidate you have in mind. You
+                can change this later from the Character panel.
+              </p>
+              <AvatarPicker value={avatarId} onChange={setAvatarId} />
             </div>
           </Card>
         )}

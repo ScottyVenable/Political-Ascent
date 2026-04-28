@@ -21,6 +21,14 @@ export interface CharacterState {
   id: string;
   name: string;
   background: Background;
+  /**
+   * Selected avatar preset id. The game ships a curated set of symbolic
+   * presets (see `src/data/avatars/`); custom-uploaded portraits are out
+   * of scope (no AI-generated imagery, per AGENTS.md §2.9). Optional so
+   * old saves continue to load — the renderer falls back to the first
+   * preset when the field is absent.
+   */
+  avatarId?: string;
   stats: CoreStats;
   traits: TraitId[];
   ideology: IdeologyPoint;
