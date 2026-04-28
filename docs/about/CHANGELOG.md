@@ -6,6 +6,15 @@ All notable changes to Political Ascent are recorded here.
 
 ### Added
 
+- **Congress panel — chamber tabs and member-detail modal** (`exp--congress-tabs`, todo#30). The chamber floor stops being a static stack of two charts.
+  - **Three-state tab strip** at the top: Both Chambers / Senate / House. Senate-only and House-only views drop the second card so the focused chamber owns more vertical real estate. Tabs follow proper `role="tablist"` / `aria-selected` semantics.
+  - **Hover preview** is now wired into the side rail. Mousing across seats lights up the rail without locking selection; clicking pins. The rail prefers hover and falls back to the last pinned selection so it never blanks out on mouseleave.
+  - **Member-detail modal** opens on seat click. Two-column layout: stat block (relationship, personality, ideology, term, priorities, plus a research-mechanic placeholder Button) on the left; voting summary (Yea/Nay/Abstain totals as a 3-tile grid) and the most recent 25 votes on the right. Escape and backdrop dismiss.
+  - The legacy "Close detail" affordance now clears both the rail and the hover state in one click.
+  - Deeper opposition research (cards, AP/PC cost, hidden-info reveal) is intentionally deferred — file follow-up issue.
+
+### Added
+
 - **Save and load** (`exp--save-load`, todo#36). Real save/load lands at last.
   - New `src/engine/SaveSystem.ts` — single-source serialiser. Versioned envelope (`meta.schemaVersion = 1`) wrapping a snapshot of `gameStore`, `characterStore`, and `worldStore`. Schema mismatches refuse to load with a clear reason instead of silently corrupting state. Storage is platform-aware: Electron writes through the existing `pa:save:*` IPC bridge to `electron-store`; browser/Capacitor falls back to `localStorage` under the `pa:save:` prefix.
   - **Developer-mode tagging** wired up (todo#21 follow-through): saves taken while `useDevStore.enabled` is true carry `meta.developer = true`. The Load UI surfaces a red `DEV` chip on those rows.
