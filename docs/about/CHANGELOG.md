@@ -6,6 +6,10 @@ All notable changes to Political Ascent are recorded here.
 
 ### Added
 
+- **Population focus pages** (`exp--population-focus`, todo#31). Population tab cards become clickable surfaces. Each card opens a `<GroupFocusModal />` with a two-column layout: mood (Happiness / Radicalism / Activism / Loyalty as bars, with a single-axis ideology compass strip showing the group's economic bias) on the left, demographics (size, income index, full tag chips, and a placeholder for group-targeted player actions like rallies and ad buys) on the right. Escape and backdrop click dismiss. New `data-testid` selectors: `population-grid`, `population-group-card`, `population-focus-modal`, `population-focus-mood`, `population-focus-demographics`. New Playwright case in `tests/e2e/population-focus.spec.ts`.
+
+### Added
+
 - **Congress panel — chamber tabs and member-detail modal** (`exp--congress-tabs`, todo#30). The chamber floor stops being a static stack of two charts.
   - **Three-state tab strip** at the top: Both Chambers / Senate / House. Senate-only and House-only views drop the second card so the focused chamber owns more vertical real estate. Tabs follow proper `role="tablist"` / `aria-selected` semantics.
   - **Hover preview** is now wired into the side rail. Mousing across seats lights up the rail without locking selection; clicking pins. The rail prefers hover and falls back to the last pinned selection so it never blanks out on mouseleave.
