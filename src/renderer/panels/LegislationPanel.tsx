@@ -13,6 +13,7 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Bar } from '../components/Bar';
 import { TermText } from '../components/tooltip';
+import { DraftLegislationScreen } from '../components/DraftLegislationScreen';
 import type { Bill, BillId, BillStage, BillTemplate } from '@/types';
 
 /**
@@ -46,8 +47,12 @@ export function LegislationPanel(): JSX.Element {
   const today = toEpochDays(currentDate);
 
   const [tab, setTab] = useState<'draft' | 'pending' | 'archive'>('pending');
+  // When non-null, the deep-customization modal is open with this
+  // template pre-loaded. Closing the modal clears it back to null.
+  const [draftTarget, setDraftTarget] = useState<BillTemplate | null>(null);
 
-  function draft(template: BillTemplate): void {
+  function quickDraft(template: BillTemplate): void {
+    // Power-user shortcut: skip the customization screen entirely.
     LegislationSystem.draftBill(template);
     pushToast({ message: `Drafted: ${template.title}`, severity: 'info', ttl: 3000 });
     setTab('pending');
@@ -122,8 +127,17 @@ export function LegislationPanel(): JSX.Element {
                   </span>
                   <span className="text-text-muted">~{totalDays} days to vote</span>
                 </div>
-                <Button variant="primary" size="sm" onClick={() => draft(t)}>
-                  Draft
+                <Button variant="primary" size="sm" onClick={() => setDraftTarget(t)} data-testid={`draft-customize-${t.id}`}>
+                  Customize &amp; Draft
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => quickDraft(t)}
+                  className="ml-2"
+                  data-testid={`draft-quick-${t.id}`}
+                >
+                  Quick draft
                 </Button>
               </Card>
             );
@@ -171,6 +185,17 @@ export function LegislationPanel(): JSX.Element {
             <p className="text-sm text-text-muted italic">No bills in the archive yet.</p>
           )}
         </div>
+      )}
+
+      {draftTarget && (
+        <DraftLegislationScreen
+          baseTemplate={draftTarget}
+          onSubmitted={() => {
+            setDraftTarget(null);
+            setTab('pending');
+          }}
+          onClose={() => setDraftTarget(null)}
+        />
       )}
     </div>
   );
