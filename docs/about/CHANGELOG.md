@@ -5,6 +5,14 @@ All notable changes to Political Ascent are recorded here.
 ## [Unreleased]
 
 ### Added
+- **Tooltips everywhere + nested z-stacking** (`exp--tooltips-everywhere`).
+  - **Glossary affordances on stat labels across panels** (todo#1). `EconomyPanel` rows for `GDP Growth`, `Unemployment`, `Inflation`, and `Deficit` are now wrapped in `<Term>`; `PopulationPanel` Bar labels for `Happiness`, `Radicalism`, and `Activism` are likewise tooltip-bearing; `SkillsPanel` branch headers route to `stat-charisma`/`stat-strategy`/`stat-connections`/`stat-integrity`/`stat-stamina`/`stat-wealth`, and skill descriptions render via `<TermText>`.
+  - **`Bar.label` and `Card.title`/`subtitle` accept `ReactNode`** so panels can pass a `<Term>`-wrapped element without losing the existing string-only call sites.
+  - **`<Term>` exposes `data-term="<id>"`** for stable e2e selectors.
+  - **Nested ExtendedTooltip stacking fix** (todo#1 second clause). When a tooltip body contains a glossary term whose own tooltip opens on hover, the inner tooltip must paint above its ancestor. `ExtendedTooltip` now reads a `TooltipDepthContext` (default 0), publishes `depth+1` to its trigger subtree and popup, and computes its `z-index` as `10000 + depth*10`. Outer tooltips sit at 10010, the first nested level at 10020, and so on — well above modals (`z-50`) and toasts (`z-40`).
+  - 3 new Playwright cases (`tests/e2e/tooltips-everywhere.spec.ts`) verifying the GDP tooltip in EconomyPanel, the Radicalism tooltip in PopulationPanel, and the Treasury topbar tooltip end-to-end.
+  - New glossary entries: `inflation`, `happiness`, `activism`.
+
 - **Polish pack** (`exp--polish-pack`).
   - **Global no-select chrome** (todo#4). `body, html` now carry `user-select: none` plus `-webkit-touch-callout: none` and `-webkit-tap-highlight-color: transparent` so accidental clicks no longer paint blue selection ranges across the dashboard, tooltips, or cards. Inputs, textareas, and `[contenteditable]` regions opt back in to text selection.
   - **Stat allocation polish** (todo#8). The character-creation Core Stats sliders no longer render the misaligned `pa-slider-ticks` border lines (they did not align to the integer snap points and were misleading). Each stat name is now wrapped in an `ExtendedTooltip` keyed to its glossary entry (`stat-charisma`, `stat-strategy`, `stat-connections`, `stat-integrity`, `stat-wealth`, `stat-stamina`) with a dotted-underline cursor-help affordance. The plain-text "Budget: N / 24–36" subtitle is replaced with a `StatBudget` meter — a labelled progress bar that flips tone (`under` muted-blue / `valid` gold / `over` red-striped) and exposes `data-tone` and `data-valid` attributes for testing.

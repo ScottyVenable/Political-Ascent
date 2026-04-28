@@ -1,6 +1,19 @@
 import { useMemo } from 'react';
 import { useWorldStore } from '@/store/worldStore';
 import { Card } from '../components/Card';
+import { Term } from '../components/tooltip';
+
+/**
+ * Map a Row label to its glossary term id. Keeps the label-to-term wiring
+ * declarative — adding a new economic indicator only requires extending
+ * this map plus an entry in `glossary.ts`.
+ */
+const ECON_TERMS: Record<string, string> = {
+  'GDP Growth': 'gdp',
+  Unemployment: 'unemployment',
+  Inflation: 'inflation',
+  Deficit: 'deficit',
+};
 
 /**
  * EconomyPanel — snapshot + sparkline of GDP/unemployment/inflation.
@@ -49,9 +62,18 @@ export function EconomyPanel(): JSX.Element {
 }
 
 function Row({ label, value }: { label: string; value: string }): JSX.Element {
+  // If we have a glossary term for this label, surface it as a hover
+  // affordance — players need to know what each indicator means.
+  const term = ECON_TERMS[label];
   return (
     <li className="flex justify-between py-1.5">
-      <span className="text-text-secondary">{label}</span>
+      {term ? (
+        <Term term={term}>
+          <span className="text-text-secondary">{label}</span>
+        </Term>
+      ) : (
+        <span className="text-text-secondary">{label}</span>
+      )}
       <span className="text-text-primary font-mono">{value}</span>
     </li>
   );

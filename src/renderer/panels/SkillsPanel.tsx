@@ -3,6 +3,7 @@ import { useUIStore } from '@/store/uiStore';
 import { SkillSystem } from '@/systems/SkillSystem';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { Term, TermText } from '../components/tooltip';
 
 const BRANCHES = ['charisma', 'strategy', 'connections', 'integrity', 'stamina', 'wealth'] as const;
 
@@ -33,7 +34,18 @@ export function SkillsPanel(): JSX.Element {
       </div>
       <div className="grid md:grid-cols-3 gap-3">
         {BRANCHES.map((branch) => (
-          <Card key={branch} title={branch[0].toUpperCase() + branch.slice(1)} accent="blue">
+          <Card
+            key={branch}
+            title={
+              // Branch headers double as glossary affordances — every
+              // branch is a stat with a tooltip entry (`stat-charisma`,
+              // etc.). The dotted underline is the standard cue.
+              <Term term={`stat-${branch}`}>
+                <span>{branch[0].toUpperCase() + branch.slice(1)}</span>
+              </Term>
+            }
+            accent="blue"
+          >
             <ul className="space-y-2">
               {all
                 .filter((s) => s.branch === branch)
@@ -48,7 +60,12 @@ export function SkillsPanel(): JSX.Element {
                         </span>
                         <span className="text-xs text-text-muted">Lv {s.requiredLevel}</span>
                       </div>
-                      <p className="text-xs text-text-secondary">{s.description}</p>
+                      {/* Skill descriptions get auto-glossary linking
+                          so terms like "Political Capital" or "PC"
+                          surface their tooltips inline. */}
+                      <p className="text-xs text-text-secondary">
+                        <TermText text={s.description} />
+                      </p>
                       <div className="mt-1">
                         {isUnlocked ? (
                           <span className="text-xs text-status-success">✓ Unlocked</span>

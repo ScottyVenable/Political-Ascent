@@ -473,6 +473,57 @@ registerTooltip(
     aliases: ['deficit'],
   },
   {
+    id: 'inflation',
+    title: 'Inflation',
+    subtitle: 'Economy',
+    summary: 'How fast prices are rising year over year.',
+    sections: [
+      {
+        kind: 'paragraph',
+        text:
+          'Inflation erodes real wages and hits low-income cohorts hardest. ' +
+          'High inflation drags incumbent approval; chronic inflation lifts ' +
+          '[term:radicalism]radicalism[/].',
+      },
+    ],
+    seeAlso: ['unemployment', 'radicalism'],
+    aliases: ['inflation'],
+  },
+  {
+    id: 'happiness',
+    title: 'Happiness',
+    subtitle: 'Cohort metric',
+    summary: 'How content a population group is with the status quo.',
+    sections: [
+      {
+        kind: 'paragraph',
+        text:
+          'Happiness is a 0\u2013100 mood index per [term:cohort]cohort[/]. ' +
+          'Low happiness raises [term:radicalism]radicalism[/] over time and ' +
+          'weakens [term:turnout]turnout[/] for incumbent allies.',
+      },
+    ],
+    seeAlso: ['cohort', 'radicalism', 'approval'],
+    aliases: ['happiness'],
+  },
+  {
+    id: 'activism',
+    title: 'Activism',
+    subtitle: 'Cohort metric',
+    summary: 'Willingness of a cohort to mobilise for political action.',
+    sections: [
+      {
+        kind: 'paragraph',
+        text:
+          'High activism amplifies a cohort\u2019s effect on every political ' +
+          'event \u2014 they show up to rallies, donate, and turn out to ' +
+          'vote. Movements can\u2019t scale without it.',
+      },
+    ],
+    seeAlso: ['turnout', 'radicalism'],
+    aliases: ['activism'],
+  },
+  {
     id: 'scandal',
     title: 'Scandal',
     subtitle: 'Event',

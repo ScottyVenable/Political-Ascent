@@ -21,8 +21,10 @@
  */
 import {
   cloneElement,
+  createContext,
   isValidElement,
   useCallback,
+  useContext,
   useEffect,
   useId,
   useMemo,
@@ -35,6 +37,29 @@ import {
 import { createPortal } from 'react-dom';
 import { getTooltip, type ModifierRow, type TooltipContent, type TooltipSection } from './registry';
 import { Icon, type IconName } from '../Icon';
+
+// ────────────────────────────────────────────────────────────────
+// NESTED Z-INDEX SUPPORT
+// ────────────────────────────────────────────────────────────────
+// When a tooltip's content (or its trigger's surrounding card) itself
+// contains another ExtendedTooltip — typically a `<TermText>` inside a
+// card description that the outer card has its own tooltip for — the
+// inner tooltip must visually stack above the outer one. Otherwise the
+// outer card's hover popup paints on top of the term tooltip and the
+// player can't read it. (See docs/todo.md item 1.)
+//
+// We solve this with a depth context: every ExtendedTooltip increments
+// the depth for both its trigger subtree and its rendered popup. The
+// rendered popup's z-index then bakes the depth in: deeper nests sit
+// higher. The base z stays at 10000 (above modals at z-50, toasts at
+// z-40), and each level adds 10 — well within the 32-bit z-index range
+// while leaving headroom between layers.
+
+/** Internal: how deep we are in the tooltip stack. 0 = outermost. */
+const TooltipDepthContext = createContext<number>(0);
+/** Per-level z-index increment. */
+const TOOLTIP_BASE_Z = 10000;
+const TOOLTIP_DEPTH_STEP = 10;
 
 // ────────────────────────────────────────────────────────────────
 // PUBLIC API
@@ -74,6 +99,13 @@ export interface ExtendedTooltipProps {
  */
 export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
   const { term, content, openDelay = 350, lockHoldMs = 1200, children } = props;
+
+  // Read parent depth so a nested tooltip stacks above its ancestor.
+  // The depth we publish is parentDepth+1; the popup z-index is
+  // computed from this same value so visuals and stacking stay in sync.
+  const parentDepth = useContext(TooltipDepthContext);
+  const ownDepth = parentDepth + 1;
+  const tooltipZ = TOOLTIP_BASE_Z + ownDepth * TOOLTIP_DEPTH_STEP;
 
   const [open, setOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -268,7 +300,7 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
   } as Record<string, unknown>);
 
   return (
-    <>
+    <TooltipDepthContext.Provider value={ownDepth}>
       {trigger}
       {open && resolved && coords && typeof document !== 'undefined' &&
         createPortal(
@@ -279,10 +311,11 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
             pinned={pinned}
             holdProgress={holdProgress}
             onClose={close}
+            zIndex={tooltipZ}
           />,
           document.body,
         )}
-    </>
+    </TooltipDepthContext.Provider>
   );
 }
 
@@ -298,10 +331,16 @@ interface TooltipCardProps {
   /** 0–1 hover-hold progress; renders the corner arc when 0 < p < 1. */
   holdProgress: number;
   onClose: () => void;
+  /**
+   * Computed z-index for this popup. Outermost tooltip = 10010, each
+   * nested level adds 10. Lets nested term tooltips paint over the
+   * card-description popup that contained the term in the first place.
+   */
+  zIndex: number;
 }
 
 function TooltipCard(props: TooltipCardProps): JSX.Element {
-  const { id, content, coords, pinned, holdProgress, onClose } = props;
+  const { id, content, coords, pinned, holdProgress, onClose, zIndex } = props;
   const ref = useRef<HTMLDivElement | null>(null);
   const [adjusted, setAdjusted] = useState<CSSProperties | null>(null);
 
@@ -338,7 +377,7 @@ function TooltipCard(props: TooltipCardProps): JSX.Element {
         position: 'fixed',
         top: adjusted?.top ?? coords.top,
         left: adjusted?.left ?? coords.left,
-        zIndex: 10000,
+        zIndex,
         maxWidth: 360,
         // Pinned tooltips become interactive; unpinned ones are pure
         // hover surfaces and should never block clicks beneath them.
@@ -567,6 +606,7 @@ export function Term({ term, children }: TermProps): JSX.Element {
       <span
         tabIndex={0}
         role="button"
+        data-term={term}
         className="underline decoration-dotted decoration-accent-gold/60 underline-offset-2 cursor-help text-text-primary"
       >
         {children}
