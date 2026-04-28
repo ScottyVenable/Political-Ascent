@@ -4,6 +4,9 @@ All notable changes to Political Ascent are recorded here.
 
 ## [Unreleased]
 
+### Added
+- **Dashboard interactivity** (`exp--dashboard-interactivity`, todo#11). The four KPI tiles on the dashboard (Approval / GDP Growth / Unemployment / Deficit) are now real `<button>` elements that navigate to the panel where the underlying number lives. Each value is colour-coded by tone: positive numbers render in `text-status-success` (green), negatives in `text-status-danger` (red), and the Approval tile uses an explicit red→neutral→green ramp. Hover state lifts the border to `accent-gold/60` for affordance; focus ring uses the standard gold accent so keyboard navigation matches the rest of the chrome. New `data-testid` selectors (`kpi-approval`, `kpi-gdp`, `kpi-unemployment`, `kpi-deficit`). 3 new Playwright cases in `tests/e2e/dashboard-interactivity.spec.ts`.
+
 ### Fixed
 - **Events firing multiple times after resolution** (`exp--events-bugfix`, todo#7).
   - Non-repeatable events are now gated by a persisted `firedEventIds: string[]` field on `WorldState` (replaces the in-memory `firedOnce` Set inside `EventEngine`). A save/load round-trip preserves the firing record, so one-shot events cannot re-trigger after the player loads.

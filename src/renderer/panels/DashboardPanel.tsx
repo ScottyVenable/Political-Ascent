@@ -146,7 +146,13 @@ export function DashboardPanel(): JSX.Element {
     // Vertical stack: KPI strip → main two-column → bottom row.
     // Gap-4 matches the surrounding panel padding in the shell.
     <div className="flex flex-col gap-4">
-      {/* ───────────────── KPI STRIP ───────────────── */}
+      {/* ───────────────── KPI STRIP ─────────────────
+          Each tile is a button that navigates to the panel where the
+          underlying number lives. The colour of the value follows the
+          tone resolver below: positive→success, negative→danger,
+          neutral→primary text. The Approval tile uses a continuous
+          red→amber→green ramp so the player gets a quick visual read
+          of cohort sentiment without parsing the digits. */}
       <section
         className="grid grid-cols-2 md:grid-cols-4 gap-3"
         aria-label="Key indicators"
@@ -155,6 +161,10 @@ export function DashboardPanel(): JSX.Element {
           label="Approval"
           value={`${avgHappiness}`}
           trend={avgHappiness >= 55 ? 'up' : avgHappiness < 40 ? 'down' : 'flat'}
+          tone={approvalTone(avgHappiness)}
+          onClick={() => setActivePanel('population')}
+          testId="kpi-approval"
+          ariaLabel={`Approval ${avgHappiness}. Open Population panel.`}
         >
           <Bar
             value={avgHappiness}
@@ -172,6 +182,16 @@ export function DashboardPanel(): JSX.Element {
           label="GDP Growth"
           value={`${economy.gdpGrowth.toFixed(2)}%`}
           trend={economy.gdpGrowth >= 1 ? 'up' : economy.gdpGrowth < 0 ? 'down' : 'flat'}
+          tone={
+            economy.gdpGrowth > 0
+              ? 'positive'
+              : economy.gdpGrowth < 0
+                ? 'negative'
+                : 'neutral'
+          }
+          onClick={() => setActivePanel('economy')}
+          testId="kpi-gdp"
+          ariaLabel={`GDP Growth ${economy.gdpGrowth.toFixed(2)} percent. Open Economy panel.`}
         />
         <Kpi
           label="Unemployment"
@@ -183,11 +203,25 @@ export function DashboardPanel(): JSX.Element {
                 ? 'down'
                 : 'flat'
           }
+          tone={
+            economy.unemployment <= 4
+              ? 'positive'
+              : economy.unemployment > 6
+                ? 'negative'
+                : 'neutral'
+          }
+          onClick={() => setActivePanel('economy')}
+          testId="kpi-unemployment"
+          ariaLabel={`Unemployment ${economy.unemployment.toFixed(1)} percent. Open Economy panel.`}
         />
         <Kpi
           label="Deficit"
           value={formatBillionsUSD(economy.deficit)}
           trend={economy.deficit > 0 ? 'down' : 'up'}
+          tone={economy.deficit > 0 ? 'negative' : 'positive'}
+          onClick={() => setActivePanel('economy')}
+          testId="kpi-deficit"
+          ariaLabel={`Deficit ${formatBillionsUSD(economy.deficit)}. Open Economy panel.`}
         />
       </section>
 
@@ -247,19 +281,55 @@ const TREND_GLYPH: Record<Trend, string> = {
   flat: '—',
 };
 
+/**
+ * Tone for a KPI value. Drives the colour of the headline number.
+ * - `positive`: green — a "good" number for this stat.
+ * - `negative`: red — a "bad" number for this stat.
+ * - `neutral`: default text colour.
+ */
+type Tone = 'positive' | 'negative' | 'neutral';
+
+const TONE_CLS: Record<Tone, string> = {
+  positive: 'text-status-success',
+  negative: 'text-status-danger',
+  neutral: 'text-text-primary',
+};
+
+/**
+ * Approval tone resolver. Treats approval as a continuous red→green ramp
+ * around mid-50s. Below 40 the player is in danger; 40-55 is neutral;
+ * 55+ is healthy.
+ */
+function approvalTone(value: number): Tone {
+  if (value < 40) return 'negative';
+  if (value >= 55) return 'positive';
+  return 'neutral';
+}
+
 function Kpi({
   label,
   value,
   trend,
+  tone = 'neutral',
+  onClick,
+  testId,
+  ariaLabel,
   children,
 }: {
   label: string;
   value: string;
   trend: Trend;
+  tone?: Tone;
+  onClick?: () => void;
+  testId?: string;
+  ariaLabel?: string;
   children?: React.ReactNode;
 }): JSX.Element {
-  return (
-    <div className="bg-bg-secondary border border-rule rounded-sm p-3">
+  // The whole tile is interactive when an onClick is provided. We render
+  // a real <button> rather than slap onClick on a <div> so keyboard
+  // navigation, focus rings, and screen-reader semantics come for free.
+  const inner = (
+    <>
       <div className="flex items-center justify-between">
         <span className="font-mono text-label uppercase tracking-widest text-text-muted">
           {label}
@@ -271,10 +341,39 @@ function Kpi({
           {TREND_GLYPH[trend]}
         </span>
       </div>
-      <div className="font-mono text-data-lg text-text-primary tabular-nums mt-1 leading-none">
+      <div
+        className={`font-mono text-data-lg tabular-nums mt-1 leading-none ${TONE_CLS[tone]}`}
+      >
         {value}
       </div>
       {children}
+    </>
+  );
+
+  const baseCls =
+    'bg-bg-secondary border border-rule rounded-sm p-3 text-left ' +
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-gold';
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={ariaLabel ?? label}
+        data-testid={testId}
+        className={
+          baseCls +
+          ' transition-colors duration-instant hover:border-accent-gold/60 hover:bg-bg-tertiary/40 cursor-pointer'
+        }
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <div data-testid={testId} className={baseCls}>
+      {inner}
     </div>
   );
 }
