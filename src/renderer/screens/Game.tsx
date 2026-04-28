@@ -23,6 +23,7 @@ import { SkillsPanel } from '../panels/SkillsPanel';
 import { CharacterPanel } from '../panels/CharacterPanel';
 import { GlossaryPanel } from '../panels/GlossaryPanel';
 import { TimelinePanel } from '../panels/TimelinePanel';
+import { PatchNotesPanel } from '../panels/PatchNotesPanel';
 
 /**
  * Game shell — holds the game-world layout.
@@ -112,6 +113,7 @@ export function Game(): JSX.Element {
           {activePanel === 'character' && <CharacterPanel />}
           {activePanel === 'glossary' && <GlossaryPanel />}
           {activePanel === 'timeline' && <TimelinePanel />}
+          {activePanel === 'patch-notes' && <PatchNotesPanel />}
         </main>
       </div>
       <BottomBar />

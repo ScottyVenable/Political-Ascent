@@ -245,6 +245,15 @@ const ICONS = {
       <path d="M8 11V7a4 4 0 0 1 8 0v4" />
     </>
   ),
+  // Tabler "news" — folded newspaper. Used by the Patch Notes panel.
+  news: (
+    <>
+      <path d="M16 6h3a1 1 0 0 1 1 1v11a2 2 0 0 1 -4 0V5a1 1 0 0 0 -1 -1H5a1 1 0 0 0 -1 1v13a2 2 0 0 0 2 2h11" />
+      <path d="M8 8h4" />
+      <path d="M8 12h4" />
+      <path d="M8 16h4" />
+    </>
+  ),
 } as const satisfies Record<string, IconPath>;
 
 /** Public union of every valid icon id. Generated from the registry. */

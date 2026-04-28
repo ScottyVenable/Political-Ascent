@@ -36,6 +36,7 @@ const PANELS: readonly PanelEntry[] = [
   { id: 'character', label: 'Character', icon: 'character' },
   { id: 'glossary', label: 'Glossary', icon: 'book' },
   { id: 'timeline', label: 'Timeline', icon: 'clock' },
+  { id: 'patch-notes', label: 'Patch Notes', icon: 'news' },
 ];
 
 function SidebarImpl(): JSX.Element {

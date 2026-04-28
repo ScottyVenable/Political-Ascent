@@ -13,7 +13,8 @@ export type PanelId =
   | 'skills'
   | 'character'
   | 'glossary'
-  | 'timeline';
+  | 'timeline'
+  | 'patch-notes';
 
 export interface ModalState {
   id: string;
