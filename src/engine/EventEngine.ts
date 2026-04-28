@@ -29,8 +29,21 @@ export interface EventEngineAPI {
 
 class EventEngineImpl implements EventEngineAPI {
   private registry = new Map<string, GameEventDefinition>();
-  private firedOnce = new Set<string>();
+  /**
+   * Instance ids that are currently being resolved. Provides idempotency
+   * against rapid double-clicks on an option button: the second invocation
+   * sees the id in this set and bails before paying costs or applying effects
+   * a second time. Cleared after the resolution completes.
+   */
+  private resolving = new Set<string>();
   private resolveCounter = 0;
+  /**
+   * Default cooldown (in weeks) for repeatable events that omit `cooldownWeeks`.
+   * Four weeks (~one month) prevents the same crisis from firing day after day
+   * while its trigger conditions remain true; it gives the player time to feel
+   * the consequences before the next instance.
+   */
+  private static readonly DEFAULT_COOLDOWN_WEEKS = 4;
 
   registerEvents(defs: readonly GameEventDefinition[]): void {
     for (const d of defs) this.registry.set(d.id, d);
@@ -43,27 +56,46 @@ class EventEngineImpl implements EventEngineAPI {
 
   checkDailyTriggers(): void {
     const world = useWorldStore.getState();
-    const rng = new SeededRNG(world.seed + useGameStore.getState().week);
+    const game = useGameStore.getState();
+    const rng = new SeededRNG(world.seed + game.week);
 
     for (const def of this.registry.values()) {
-      if (!def.isRepeatable && this.firedOnce.has(def.id)) continue;
+      // Non-repeatable: skip if already fired (persistent set in worldStore so
+      // save/load round-trips do not re-trigger one-shot events).
+      if (!def.isRepeatable && world.firedEventIds.includes(def.id)) continue;
+      // Avoid double-queuing while an instance of this event is on screen.
       if (world.activeEvents.some((e) => e.eventId === def.id)) continue;
+      // Per-event cooldown: only relevant for repeatable events. Compares the
+      // current week to the week stamped at last fire.
+      if (def.isRepeatable) {
+        const lastFired = world.eventCooldowns[def.id];
+        const cooldown = def.cooldownWeeks ?? EventEngineImpl.DEFAULT_COOLDOWN_WEEKS;
+        if (lastFired !== undefined && game.week - lastFired < cooldown) continue;
+      }
       if (!this.evaluateConditions(def.triggerConditions, rng)) continue;
 
       const instance: ActiveEvent = {
         instanceId: makeId('evt', rng),
         eventId: def.id,
-        queuedAt: `${useGameStore.getState().currentDate.year}-${useGameStore
-          .getState()
-          .currentDate.month}-${useGameStore.getState().currentDate.day}`,
+        queuedAt: `${game.currentDate.year}-${game.currentDate.month}-${game.currentDate.day}`,
       };
       world.queueEvent(instance);
-      if (!def.isRepeatable) this.firedOnce.add(def.id);
+      // Stamp cooldown the moment the event queues. This way a flapping
+      // condition (e.g. unemployment briefly crossing a threshold during a
+      // tick) cannot enqueue the same event twice in the same week.
+      world.stampEventCooldown(def.id, game.week);
+      if (!def.isRepeatable) world.markEventFired(def.id);
       log.debug('event queued', def.id);
     }
   }
 
   resolveOption(eventInstanceId: string, optionId: string): void {
+    // Idempotency guard: if a resolution for this instance is already in
+    // flight (e.g. the player double-clicked the option button before the
+    // dismissEvent state update propagated), bail. Without this guard the
+    // costs would be paid twice and effects applied twice.
+    if (this.resolving.has(eventInstanceId)) return;
+
     const world = useWorldStore.getState();
     const active = world.activeEvents.find((e) => e.instanceId === eventInstanceId);
     if (!active) return;
@@ -72,25 +104,30 @@ class EventEngineImpl implements EventEngineAPI {
     const option = def.options.find((o: EventOption) => o.id === optionId);
     if (!option) return;
 
-    // Pay costs.
-    if (option.costs.pc) useGameStore.getState().addPoliticalCapital(-option.costs.pc);
-    if (option.costs.ap) useGameStore.getState().spendAP(option.costs.ap);
+    this.resolving.add(eventInstanceId);
+    try {
+      // Pay costs.
+      if (option.costs.pc) useGameStore.getState().addPoliticalCapital(-option.costs.pc);
+      if (option.costs.ap) useGameStore.getState().spendAP(option.costs.ap);
 
-    // Select weighted outcome deterministically from world seed + event chain counter.
-    this.resolveCounter += 1;
-    const rng = new SeededRNG(world.seed + this.resolveCounter * 97);
-    const outcome: WeightedOutcome = weightedRandom(option.outcomes, rng);
-    applyEffects(outcome.effects);
+      // Select weighted outcome deterministically from world seed + event chain counter.
+      this.resolveCounter += 1;
+      const rng = new SeededRNG(world.seed + this.resolveCounter * 97);
+      const outcome: WeightedOutcome = weightedRandom(option.outcomes, rng);
+      applyEffects(outcome.effects);
 
-    world.pushNews({
-      id: makeId('news', rng),
-      date: useGameStore.getState().currentDate,
-      headline: def.title,
-      body: outcome.flavor,
-      severity: def.type === 'crisis' ? 'warning' : 'info',
-    });
+      world.pushNews({
+        id: makeId('news', rng),
+        date: useGameStore.getState().currentDate,
+        headline: def.title,
+        body: outcome.flavor,
+        severity: def.type === 'crisis' ? 'warning' : 'info',
+      });
 
-    world.dismissEvent(eventInstanceId);
+      world.dismissEvent(eventInstanceId);
+    } finally {
+      this.resolving.delete(eventInstanceId);
+    }
   }
 
   private evaluateConditions(conditions: readonly TriggerCondition[], rng: SeededRNG): boolean {

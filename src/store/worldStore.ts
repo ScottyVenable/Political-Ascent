@@ -20,6 +20,15 @@ interface WorldStoreActions {
   updateLegislator: (id: string, patch: Partial<Legislator>) => void;
   queueEvent: (event: ActiveEvent) => void;
   dismissEvent: (instanceId: string) => void;
+  /**
+   * Mark a non-repeatable event id as having fired. Idempotent. Persisted via
+   * worldStore so save/load preserves the firing record.
+   */
+  markEventFired: (eventId: string) => void;
+  /**
+   * Stamp an event’s last-fired week. Used for repeatable-event cooldowns.
+   */
+  stampEventCooldown: (eventId: string, week: number) => void;
   addBill: (bill: Bill) => void;
   updateBill: (id: string, patch: Partial<Bill>) => void;
   movePending: (id: string, destination: 'passed' | 'failed') => void;
@@ -50,6 +59,8 @@ const EMPTY: WorldState = {
   relationships: {},
   leverage: {},
   activeEvents: [],
+  firedEventIds: [],
+  eventCooldowns: {},
   activeQuests: [],
   pendingLegislation: [],
   passedLegislation: [],
@@ -102,6 +113,16 @@ export const useWorldStore = create<Store>()(
     dismissEvent: (instanceId) =>
       set((s) => {
         s.activeEvents = s.activeEvents.filter((e) => e.instanceId !== instanceId);
+      }),
+
+    markEventFired: (eventId) =>
+      set((s) => {
+        if (!s.firedEventIds.includes(eventId)) s.firedEventIds.push(eventId);
+      }),
+
+    stampEventCooldown: (eventId, week) =>
+      set((s) => {
+        s.eventCooldowns[eventId] = week;
       }),
 
     addBill: (bill) =>

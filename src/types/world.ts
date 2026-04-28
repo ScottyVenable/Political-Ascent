@@ -74,6 +74,18 @@ export interface WorldState {
   relationships: Record<string, number>;
   leverage: Record<string, number>;
   activeEvents: ActiveEvent[];
+  /**
+   * Event ids that have fired and are non-repeatable. Persisted with the world
+   * so a save/load round-trip does not re-trigger one-shot events.
+   * @see EventEngine
+   */
+  firedEventIds: string[];
+  /**
+   * Map of event id → week index (game week) at which the event most recently
+   * fired. Used to enforce per-event cooldowns for repeatable events so the
+   * same crisis cannot trigger every single day while its conditions hold.
+   */
+  eventCooldowns: Record<string, number>;
   activeQuests: QuestInstance[];
   pendingLegislation: Bill[];
   passedLegislation: Bill[];

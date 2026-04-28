@@ -4,6 +4,13 @@ All notable changes to Political Ascent are recorded here.
 
 ## [Unreleased]
 
+### Fixed
+- **Events firing multiple times after resolution** (`exp--events-bugfix`, todo#7).
+  - Non-repeatable events are now gated by a persisted `firedEventIds: string[]` field on `WorldState` (replaces the in-memory `firedOnce` Set inside `EventEngine`). A save/load round-trip preserves the firing record, so one-shot events cannot re-trigger after the player loads.
+  - Repeatable events now respect a per-event cooldown. `GameEventDefinition.cooldownWeeks` (defaults to 4) gates re-firing; `WorldState.eventCooldowns: Record<string, number>` stores the week of the most recent fire. The cooldown is stamped at queue time so a flapping condition cannot enqueue twice in one week.
+  - `EventEngine.resolveOption` is now idempotent against rapid double-clicks via an in-flight `resolving` set; a second call with the same instance id while the first is still applying effects is a no-op.
+  - 4 new Vitest cases in `src/engine/EventEngine.test.ts`.
+
 ### Added
 - **Tooltips everywhere + nested z-stacking** (`exp--tooltips-everywhere`).
   - **Glossary affordances on stat labels across panels** (todo#1). `EconomyPanel` rows for `GDP Growth`, `Unemployment`, `Inflation`, and `Deficit` are now wrapped in `<Term>`; `PopulationPanel` Bar labels for `Happiness`, `Radicalism`, and `Activism` are likewise tooltip-bearing; `SkillsPanel` branch headers route to `stat-charisma`/`stat-strategy`/`stat-connections`/`stat-integrity`/`stat-stamina`/`stat-wealth`, and skill descriptions render via `<TermText>`.
