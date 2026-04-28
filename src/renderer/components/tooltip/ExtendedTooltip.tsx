@@ -38,6 +38,7 @@ import { createPortal } from 'react-dom';
 import { getTooltip, type ModifierRow, type TooltipContent, type TooltipSection } from './registry';
 import { findTermMatches } from './registry';
 import { Icon, type IconName } from '../Icon';
+import { useSettingsStore } from '@/store/settingsStore';
 
 // ────────────────────────────────────────────────────────────────
 // PIN COORDINATOR (todo#29)
@@ -111,9 +112,8 @@ export interface ExtendedTooltipProps {
    * How long the player must hover before the tooltip auto-locks (in
    * ms). A radial progress arc fills during the hold. Set to 0 to
    * disable hold-to-lock; the tooltip then only locks on Shift-leave
-   * (legacy behaviour). Default 3000ms — bumped from 1200ms per
-   * docs/todo.md item 26 so the player has a full three-second
-   * window before a tooltip auto-pins.
+   * (legacy behaviour). When omitted, falls back to the player's
+   * `tooltipPinMs` setting (default 2000ms). (todo#49)
    */
   lockHoldMs?: number;
   /**
@@ -133,7 +133,14 @@ export interface ExtendedTooltipProps {
  *   </ExtendedTooltip>
  */
 export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
-  const { term, content, openDelay = 350, lockHoldMs = 3000, children } = props;
+  const { term, content, openDelay = 350, lockHoldMs: lockHoldMsProp, children } = props;
+
+  // Honour the player's tooltip-pin-duration setting (todo#49).
+  // If the caller explicitly passes `lockHoldMs`, that value wins;
+  // otherwise we read from the settings store so all tooltips respect
+  // the player's preference without every call site needing updating.
+  const settingsPin = useSettingsStore((s) => s.gameplay.tooltipPinMs);
+  const lockHoldMs = lockHoldMsProp ?? settingsPin;
 
   // Read parent depth so a nested tooltip stacks above its ancestor.
   // The depth we publish is parentDepth+1; the popup z-index is
@@ -319,12 +326,28 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
 
   // Pin while shift is held during mouse-leave: stays open. Otherwise
   // close (and abort any in-flight hold animation).
+  //
+  // todo#57: if the mouse moved into a [role="tooltip"] card (i.e. the
+  // player slid the cursor from the trigger into the tooltip panel), do
+  // NOT close the tooltip. The card's own onMouseLeave will trigger
+  // close when the cursor actually exits the tooltip area.
   const handleLeave = useCallback(
     (e: React.MouseEvent | React.FocusEvent) => {
       const shift = (e as React.MouseEvent).shiftKey;
       if (shift) {
         cancelHold();
         setPinned(true);
+        return;
+      }
+      // Detect mouse-to-tooltip transition: if relatedTarget is inside
+      // a tooltip card, the cursor hasn't truly left the interaction
+      // zone — just moved from trigger into the tooltip panel.
+      const nativeEvt = e.nativeEvent as MouseEvent;
+      const relatedTarget = nativeEvt.relatedTarget as Element | null;
+      if (relatedTarget && relatedTarget.closest?.('[role="tooltip"]')) {
+        // Cancel the hold-arc animation (cursor is now over the card,
+        // not pressing on the trigger) but keep the tooltip visible.
+        cancelHold();
         return;
       }
       if (!pinned) {
@@ -412,6 +435,14 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
             pinned={pinned}
             holdProgress={holdProgress}
             onClose={close}
+            onLeave={(relatedTarget) => {
+              // Close the tooltip when the cursor leaves the card, UNLESS it
+              // moved back onto the trigger (the trigger's onMouseEnter will
+              // re-open it) or into another tooltip (nested stack). (#57)
+              if (triggerRef.current?.contains(relatedTarget ?? null)) return;
+              if (relatedTarget && relatedTarget.closest?.('[role="tooltip"]')) return;
+              if (!pinned) close();
+            }}
             zIndex={tooltipZ}
           />,
           document.body,
@@ -433,6 +464,12 @@ interface TooltipCardProps {
   holdProgress: number;
   onClose: () => void;
   /**
+   * Called when the mouse leaves the tooltip card. The `relatedTarget`
+   * is the element the cursor moved to. The parent uses this to decide
+   * whether to close the tooltip (todo#57).
+   */
+  onLeave?: (relatedTarget: Element | null) => void;
+  /**
    * Computed z-index for this popup. Outermost tooltip = 10010, each
    * nested level adds 10. Lets nested term tooltips paint over the
    * card-description popup that contained the term in the first place.
@@ -441,7 +478,7 @@ interface TooltipCardProps {
 }
 
 function TooltipCard(props: TooltipCardProps): JSX.Element {
-  const { id, content, coords, pinned, holdProgress, onClose, zIndex } = props;
+  const { id, content, coords, pinned, holdProgress, onClose, onLeave, zIndex } = props;
   const ref = useRef<HTMLDivElement | null>(null);
   const [adjusted, setAdjusted] = useState<CSSProperties | null>(null);
 
@@ -474,15 +511,20 @@ function TooltipCard(props: TooltipCardProps): JSX.Element {
         // the window-level outside-click handler that would close us.
         if (pinned) e.stopPropagation();
       }}
+      onMouseLeave={(e) => {
+        // Notify the parent ExtendedTooltip that the cursor left the
+        // card, so it can decide whether to close (todo#57).
+        onLeave?.(e.relatedTarget as Element | null);
+      }}
       style={{
         position: 'fixed',
         top: adjusted?.top ?? coords.top,
         left: adjusted?.left ?? coords.left,
         zIndex,
         maxWidth: 360,
-        // Pinned tooltips become interactive; unpinned ones are pure
-        // hover surfaces and should never block clicks beneath them.
-        pointerEvents: pinned ? 'auto' : 'none',
+        // Always interactive so the player can hover into the tooltip
+        // from the trigger without it closing. (#57)
+        pointerEvents: 'auto',
       }}
       className="bg-bg-secondary border border-rule-strong rounded-sm shadow-glow-gold animate-tooltip-enter"
     >
@@ -581,7 +623,11 @@ function HoldRing({ progress }: { progress: number }): JSX.Element {
         strokeDasharray={c}
         strokeDashoffset={offset}
         transform="rotate(-90 10 10)"
-        style={{ transition: 'stroke-dashoffset 60ms linear' }}
+        // No CSS transition — the rAF loop already drives updates at
+        // ~60Hz so the arc fills smoothly without lag. A CSS transition
+        // here caused the visual to chase the actual value and appear
+        // "stuck" because new frames arrived faster than the transition
+        // completed. (todo#59)
       />
     </svg>
   );

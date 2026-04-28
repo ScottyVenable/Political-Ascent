@@ -38,6 +38,30 @@ export function Settings(): JSX.Element {
           <Toggle label="On low AP" value={settings.gameplay.autoPauseOnLowAP} onChange={(v) => updateGameplay({ autoPauseOnLowAP: v })} />
           <Toggle label="On negative poll" value={settings.gameplay.autoPauseOnNegativePoll} onChange={(v) => updateGameplay({ autoPauseOnNegativePoll: v })} />
         </Card>
+        {/* Tooltip behaviour (todo#49) */}
+        <Card title="Tooltips">
+          {/* How long the player must hover before a tooltip auto-pins.
+              Range 0.5\u20135 seconds (stored as ms). The slider snaps to
+              250ms increments for readability. */}
+          <div className="space-y-1">
+            <div className="flex justify-between items-baseline">
+              <span className="text-sm text-text-secondary">Pin hold duration</span>
+              <span className="font-mono text-sm text-accent-gold tabular-nums">
+                {(settings.gameplay.tooltipPinMs / 1000).toFixed(1)}s
+              </span>
+            </div>
+            <Slider
+              label=""
+              min={500}
+              max={5000}
+              value={settings.gameplay.tooltipPinMs}
+              onChange={(v) => updateGameplay({ tooltipPinMs: Math.round(v / 250) * 250 })}
+            />
+            <p className="font-mono text-[0.625rem] text-text-muted">
+              Hold cursor over any highlighted term for this long to pin the tooltip open.
+            </p>
+          </div>
+        </Card>
         <Card title="Display">
           <Slider
             label="Font scale"
