@@ -122,13 +122,55 @@ test.describe('mobile portrait', () => {
     const footer = page.locator('footer');
     await expect(footer).toBeVisible();
 
-    const pause = footer.getByRole('button', { name: /pause/i });
-    const fast = footer.getByRole('button', { name: /^fast$/i });
+    const pause = footer.getByRole('radio', { name: /pause/i });
+    const fast = footer.getByRole('radio', { name: /^fast/i });
     await expect(pause).toBeVisible();
     await expect(fast).toBeVisible();
 
     // The week readout text must be present (might wrap but must not be
     // hidden behind the speed-button column).
     await expect(footer.getByText(/^WEEK\s+\d+/)).toBeVisible();
+  });
+
+  test('new panels (population focus, economy detail, timeline filters, skills) layout cleanly in portrait', async ({ page }) => {
+    // Smoke-test that the recently-added panels (PR #76–#79) do not
+    // overflow horizontally and their primary controls stay tappable
+    // on a Pixel-class portrait viewport.
+    await goToGame(page);
+
+    async function expectNoHOverflow(testid: string): Promise<void> {
+      const ok = await page.evaluate((id) => {
+        const main = document.querySelector('main');
+        if (!main) return false;
+        return main.scrollWidth <= main.clientWidth + 1;
+      }, testid);
+      expect(ok).toBe(true);
+    }
+
+    // Open the drawer and visit each panel via the sidebar button.
+    async function openPanel(label: RegExp): Promise<void> {
+      await page.locator('[data-testid="topbar-menu-button"]').click();
+      await page
+        .locator('[data-testid="sidebar-drawer"]')
+        .getByRole('button', { name: label })
+        .click();
+      await page.waitForTimeout(200);
+    }
+
+    await openPanel(/^population$/i);
+    await expect(page.getByTestId('population-grid')).toBeVisible();
+    await expectNoHOverflow('population-grid');
+
+    await openPanel(/^economy$/i);
+    await expect(page.getByTestId('economy-panel')).toBeVisible();
+    await expectNoHOverflow('economy-panel');
+
+    await openPanel(/^timeline$/i);
+    await expect(page.getByTestId('timeline-filter-bar')).toBeVisible();
+    await expectNoHOverflow('timeline-filter-bar');
+
+    await openPanel(/^skills$/i);
+    await expect(page.getByTestId('skill-tree')).toBeVisible();
+    await expectNoHOverflow('skill-tree');
   });
 });
