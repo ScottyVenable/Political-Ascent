@@ -6,6 +6,10 @@ All notable changes to Political Ascent are recorded here.
 
 ### Added
 
+- **Skill tree visualisation** (`exp--skill-tree`, todo#34). Replaces the flat 3-column card grid with an RPG-style tree: six branch columns sorted by stat, hex-clipped skill badges with explicit locked / available / unlocked states (filled gold + check pip when unlocked, gold-ring pulse when available, dim grey when locked), in-branch prerequisite chains rendered as connector bars that light up gold once the predecessor is owned, and a sticky right-rail showing the focused node's full description, prereq chips (clickable to walk a chain), and the unlock affordance. Header strip now surfaces per-branch completion (`charisma 1/2`, etc.) so the player can see progress at a glance. New `data-testid` selectors: `skill-tree`, `skill-tree-grid`, `skill-points`, `skill-branch-totals`, `skill-branch-{name}`, `skill-node-{id}`, `skill-connector-{prev}-{next}`, `skill-detail-rail`, `skill-prereq-{id}`, `skill-unlock-button`. Two new Playwright cases in `tests/e2e/skill-tree.spec.ts`.
+
+### Added
+
 - **Timeline filters and search** (`exp--timeline-filters`, todo#35). The Timeline panel grows a filter bar above the chronology: three severity chips (Info / Warning / Danger) with live count badges plus a free-text search input that scans both headline and body. Toggling the last severity off auto-restores all three (matches the affordance pattern used by Steam and Slack log filters). New `data-testid` selectors: `timeline-filter-bar`, `timeline-filter-{info,warning,danger}`, `timeline-search`, `timeline-count`.
 
 ### Added
