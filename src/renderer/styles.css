@@ -304,23 +304,43 @@ body {
 /* Prismatic — an animated conic-gradient overlay. We set it as the
    border via a pseudo-element so the card body's content stays crisp.
 
-   Robustness notes:
+   --- IMPLEMENTATION HISTORY ---
+   v1 (broken): we rotated the entire `::before` element with
+   `transform: rotate()`. Because the pseudo-element is a *rectangle*
+   inset:-2px outside the card, rotating it by anything other than
+   90°/180°/270° caused the corners to sweep outside the parent's
+   rounded clip, producing the ugly "spotlight wedge" the Lead Director
+   flagged on The Statesman card. Worse, when an ancestor was already
+   running its own `transform` animation (pack-reveal flip, hover lift)
+   browsers occasionally froze the rotation entirely.
+   v2 (this version): use `@property` to register a custom angle
+   property that the browser can interpolate as a real <angle> value.
+   The conic gradient reads `from var(...)`, so animating the property
+   sweeps the *gradient stops* around the static rectangle. The element
+   itself never rotates, so corners never escape the clip and the
+   animation composes cleanly with parent transforms.
+
+   `@property` ships in Chrome 85+, Safari 16.4+, Firefox 128+ — covers
+   every platform Political Ascent currently targets. Older browsers
+   simply see a static prismatic gradient (still distinguishable from
+   other rarities, just not animated), which is an acceptable
+   degradation.
+
+   Other notes:
    - `isolation: isolate` on the parent contains the stacking context
      so the gradient never bleeds onto siblings or gets clipped by an
      ancestor's `overflow`.
-   - The pseudo-element animates its own `transform` so we hint the
-     compositor with `will-change`. Without this, browsers occasionally
-     freeze the rotation while the parent is being animated by the
-     pack-reveal flip (`pa-card-reveal` uses `transform: rotateY`).
-   - `pointer-events: none` keeps the gradient from intercepting hover
-     so the card's own onMouseEnter still fires for the tooltip.
-   - We force a fresh stacking context per card by giving the parent a
-     non-auto z-index; otherwise sibling cards in the reveal grid can
-     steal the gradient (observed when grid uses CSS Grid with implicit
-     row tracks). */
+   - `pointer-events: none` keeps the gradient from intercepting hover.
+   - `will-change: background` hints the compositor at the right
+     property; rotating gradient *stops* (not the layer) is GPU-cheap
+     when the layer itself is promoted. */
+@property --pa-prismatic-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
 @keyframes pa-prismatic-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  to { --pa-prismatic-angle: 360deg; }
 }
 .rarity-prismatic.rarity-frame {
   border-color: transparent;
@@ -335,14 +355,13 @@ body {
   z-index: -1;
   border-radius: inherit;
   background: conic-gradient(
-    from 0deg,
+    from var(--pa-prismatic-angle),
     #c9a84c, #9b6dbf, #4a7a96, #6b8f5a, #c9a84c
   );
   animation: pa-prismatic-spin 6s linear infinite;
   filter: blur(0.5px);
   pointer-events: none;
-  transform-origin: center center;
-  will-change: transform;
+  will-change: background;
 }
 /* Honour reduced-motion for the spin specifically. The global
    reduced-motion rule already sets `animation-duration: 0s` but we
