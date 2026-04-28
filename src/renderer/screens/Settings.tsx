@@ -46,6 +46,10 @@ export function Settings(): JSX.Element {
             onChange={(v) => updateDisplay({ fontScale: v / 100 })}
           />
           <Toggle label="Reduce motion" value={settings.display.reduceMotion} onChange={(v) => updateDisplay({ reduceMotion: v })} />
+          {/* Fullscreen toggle: delegates to Electron BrowserWindow so
+              the preference is persisted and restored on next launch.
+              No-ops in the browser / mobile builds. (#80) */}
+          <FullscreenToggle />
         </Card>
         <Card title="Accessibility">
           <Toggle label="High contrast" value={settings.accessibility.highContrast} onChange={(v) => updateAccessibility({ highContrast: v })} />
@@ -195,5 +199,43 @@ function DeveloperCard(): JSX.Element {
         </div>
       )}
     </Card>
+  );
+}
+
+/**
+ * Fullscreen toggle for the Display section of Settings.
+ *
+ * Reads the current window fullscreen state via the Electron bridge and
+ * calls `pa:window:setFullscreen` to change it. The main-process listener
+ * persists the change so it is restored on the next launch.
+ *
+ * If running outside Electron (browser, mobile), the bridge is absent and
+ * the toggle renders nothing. (#80)
+ */
+function FullscreenToggle(): JSX.Element | null {
+  const bridge = typeof window !== 'undefined'
+    ? (window as unknown as { politicalAscent?: { window?: { isFullscreen: () => Promise<boolean>; setFullscreen: (v: boolean) => Promise<boolean> } } }).politicalAscent?.window
+    : undefined;
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Initialise from the actual window state on mount.
+  useEffect(() => {
+    if (!bridge) return;
+    void bridge.isFullscreen().then(setIsFullscreen);
+  }, [bridge]);
+
+  if (!bridge) return null;
+
+  return (
+    <Toggle
+      label="Fullscreen on launch"
+      value={isFullscreen}
+      onChange={(v) => {
+        void bridge.setFullscreen(v).then((ok) => {
+          if (ok) setIsFullscreen(v);
+        });
+      }}
+    />
   );
 }
