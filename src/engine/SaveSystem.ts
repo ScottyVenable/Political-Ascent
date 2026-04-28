@@ -268,14 +268,17 @@ export async function deleteSave(slotId: string): Promise<boolean> {
  * the Game screen) — this function only restores state.
  */
 export function applySavePayload(payload: SavePayload): void {
-  // Use replace=true so we don't merge stale keys from the previous
-  // run. Action methods on the live store are preserved by Zustand's
-  // setState contract regardless of the snapshot shape. The cast is
-  // intentional: the snapshot is `unknown` until the schema-version
-  // gate in `isValidPayload` clears it.
-  useGameStore.setState(payload.stores.game as object, true);
-  useCharacterStore.setState(payload.stores.character as object, true);
-  useWorldStore.setState(payload.stores.world as object, true);
+  // Merge (replace=false) rather than full-replace. Zustand's
+  // `setState(state, true)` wipes everything — including the action
+  // methods bound by the store factory — which would leave callers
+  // calling `game.setSpeed(...)` against a plain data object after a
+  // load. By merging instead we keep the action surface intact while
+  // every persisted data field is overwritten by the snapshot. The
+  // cast is intentional: the snapshot is `unknown` until the
+  // schema-version gate in `isValidPayload` clears it.
+  useGameStore.setState(payload.stores.game as object);
+  useCharacterStore.setState(payload.stores.character as object);
+  useWorldStore.setState(payload.stores.world as object);
   log.info('save applied', { meta: payload.meta });
 }
 

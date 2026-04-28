@@ -67,4 +67,21 @@
 66. Implement a better graph renderer for the bar graphs and implement where possible other types of graphs.
 67. In the cohort detailed view, show a list of their biggest issues and how the player is performing with them based on the stats and data. Include quotes from members of the cohort in a panel that shows "Public Opinion" as a snapshot of their attitude towards the government.
 68. Allow to filter the cohort views based on national level, state level, or local level to see more details based on where the player chooses to have their character come from and their role. Implement this into the game in the character creator to choose their state and their district.
-69. 
+69. Eliminate the both chambers view and only have the one at a time. Also make the member detail show up as a tooltip at the mouse when hovering over a seat. Then on the right side there should be a panel list of all the members with search functions, filter options, sort options and when typing or selecting filters, the chamber view adjusts in real time lowering the opacity of members not applicable and leaving the ones who are. Allow a toggle switch to either hide the members on filter selection or dim them.
+70. Implement a system for tracking and displaying the player's interactions with members of Congress, including meetings, conversations, and votes. This would provide players with a clear sense of their relationships and help them plan their next moves strategically.
+71. Implement a system for tracking and displaying the player's progress on various political goals and objectives, including bills passed, public approval, and faction support. This would provide players with a clear sense of their achievements and help them plan their next moves strategically.
+72. Implement a system for tracking and displaying the player's/NPCs relationships with various political factions and interest groups, including their level of support and influence. This would allow players to make informed decisions about which factions to align with and how to navigate the complex web of political alliances in the game.
+73. Have a breakdown on the bill creation showing where the opposition from the bill is coming from on certain provisions. Expand on this system more by making the Draft New menu have the player creaete the name of the bill (or generate one), choose the category, and various other adjustments before going in the adding of provisions and drafting the bill. More provisions and features will be added based on upgrades, cards, traits, ideology, feedback from constituants, and research gathered from the players team (which would be a new menu to manage staff and direct them based on role).
+74. In the Character screen, track the player characters personal funds and implement ways to get more.
+75. Find all data tags rendered in the game and make sure to render them to be better fitting in the game instead of just the name of the variable.
+76. Lock scrolling when a modal/popup is up.
+77. Make it so nested Expanded Tooltips can be locked at the same time, but seperate non parent ones cannot.
+78. Add an autosave system
+79. Hide the top tool bar "File/View/etc" from the game.
+80. Add a setting for enabling fullscreen and it being consistent when opening the game again.
+81. ~~Fix error when loading a save (`game.setSpeed is not a function` from `startClock` after applying snapshot, plus `dataLoader` warning `skipping invalid file /src/data/legislation/policy-modules.json`).~~ Both fixed: `applySavePayload` now merges into the live store rather than full-replacing (action methods preserved), and `policy-modules.json` moved to `src/data/legislation/modules/` so the bills glob no longer picks it up.
+82. (no entry — original numbering jumped from 81 to 83 in source)
+83. Fix vote counts not showing up when focusing on a house/senate member.
+84. Show an effects modal when playing a card that tell's you what it did.
+85. Show a modal when a vote finishes instead of just a notification. Stylaized to show the Yay's and Nay's and a breakdown that the player can navigate before dismissing it.
+86. 

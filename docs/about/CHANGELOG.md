@@ -4,6 +4,11 @@ All notable changes to Political Ascent are recorded here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Save/load no longer wipes Zustand actions** (`exp--todo-tidy`, todo#81). `applySavePayload` was calling `useGameStore.setState(snapshot, true)` which Zustand interprets as full-replace and silently dropped the bound action methods (`setSpeed`, `setPaused`, etc.). On the very next render `GameEngine.startClock` would crash with `game.setSpeed is not a function`. Switched to merge-mode (`setState(snapshot)` without the second arg) so action methods survive the load while every persisted data field is still overwritten by the snapshot. Test coverage held at 7/7 because the tests only check data round-trip; the bug was action-binding which production code exercises but the tests didn't.
+- **`dataLoader` warning** (`exp--todo-tidy`, todo#81 cluster). The legislation glob `/src/data/legislation/*.json` matched `policy-modules.json` from the draft-legislation PR and tried to validate it as a `BillTemplate`, logging `skipping invalid file` on every boot. Moved the file to `src/data/legislation/modules/policy-modules.json` (out of the bills glob) and updated the import path in `DraftLegislationScreen`.
+
 ### Added
 
 - **Bottom bar polish + mobile portrait sweep** (`exp--bottom-bar-polish`, todo#23 + todo#38). Bottom bar gets a richer command strip: speed buttons render as a true segmented `radiogroup` (rounded-l on Pause, rounded-r on 4&times;, square middles, gold-glow on the active member), keyboard-shortcut chips (`Space`, `1`, `2`, `4`) render under each speed on tablet+, the centre week readout grows a slim year-progress bar (1px on phones, 2px on tablet+, gold), the right-side cluster now shows a vertical divider before the destructive Menu button, and the footer honours `env(safe-area-inset-bottom)` so the Pixel home indicator doesn't clip controls. New `data-testid` selectors: `bottombar`, `bottombar-speed`, `bottombar-speed-{0|1|2|4}`, `bottombar-week`, `bottombar-year-progress`. Mobile portrait spec extended to verify Population / Economy / Timeline / Skills panels layout cleanly in a Pixel-class viewport with no horizontal overflow.
