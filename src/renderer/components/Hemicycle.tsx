@@ -50,8 +50,16 @@ export interface HemicycleProps {
   onSelect?: (l: Legislator) => void;
   /** Currently highlighted legislator id, if any. */
   highlightId?: string;
-  /** Hover callback; emits null on leave. */
-  onHover?: (l: Legislator | null) => void;
+  /** Hover callback with client-space cursor coordinates (for floating tooltip). */
+  onHoverPos?: (l: Legislator | null, x: number, y: number) => void;
+  /**
+   * Set of legislator ids that should be dimmed (reduced opacity) in the
+   * chart. Seats not in this set remain fully opaque. Used by the member
+   * list search/filter to de-emphasise non-matching members without hiding
+   * them entirely — matching the GDD §14 "context without clutter" goal.
+   * When the set is empty or undefined, all seats are fully opaque.
+   */
+  dimmedIds?: ReadonlySet<string>;
   className?: string;
 }
 
@@ -177,8 +185,9 @@ function HemicycleImpl({
   legislators,
   width = 520,
   onSelect,
-  onHover,
+  onHoverPos,
   highlightId,
+  dimmedIds,
   className = '',
 }: HemicycleProps): JSX.Element {
   const { seats, viewHeight } = useMemo(
@@ -198,6 +207,8 @@ function HemicycleImpl({
         const fill = PARTY_FILL[party] ?? '#5F6158';
         const stroke = PARTY_STROKE[party] ?? '#3A3B36';
         const isHighlighted = highlightId === (s.legislator.id as unknown as string);
+        const isDimmed = dimmedIds !== undefined && dimmedIds.size > 0 &&
+          dimmedIds.has(s.legislator.id as unknown as string);
         return (
           <circle
             key={s.legislator.id as unknown as string}
@@ -207,10 +218,15 @@ function HemicycleImpl({
             fill={fill}
             stroke={isHighlighted ? '#D8D6CC' : stroke}
             strokeWidth={isHighlighted ? 1.5 : 0.5}
-            style={{ cursor: onSelect ? 'pointer' : 'default' }}
+            opacity={isDimmed ? 0.18 : 1}
+            style={{ cursor: onSelect ? 'pointer' : 'default', transition: 'opacity 0.15s' }}
             onClick={onSelect ? () => onSelect(s.legislator) : undefined}
-            onMouseEnter={onHover ? () => onHover(s.legislator) : undefined}
-            onMouseLeave={onHover ? () => onHover(null) : undefined}
+            onMouseEnter={
+              onHoverPos
+                ? (e) => onHoverPos(s.legislator, e.clientX, e.clientY)
+                : undefined
+            }
+            onMouseLeave={onHoverPos ? (e) => onHoverPos(null, e.clientX, e.clientY) : undefined}
           >
             <title>
               {s.legislator.name} ({party}-{s.legislator.state}

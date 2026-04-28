@@ -72,11 +72,22 @@ export interface ExpediteResult {
   reason?: string;
 }
 
-/** Result shape returned by `resolveVote`. Unchanged from pre-pacing. */
+/** A single legislator's recorded vote, returned with the `VoteResult`. */
+export interface LegislatorVoteRecord {
+  id: string;
+  name: string;
+  party: 'D' | 'R' | 'I';
+  state: string;
+  vote: 'yea' | 'nay';
+}
+
+/** Result shape returned by `resolveVote`. */
 export interface VoteResult {
   passed: boolean;
   yea: number;
   nay: number;
+  /** Per-legislator breakdown, populated after #83 fix. */
+  breakdown: LegislatorVoteRecord[];
 }
 
 export interface LegislationSystemAPI {
@@ -239,6 +250,19 @@ class LegislationSystemImpl implements LegislationSystemAPI {
     // Resolve the vote instead of transitioning to a new waiting stage.
     if (bill.stage === 'vote') {
       const result = this.resolveVote(billId);
+      // Show the styled vote-result modal so the player gets the same
+      // breakdown whether the vote was expedited or auto-resolved.
+      useUIStore.getState().openModal({
+        id: `vote-result-${billId}`,
+        type: 'vote-result',
+        payload: {
+          billTitle: bill.title,
+          passed: result.passed,
+          yea: result.yea,
+          nay: result.nay,
+          breakdown: result.breakdown,
+        },
+      });
       return {
         ok: true,
         newStage: result.passed ? 'signed' : 'failed',
@@ -266,7 +290,7 @@ class LegislationSystemImpl implements LegislationSystemAPI {
   resolveVote(billId: BillId): VoteResult {
     const world = useWorldStore.getState();
     const bill = world.pendingLegislation.find((b) => b.id === billId);
-    if (!bill) return { passed: false, yea: 0, nay: 0 };
+    if (!bill) return { passed: false, yea: 0, nay: 0, breakdown: [] };
 
     const strategy = useCharacterStore.getState().stats.strategy;
     const rng = new SeededRNG(world.seed + Number(billId.replace(/\D/g, '') || 0));
@@ -274,6 +298,12 @@ class LegislationSystemImpl implements LegislationSystemAPI {
 
     let yea = 0;
     let nay = 0;
+    // Collect each senator's individual vote so we can:
+    //  (a) write it back to their `votingHistory` (fixes todo#83 —
+    //      the rail/modal now has real data to display), and
+    //  (b) pass the full breakdown to the vote-result modal (todo#85).
+    const breakdown: LegislatorVoteRecord[] = [];
+
     for (const legis of senate) {
       const p = perLegislatorPassChance({
         alignment: legis.priorities.some((pri) => bill.tags.includes(pri)),
@@ -281,8 +311,25 @@ class LegislationSystemImpl implements LegislationSystemAPI {
         opposition: bill.opposition,
         strategy,
       });
-      if (rng.next() < p) yea++;
+      const voted: 'yea' | 'nay' = rng.next() < p ? 'yea' : 'nay';
+      if (voted === 'yea') yea++;
       else nay++;
+
+      breakdown.push({
+        id: legis.id as unknown as string,
+        name: legis.name,
+        party: legis.party,
+        state: legis.state,
+        vote: voted,
+      });
+
+      // Merge the new vote entry into the senator's history. We spread
+      // the existing record to avoid clobbering prior votes — the store
+      // action uses Object.assign which would replace the entire object
+      // if we only sent the new key.
+      world.updateLegislator(legis.id as unknown as string, {
+        votingHistory: { ...legis.votingHistory, [billId]: voted },
+      });
     }
 
     const passed = yea >= 51;
@@ -297,7 +344,7 @@ class LegislationSystemImpl implements LegislationSystemAPI {
     } else {
       world.movePending(billId, 'failed');
     }
-    return { passed, yea, nay };
+    return { passed, yea, nay, breakdown };
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -332,10 +379,24 @@ class LegislationSystemImpl implements LegislationSystemAPI {
       // advance; time is the toll.
       if (bill.stage === 'vote') {
         const result = this.resolveVote(bill.id);
+        // Push the styled vote-result modal (todo#85). The brief toast is
+        // still kept so the player sees a notification if they dismiss the
+        // modal instantly or if the modal fires off-screen.
+        useUIStore.getState().openModal({
+          id: `vote-result-${bill.id}`,
+          type: 'vote-result',
+          payload: {
+            billTitle: bill.title,
+            passed: result.passed,
+            yea: result.yea,
+            nay: result.nay,
+            breakdown: result.breakdown,
+          },
+        });
         pushToast({
           message: result.passed
-            ? `${bill.title} PASSED ${result.yea}–${result.nay}`
-            : `${bill.title} FAILED ${result.yea}–${result.nay}`,
+            ? `${bill.title} PASSED ${result.yea}\u2013${result.nay}`
+            : `${bill.title} FAILED ${result.yea}\u2013${result.nay}`,
           severity: result.passed ? 'success' : 'danger',
           ttl: 5000,
         });

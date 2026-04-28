@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
+import type { VoteResultPayload } from '@/store/uiStore';
 import { useWorldStore } from '@/store/worldStore';
 import { useGameStore } from '@/store/gameStore';
 import { TimeEngine } from '@/engine/TimeEngine';
@@ -10,6 +11,7 @@ import { Sidebar } from '../components/Sidebar';
 import { BottomBar } from '../components/BottomBar';
 import { ModalShell } from '../components/ModalShell';
 import { Button } from '../components/Button';
+import { Icon } from '../components/Icon';
 
 import { DashboardPanel } from '../panels/DashboardPanel';
 import { LegislationPanel } from '../panels/LegislationPanel';
@@ -144,6 +146,7 @@ export function Game(): JSX.Element {
       </div>
       <BottomBar />
       {activeEvents.length > 0 && <EventModal />}
+      <VoteResultModal />
     </div>
   );
 }
@@ -184,5 +187,171 @@ function EventModal(): JSX.Element | null {
         ))}
       </div>
     </ModalShell>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// VOTE RESULT MODAL (todo#85)
+// Rendered whenever uiStore has a 'vote-result' modal queued. Shows
+// a styled breakdown of the roll-call: PASSED/FAILED banner, yea/nay
+// totals, and a scrollable per-senator list the player can review
+// before dismissing. Game time is paused (the engine is ticking but
+// the modal gives context); the player can always dismiss and return
+// to the Legislation panel for further review.
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Reads the first 'vote-result' modal from uiStore, if any, and renders
+ * a full-screen overlay with the roll-call details. Nothing renders when
+ * the queue is empty.
+ */
+function VoteResultModal(): JSX.Element | null {
+  const modals = useUIStore((s) => s.modals);
+  const closeModal = useUIStore((s) => s.closeModal);
+
+  // Pick the first vote-result in the queue; other modal types are
+  // handled by their own components (e.g. EventModal above).
+  const modal = modals.find((m) => m.type === 'vote-result');
+  if (!modal) return null;
+
+  const data = modal.payload as VoteResultPayload;
+  const { billTitle, passed, yea, nay, breakdown } = data;
+  const total = yea + nay;
+
+  // Sort: yeas first, then nays, each group alpha by last name so the
+  // player can scan for specific members quickly.
+  const sorted = [...breakdown].sort((a, b) => {
+    if (a.vote !== b.vote) return a.vote === 'yea' ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  const PARTY_TEXT: Record<'D' | 'R' | 'I', string> = {
+    D: 'text-[#7B9BAB]',
+    R: 'text-[#C07A79]',
+    I: 'text-accent-gold',
+  };
+
+  function dismiss(): void {
+    closeModal(modal.id);
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Vote result for ${billTitle}`}
+      onClick={dismiss}
+      data-testid="vote-result-modal"
+    >
+      <div
+        className="w-full max-w-2xl bg-bg-secondary rounded-lg border border-bg-tertiary shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ── HEADER ── */}
+        <header
+          className={[
+            'px-6 py-5 border-b border-bg-tertiary flex flex-col gap-1',
+            passed ? 'bg-status-success/10' : 'bg-status-danger/10',
+          ].join(' ')}
+        >
+          {/* PASSED / FAILED banner */}
+          <div
+            className={[
+              'font-headline text-3xl font-bold tracking-widest uppercase',
+              passed ? 'text-status-success' : 'text-status-danger',
+            ].join(' ')}
+            data-testid="vote-result-verdict"
+          >
+            {passed ? 'Passed' : 'Failed'}
+          </div>
+          <p className="font-mono text-label text-text-muted uppercase tracking-widest">
+            {billTitle}
+          </p>
+        </header>
+
+        {/* ── VOTE TOTALS ── */}
+        <div
+          className="grid grid-cols-2 divide-x divide-bg-tertiary border-b border-bg-tertiary"
+          data-testid="vote-result-totals"
+        >
+          {/* YEA */}
+          <div className="flex flex-col items-center py-4 gap-1">
+            <span
+              className="font-mono text-4xl font-bold text-status-success tabular-nums"
+              data-testid="vote-result-yea"
+            >
+              {yea}
+            </span>
+            <div className="flex items-center gap-1 font-mono text-label uppercase tracking-widest text-text-muted">
+              <Icon name="check" size={12} />
+              Yea
+            </div>
+            {/* Proportion bar */}
+            <div className="w-24 h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+              <div
+                className="h-full bg-status-success rounded-full"
+                style={{ width: total > 0 ? `${(yea / total) * 100}%` : '0%' }}
+              />
+            </div>
+          </div>
+
+          {/* NAY */}
+          <div className="flex flex-col items-center py-4 gap-1">
+            <span
+              className="font-mono text-4xl font-bold text-status-danger tabular-nums"
+              data-testid="vote-result-nay"
+            >
+              {nay}
+            </span>
+            <div className="flex items-center gap-1 font-mono text-label uppercase tracking-widest text-text-muted">
+              <Icon name="close" size={12} />
+              Nay
+            </div>
+            {/* Proportion bar */}
+            <div className="w-24 h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+              <div
+                className="h-full bg-status-danger rounded-full"
+                style={{ width: total > 0 ? `${(nay / total) * 100}%` : '0%' }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ── SENATOR BREAKDOWN ── */}
+        {breakdown.length > 0 && (
+          <div className="flex-1 overflow-y-auto game-scroll px-4 py-3">
+            <p className="font-mono text-label uppercase tracking-widest text-text-muted mb-2">
+              Roll-call ({total} senators)
+            </p>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-0.5">
+              {sorted.map((rec) => (
+                <li
+                  key={rec.id}
+                  className="flex justify-between items-center px-2 py-1 rounded-sm text-[0.8125rem] even:bg-bg-tertiary/20"
+                >
+                  <span className={`font-mono text-[0.6875rem] uppercase mr-2 ${PARTY_TEXT[rec.party]}`}>
+                    {rec.party}
+                  </span>
+                  <span className="flex-1 text-text-secondary truncate">{rec.name}</span>
+                  <span className="font-mono text-label ml-2">
+                    <span className={rec.vote === 'yea' ? 'text-status-success' : 'text-status-danger'}>
+                      {rec.vote === 'yea' ? 'Yea' : 'Nay'}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* ── FOOTER ── */}
+        <footer className="px-6 py-3 border-t border-bg-tertiary flex justify-end">
+          <Button variant="primary" onClick={dismiss} data-testid="vote-result-dismiss">
+            Dismiss
+          </Button>
+        </footer>
+      </div>
+    </div>
   );
 }

@@ -1,27 +1,34 @@
 /**
  * CongressPanel — the chamber floor.
  *
- * Redesign goals (UI_GAME_FEEL_PROPOSAL §8.4 / issue #41):
- *   - Show Congress as two chambers stacked vertically, each rendered
- *     as a semicircular hemicycle (see `Hemicycle.tsx`). This replaces
- *     the previous flat grid of coloured dots.
- *   - Above each hemicycle, a "plinth" header shows total seats,
- *     majority threshold, and a stacked party-ratio bar that lets the
- *     player read the coalition shape at a glance.
- *   - Clicking a seat opens a detail drawer alongside the chart
- *     (bottom strip on narrow screens, side rail on wide).
- *   - Party filter styled with the Button component so it no longer
- *     looks like raw inline CSS.
+ * Redesign pass (todo#69, April 2026):
+ *   - Eliminated the "both chambers" view. Players choose Senate or House
+ *     with a two-tab strip; one chamber owns the entire viewport at a time,
+ *     giving the hemicycle more room and making the member list readable.
+ *   - Left column: plinth header + hemicycle. Right column: scrollable
+ *     member roster with real-time search, party filter, sort options, and
+ *     a hide/dim toggle. Typing in the search box updates the hemicycle
+ *     in real time — non-matching seats fade to ~18% opacity so spatial
+ *     context (left/right arc position) is preserved while matched members
+ *     are visually prominent.
+ *   - Hovering a seat shows a floating tooltip anchored at the cursor.
+ *   - Clicking a seat or a member row opens the full MemberModal.
  *
- * Performance notes:
- *   - `Hemicycle` is memoized and only recomputes when its legislator
- *     list identity changes. Store selectors return the raw array
- *     reference so unrelated world updates do not trigger a re-layout
- *     of 535 seats.
- *   - Filtering to a single party typically cuts the working set in
- *     half so the re-layout on filter-toggle is cheap.
+ * Vote count fix (todo#83): vote counts now populate because
+ * `LegislationSystem.resolveVote` records each senator's individual vote
+ * into `legislator.votingHistory` immediately after the roll-call.
+ *
+ * Performance:
+ *   - `Hemicycle` is memoized and recomputes only when the legislators
+ *     list identity changes. The dimmedIds Set is rebuilt by useMemo
+ *     whenever search/filter/chamber state changes.
+ *   - Member list is a windowed `<ul>` in CSS — no virtualizer needed
+ *     for 100 senators; for 435 representatives this is borderline but
+ *     acceptable until a virtual-scroll library is approved.
+ *
+ * @module renderer/panels/CongressPanel
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWorldStore } from '@/store/worldStore';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -30,13 +37,13 @@ import { Hemicycle } from '../components/Hemicycle';
 import type { Legislator, Party } from '@/types';
 
 type PartyFilter = 'all' | Party;
-/**
- * Which chamber view to render.
- *   - `both` — stacked Senate over House (the legacy layout).
- *   - `senate` / `house` — focus a single chamber. Frees the rest of
- *     the panel real estate for richer charts/data, per todo#30.
- */
-type ChamberTab = 'both' | 'senate' | 'house';
+/** Single-chamber tab — no more "both". */
+type ChamberTab = 'senate' | 'house';
+
+/** Direction to sort the member list. */
+type SortKey = 'name' | 'state' | 'relationship';
+/** Whether filtered-out seats are hidden entirely or dimmed in the hemicycle. */
+type FilterMode = 'dim' | 'hide';
 
 const PARTY_LABEL: Record<Party, string> = {
   D: 'Democrat',
@@ -44,8 +51,6 @@ const PARTY_LABEL: Record<Party, string> = {
   I: 'Independent',
 };
 
-// Same palette as Hemicycle so the party-strip bars visually match
-// the seats in the chart.
 const PARTY_BAR: Record<Party, string> = {
   D: 'bg-[#5A7A8A]',
   R: 'bg-[#A85958]',
@@ -58,145 +63,210 @@ const PARTY_TEXT: Record<Party, string> = {
   I: 'text-accent-gold',
 };
 
+/** Tooltip shown at cursor when hovering a hemicycle seat. */
+interface HoverTooltip {
+  legislator: Legislator;
+  /** Client-space X (pixels from left of viewport). */
+  x: number;
+  /** Client-space Y (pixels from top of viewport). */
+  y: number;
+}
+
 export function CongressPanel(): JSX.Element {
   const senate = useWorldStore((s) => s.congress.senate);
   const house = useWorldStore((s) => s.congress.house);
 
-  const [filter, setFilter] = useState<PartyFilter>('all');
+  const [chamber, setChamber] = useState<ChamberTab>('senate');
+  const [partyFilter, setPartyFilter] = useState<PartyFilter>('all');
+  const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('name');
+  const [filterMode, setFilterMode] = useState<FilterMode>('dim');
   const [selected, setSelected] = useState<Legislator | null>(null);
-  // Hover preview lights up the side rail without locking selection.
-  // Clicking a seat still pins via `selected` and opens the modal.
-  const [hovered, setHovered] = useState<Legislator | null>(null);
-  const [chamber, setChamber] = useState<ChamberTab>('both');
-  // Modal opens on click. We keep it separate from `selected` so the
-  // side rail can persist after the modal is dismissed (the player
-  // often wants to keep studying the same member at a glance).
   const [modalOpen, setModalOpen] = useState(false);
+  /** Floating tooltip state for seat hover. */
+  const [hoverTooltip, setHoverTooltip] = useState<HoverTooltip | null>(null);
 
-  const senateFiltered = useMemo(
-    () => (filter === 'all' ? senate : senate.filter((l) => l.party === filter)),
-    [senate, filter],
-  );
-  const houseFiltered = useMemo(
-    () => (filter === 'all' ? house : house.filter((l) => l.party === filter)),
-    [house, filter],
-  );
+  // The full list for the active chamber.
+  const chamberMembers = chamber === 'senate' ? senate : house;
+
+  // Normalised search term for case-insensitive matching.
+  const searchLower = search.toLowerCase();
 
   /**
-   * Seat-click handler: pin selection, light up rail, open modal. The
-   * three actions share a single entry point so the panel never gets
-   * into the half-state where one of them is missing.
+   * Members that match the current party filter AND search string.
+   * This is the set rendered in the right-side list.
    */
-  const onSeatClick = (l: Legislator): void => {
-    setSelected(l);
-    setHovered(l);
-    setModalOpen(true);
-  };
+  const matchedMembers = useMemo(() => {
+    return chamberMembers.filter((l) => {
+      const partyOk = partyFilter === 'all' || l.party === partyFilter;
+      if (!partyOk) return false;
+      if (!searchLower) return true;
+      // Match against name, state, personality (handy for power users).
+      return (
+        l.name.toLowerCase().includes(searchLower) ||
+        l.state.toLowerCase().includes(searchLower) ||
+        l.personality.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [chamberMembers, partyFilter, searchLower]);
 
-  // The rail prefers hover (live) but falls back to the last pinned
-  // selection so the rail does not blank out on mouseleave.
-  const railSubject = hovered ?? selected;
+  /** Sorted list for the right-side roster. */
+  const sortedMembers = useMemo(() => {
+    return [...matchedMembers].sort((a, b) => {
+      switch (sortKey) {
+        case 'name': return a.name.localeCompare(b.name);
+        case 'state': return a.state.localeCompare(b.state) || a.name.localeCompare(b.name);
+        case 'relationship': return b.relationship - a.relationship;
+        default: return 0;
+      }
+    });
+  }, [matchedMembers, sortKey]);
+
+  /**
+   * Set of legislator ids to dim (or hide) in the hemicycle.
+   *
+   * When there is no active filter/search, the set is empty and all seats
+   * are fully opaque. When a filter is active, seats NOT in `matchedMembers`
+   * are either dimmed (filterMode='dim') or excluded from the legislators
+   * list passed to Hemicycle (filterMode='hide').
+   */
+  const dimmedIds = useMemo<ReadonlySet<string>>(() => {
+    const hasFilter = partyFilter !== 'all' || searchLower.length > 0;
+    if (!hasFilter) return new Set();
+    const matchedSet = new Set(matchedMembers.map((l) => l.id as unknown as string));
+    return new Set(
+      chamberMembers
+        .map((l) => l.id as unknown as string)
+        .filter((id) => !matchedSet.has(id)),
+    );
+  }, [chamberMembers, matchedMembers, partyFilter, searchLower]);
+
+  /**
+   * The legislators list passed to the Hemicycle.
+   * In 'hide' mode we exclude dimmed members entirely; in 'dim' mode we
+   * show all seats but let Hemicycle fade the non-matched ones.
+   */
+  const hemicycleMembers = useMemo(() => {
+    if (filterMode === 'hide' && dimmedIds.size > 0) {
+      return chamberMembers.filter((l) => !dimmedIds.has(l.id as unknown as string));
+    }
+    return chamberMembers;
+  }, [chamberMembers, dimmedIds, filterMode]);
+
+  /** Open the member modal. */
+  const onSeatClick = useCallback((l: Legislator): void => {
+    setSelected(l);
+    setModalOpen(true);
+    setHoverTooltip(null);
+  }, []);
+
+  /** Update the floating tooltip position and subject on hover. */
+  const onHoverPos = useCallback((l: Legislator | null, x: number, y: number): void => {
+    setHoverTooltip(l ? { legislator: l, x, y } : null);
+  }, []);
+
+  /** Total seat counts for the plinth header. */
+  const totalSeats = chamberMembers.length;
+  const majority = Math.floor(totalSeats / 2) + 1;
+
+  // Party breakdown across the full (unfiltered) chamber, so the
+  // PartyStrip always shows the real composition regardless of filter.
+  const breakdown = useMemo(
+    () => countByParty(chamberMembers),
+    [chamberMembers],
+  );
 
   return (
-    <div className="grid lg:grid-cols-[1fr_280px] gap-4 items-start">
-      <div className="space-y-4 min-w-0">
-        {/* ── CHAMBER TABS ──
-            Three-state tab strip: Both / Senate / House. Senate-only
-            and House-only views drop the second card so the focused
-            chamber owns more vertical real estate. */}
-        <div
-          className="flex items-center gap-1 border-b border-bg-tertiary"
-          role="tablist"
-          aria-label="Chamber view"
-          data-testid="congress-chamber-tabs"
-        >
-          {(
-            [
-              { id: 'both', label: 'Both Chambers' },
-              { id: 'senate', label: 'Senate' },
-              { id: 'house', label: 'House' },
-            ] as const
-          ).map((tab) => {
-            const active = chamber === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                data-testid={`congress-tab-${tab.id}`}
-                onClick={() => setChamber(tab.id)}
-                className={[
-                  'px-3 py-2 -mb-px font-mono text-label uppercase tracking-widest transition-colors',
-                  active
-                    ? 'border-b-2 border-accent-gold text-accent-gold'
-                    : 'border-b-2 border-transparent text-text-muted hover:text-text-primary',
-                ].join(' ')}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ── FILTER BAR ── */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-mono text-label uppercase tracking-widest text-text-muted mr-1">
-            Filter
-          </span>
-          {(['all', 'D', 'R', 'I'] as const).map((p) => (
-            <Button
-              key={p}
-              size="sm"
-              variant={filter === p ? 'primary' : 'secondary'}
-              onClick={() => setFilter(p)}
-            >
-              {p === 'all' ? 'All' : p}
-            </Button>
-          ))}
-          {selected && (
+    <div className="space-y-3">
+      {/* ── CHAMBER TABS ── */}
+      <div
+        className="flex items-center gap-1 border-b border-bg-tertiary"
+        role="tablist"
+        aria-label="Chamber"
+        data-testid="congress-chamber-tabs"
+      >
+        {([
+          { id: 'senate', label: 'Senate' },
+          { id: 'house', label: 'House' },
+        ] as const).map((tab) => {
+          const active = chamber === tab.id;
+          return (
             <button
+              key={tab.id}
               type="button"
-              onClick={() => {
-                setSelected(null);
-                setHovered(null);
-              }}
-              className="ml-auto text-label font-mono uppercase tracking-widest text-text-muted hover:text-text-primary transition-colors"
+              role="tab"
+              aria-selected={active}
+              data-testid={`congress-tab-${tab.id}`}
+              onClick={() => setChamber(tab.id)}
+              className={[
+                'px-3 py-2 -mb-px font-mono text-label uppercase tracking-widest transition-colors',
+                active
+                  ? 'border-b-2 border-accent-gold text-accent-gold'
+                  : 'border-b-2 border-transparent text-text-muted hover:text-text-primary',
+              ].join(' ')}
             >
-              Close detail
+              {tab.label}
             </button>
-          )}
+          );
+        })}
+      </div>
+
+      {/* ── MAIN LAYOUT: hemicycle left + member list right ── */}
+      <div className="grid lg:grid-cols-[1fr_320px] gap-4 items-start">
+
+        {/* ── LEFT: PLINTH + HEMICYCLE ── */}
+        <Card accent="gold" className="overflow-hidden">
+          <header className="mb-3 pb-3 border-b border-rule">
+            <div className="flex items-baseline justify-between gap-3 flex-wrap">
+              <h3 className="font-headline text-panel-title text-text-primary capitalize">
+                {chamber === 'senate' ? 'Senate' : 'House of Representatives'}
+              </h3>
+              <span className="font-mono text-data-sm text-text-muted tabular-nums">
+                {totalSeats} seats · majority {majority}
+              </span>
+            </div>
+            <PartyStrip breakdown={breakdown} total={totalSeats} className="mt-2" />
+          </header>
+          <div className="px-2 pt-1">
+            <Hemicycle
+              legislators={hemicycleMembers}
+              onSelect={onSeatClick}
+              onHoverPos={onHoverPos}
+              highlightId={selected?.id as string | undefined}
+              dimmedIds={filterMode === 'dim' ? dimmedIds : undefined}
+            />
+          </div>
+        </Card>
+
+        {/* ── RIGHT: MEMBER ROSTER ── */}
+        <div className="space-y-3 lg:sticky lg:top-0">
+          <MemberListPanel
+            members={sortedMembers}
+            total={chamberMembers.length}
+            partyFilter={partyFilter}
+            setPartyFilter={setPartyFilter}
+            search={search}
+            setSearch={setSearch}
+            sortKey={sortKey}
+            setSortKey={setSortKey}
+            filterMode={filterMode}
+            setFilterMode={setFilterMode}
+            onSelect={onSeatClick}
+            selected={selected}
+          />
         </div>
-
-        {(chamber === 'both' || chamber === 'senate') && (
-          <ChamberCard
-            title="Senate"
-            legislators={senateFiltered}
-            totalSeats={senate.length}
-            majority={Math.floor(senate.length / 2) + 1}
-            onSelect={onSeatClick}
-            onHover={setHovered}
-            highlightId={selected?.id as string | undefined}
-          />
-        )}
-        {(chamber === 'both' || chamber === 'house') && (
-          <ChamberCard
-            title="House of Representatives"
-            legislators={houseFiltered}
-            totalSeats={house.length}
-            majority={Math.floor(house.length / 2) + 1}
-            onSelect={onSeatClick}
-            onHover={setHovered}
-            highlightId={selected?.id as string | undefined}
-          />
-        )}
       </div>
 
-      {/* ── DETAIL RAIL ── */}
-      <div className="lg:sticky lg:top-0">
-        <LegislatorDetail legislator={railSubject} />
-      </div>
+      {/* ── CURSOR TOOLTIP ── */}
+      {hoverTooltip && (
+        <SeatTooltip
+          legislator={hoverTooltip.legislator}
+          x={hoverTooltip.x}
+          y={hoverTooltip.y}
+        />
+      )}
 
+      {/* ── MEMBER MODAL ── */}
       {modalOpen && selected && (
         <MemberModal
           legislator={selected}
@@ -208,49 +278,215 @@ export function CongressPanel(): JSX.Element {
 }
 
 // ─────────────────────────────────────────────────────────────
-// CHAMBER CARD
-// Plinth header + hemicycle for a single chamber.
+// SEAT TOOLTIP
+// Fixed-position card that follows the cursor. Shown on seat hover;
+// dismissed on mouseleave via the parent state reset.
 // ─────────────────────────────────────────────────────────────
 
-function ChamberCard({
-  title,
-  legislators,
-  totalSeats,
-  majority,
-  onSelect,
-  onHover,
-  highlightId,
+/**
+ * Lightweight floating card shown when the player hovers a hemicycle
+ * seat. Positioned at `(x, y)` in client space with a small offset so
+ * the cursor doesn't cover the text. The tooltip is `pointer-events-none`
+ * so it doesn't swallow the SVG mouse events underneath it.
+ *
+ * @param legislator — member to summarise.
+ * @param x — clientX from the SVG circle's onMouseEnter.
+ * @param y — clientY from the SVG circle's onMouseEnter.
+ */
+function SeatTooltip({
+  legislator: l,
+  x,
+  y,
 }: {
-  title: string;
-  legislators: readonly Legislator[];
-  totalSeats: number;
-  majority: number;
-  onSelect: (l: Legislator) => void;
-  onHover?: (l: Legislator | null) => void;
-  highlightId?: string;
+  legislator: Legislator;
+  x: number;
+  y: number;
 }): JSX.Element {
-  const breakdown = useMemo(() => countByParty(legislators), [legislators]);
+  const r = l.relationship;
+  const relCls =
+    r < -25 ? 'text-status-danger' :
+    r < 25  ? 'text-status-warning' :
+    'text-accent-gold';
+
+  const votes = Object.entries(l.votingHistory);
+  const yeas = votes.filter(([, v]) => v === 'yea').length;
+  const nays = votes.filter(([, v]) => v === 'nay').length;
 
   return (
-    <Card accent="gold" className="overflow-hidden">
-      <header className="mb-3 pb-3 border-b border-rule">
-        <div className="flex items-baseline justify-between gap-3 flex-wrap">
-          <h3 className="font-headline text-panel-title text-text-primary">{title}</h3>
-          <span className="font-mono text-data-sm text-text-muted tabular-nums">
-            {legislators.length} of {totalSeats} · majority {majority}
+    <div
+      className="fixed z-50 pointer-events-none bg-bg-secondary border border-bg-tertiary rounded-md shadow-xl px-3 py-2 min-w-[180px]"
+      style={{
+        left: Math.min(x + 12, window.innerWidth - 200),
+        top: Math.max(y - 60, 8),
+      }}
+      data-testid="congress-seat-tooltip"
+    >
+      <p className="font-headline text-sm font-bold text-text-primary">{l.name}</p>
+      <p className={`font-mono text-[0.6875rem] uppercase tracking-widest ${PARTY_TEXT[l.party]}`}>
+        {l.party}-{l.state}
+        {l.district !== undefined ? `-${l.district}` : ''}&nbsp;·&nbsp;{l.chamber.toUpperCase()}
+      </p>
+      <div className="mt-1 flex items-baseline justify-between text-[0.75rem]">
+        <span className="text-text-muted font-mono">Rel.</span>
+        <span className={`font-mono font-bold tabular-nums ${relCls}`}>
+          {r > 0 ? '+' : ''}{r}
+        </span>
+      </div>
+      {votes.length > 0 && (
+        <div className="mt-0.5 flex items-baseline justify-between text-[0.75rem]">
+          <span className="text-text-muted font-mono">Votes</span>
+          <span className="font-mono tabular-nums text-text-secondary">
+            <span className="text-status-success">{yeas}Y</span>
+            {' / '}
+            <span className="text-status-danger">{nays}N</span>
           </span>
         </div>
-        <PartyStrip breakdown={breakdown} total={legislators.length} className="mt-2" />
-      </header>
+      )}
+    </div>
+  );
+}
 
-      <div className="px-2 pt-1">
-        <Hemicycle
-          legislators={legislators}
-          onSelect={onSelect}
-          onHover={onHover}
-          highlightId={highlightId}
+// ─────────────────────────────────────────────────────────────
+// MEMBER LIST PANEL
+// Scrollable roster with search, party filter, sort, and hide/dim toggle.
+// ─────────────────────────────────────────────────────────────
+
+function MemberListPanel({
+  members,
+  total,
+  partyFilter,
+  setPartyFilter,
+  search,
+  setSearch,
+  sortKey,
+  setSortKey,
+  filterMode,
+  setFilterMode,
+  onSelect,
+  selected,
+}: {
+  members: readonly Legislator[];
+  total: number;
+  partyFilter: PartyFilter;
+  setPartyFilter: (p: PartyFilter) => void;
+  search: string;
+  setSearch: (s: string) => void;
+  sortKey: SortKey;
+  setSortKey: (k: SortKey) => void;
+  filterMode: FilterMode;
+  setFilterMode: (m: FilterMode) => void;
+  onSelect: (l: Legislator) => void;
+  selected: Legislator | null;
+}): JSX.Element {
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <Card title="Members" subtitle={`${members.length} of ${total}`}>
+      {/* ── SEARCH ── */}
+      <div className="relative mb-2">
+        <Icon
+          name="search"
+          size={14}
+          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
+        />
+        <input
+          ref={searchRef}
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Name, state, or personality…"
+          className="w-full bg-bg-tertiary border border-rule rounded-sm pl-8 pr-3 py-1.5 font-mono text-[0.8125rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-accent-gold/40"
+          data-testid="congress-member-search"
+          aria-label="Search members"
         />
       </div>
+
+      {/* ── PARTY FILTER ── */}
+      <div className="flex items-center gap-1 mb-2 flex-wrap">
+        {(['all', 'D', 'R', 'I'] as const).map((p) => (
+          <Button
+            key={p}
+            size="sm"
+            variant={partyFilter === p ? 'primary' : 'secondary'}
+            onClick={() => setPartyFilter(p)}
+            data-testid={`congress-filter-${p}`}
+          >
+            {p === 'all' ? 'All' : p}
+          </Button>
+        ))}
+        {/* Hide / Dim toggle */}
+        <button
+          type="button"
+          onClick={() => setFilterMode(filterMode === 'dim' ? 'hide' : 'dim')}
+          className="ml-auto flex items-center gap-1 font-mono text-label uppercase tracking-widest text-text-muted hover:text-text-primary transition-colors"
+          title={filterMode === 'dim' ? 'Dim filtered seats (click to hide instead)' : 'Hide filtered seats (click to dim instead)'}
+          data-testid="congress-filter-mode-toggle"
+        >
+          <Icon name={filterMode === 'dim' ? 'eye' : 'eye-off'} size={13} />
+          {filterMode === 'dim' ? 'Dim' : 'Hide'}
+        </button>
+      </div>
+
+      {/* ── SORT ── */}
+      <div className="flex items-center gap-1 mb-3">
+        <span className="font-mono text-label uppercase tracking-widest text-text-muted mr-1">
+          Sort
+        </span>
+        {(['name', 'state', 'relationship'] as const).map((key) => (
+          <Button
+            key={key}
+            size="sm"
+            variant={sortKey === key ? 'primary' : 'secondary'}
+            onClick={() => setSortKey(key)}
+            data-testid={`congress-sort-${key}`}
+          >
+            {key === 'relationship' ? 'Rel.' : key.charAt(0).toUpperCase() + key.slice(1)}
+          </Button>
+        ))}
+      </div>
+
+      {/* ── ROSTER ── */}
+      {members.length === 0 ? (
+        <p className="text-body text-text-muted italic">No members match the current filter.</p>
+      ) : (
+        <ul
+          className="space-y-0.5 max-h-[60vh] overflow-y-auto game-scroll pr-1"
+          data-testid="congress-member-list"
+        >
+          {members.map((l) => {
+            const r = l.relationship;
+            const relCls =
+              r < -25 ? 'text-status-danger' :
+              r < 25  ? 'text-status-warning' :
+              'text-accent-gold';
+            const isSelected = selected?.id === l.id;
+            return (
+              <li key={l.id as unknown as string}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(l)}
+                  className={[
+                    'w-full flex items-center gap-2 px-2 py-1 rounded-sm text-left text-[0.8125rem] transition-colors',
+                    isSelected
+                      ? 'bg-accent-gold/10 border border-accent-gold/30'
+                      : 'hover:bg-bg-tertiary/60 border border-transparent',
+                  ].join(' ')}
+                  data-testid="congress-member-row"
+                >
+                  <span className={`font-mono text-[0.6875rem] uppercase w-4 shrink-0 ${PARTY_TEXT[l.party]}`}>
+                    {l.party}
+                  </span>
+                  <span className="flex-1 truncate text-text-primary">{l.name}</span>
+                  <span className="font-mono text-[0.6875rem] text-text-muted shrink-0">{l.state}</span>
+                  <span className={`font-mono text-[0.6875rem] tabular-nums shrink-0 ${relCls}`}>
+                    {r > 0 ? '+' : ''}{r}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </Card>
   );
 }
@@ -305,92 +541,9 @@ function countByParty(legislators: readonly Legislator[]): Record<Party, number>
 }
 
 // ─────────────────────────────────────────────────────────────
-// LEGISLATOR DETAIL RAIL
-// Shown when a seat is clicked. Empty-state teaches the interaction.
+// DETAIL UTILITIES  (DetailRow, VoteBadge)
+// Shared between SeatTooltip, MemberListPanel, and MemberModal.
 // ─────────────────────────────────────────────────────────────
-
-function LegislatorDetail({ legislator }: { legislator: Legislator | null }): JSX.Element {
-  if (!legislator) {
-    return (
-      <Card title="Member" subtitle="DETAIL">
-        <p className="text-body text-text-muted italic">
-          Click a seat to inspect a legislator — their ideology,
-          relationship with you, and voting record.
-        </p>
-      </Card>
-    );
-  }
-
-  const r = legislator.relationship;
-  const relTone: 'danger' | 'warning' | 'gold' =
-    r < -25 ? 'danger' : r < 25 ? 'warning' : 'gold';
-  const votes = Object.entries(legislator.votingHistory);
-
-  return (
-    <Card
-      title={legislator.name}
-      subtitle={`${legislator.party}-${legislator.state}${
-        legislator.district !== undefined ? `-${legislator.district}` : ''
-      } · ${legislator.chamber.toUpperCase()}`}
-    >
-      <div className="space-y-3">
-        <DetailRow label="Relationship" value={`${r > 0 ? '+' : ''}${r}`} tone={relTone} />
-        <DetailRow label="Personality" value={legislator.personality} />
-        <DetailRow
-          label="Ideology"
-          value={`${legislator.ideology.x.toFixed(2)} · ${legislator.ideology.y.toFixed(2)}`}
-        />
-        <DetailRow label="Term ends" value={String(legislator.termEndsYear)} />
-
-        <div>
-          <div className="font-mono text-label uppercase tracking-widest text-text-muted mb-1">
-            Priorities
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {legislator.priorities.length === 0 ? (
-              <span className="text-body text-text-muted italic">None recorded</span>
-            ) : (
-              legislator.priorities.map((p) => (
-                <span
-                  key={p}
-                  className="font-mono text-[0.6875rem] uppercase tracking-wider px-1.5 py-0.5 bg-bg-tertiary text-text-secondary rounded-sm"
-                >
-                  {p}
-                </span>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <span className="font-mono text-label uppercase tracking-widest text-text-muted">
-              Voting record
-            </span>
-            <span className="font-mono text-data-sm text-text-muted tabular-nums">
-              {votes.length}
-            </span>
-          </div>
-          {votes.length === 0 ? (
-            <p className="text-body text-text-muted italic">No votes cast yet.</p>
-          ) : (
-            <ul className="space-y-1 max-h-48 overflow-y-auto game-scroll pr-1">
-              {votes.slice(-10).reverse().map(([billId, vote]) => (
-                <li
-                  key={billId}
-                  className="flex justify-between items-center text-[0.8125rem]"
-                >
-                  <span className="text-text-secondary truncate mr-2">{billId}</span>
-                  <VoteBadge vote={vote} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
-}
 
 function DetailRow({
   label,
@@ -439,19 +592,12 @@ function VoteBadge({ vote }: { vote: 'yea' | 'nay' | 'abstain' }): JSX.Element {
 
 // ─────────────────────────────────────────────────────────────
 // MEMBER MODAL
-// Click-to-open detail surface. The side rail stays as the live
-// hover preview; this modal is where the player goes to *study* a
-// member. Same data as the rail today, with extra room for an
-// ideology compass and a research-mechanic placeholder (todo#30
-// follow-up tracked as an issue).
+// Full detail surface opened on seat click or member row click.
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Lay out the four-panel modal. Closes on Escape and on backdrop
- * click. We do not use ModalShell because the two competing
- * confirmation patterns (ModalShell's stack + this panel-level state)
- * fight over Escape; a self-contained modal keeps focus management
- * simple while we iterate on the panel.
+ * Deep-dive modal for a single legislator. Shows stat block + voting
+ * record summary + recent votes. Closes on Escape or backdrop click.
  */
 function MemberModal({
   legislator,
@@ -460,8 +606,6 @@ function MemberModal({
   legislator: Legislator;
   onClose: () => void;
 }): JSX.Element {
-  // Escape-to-close. Effect lives on the modal itself so unmounting
-  // tears the listener down cleanly.
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
       if (e.key === 'Escape') onClose();
@@ -508,7 +652,7 @@ function MemberModal({
         </header>
 
         <div className="px-5 py-4 grid md:grid-cols-2 gap-5 overflow-y-auto game-scroll">
-          {/* Left column: stat block. */}
+          {/* Left: stat block */}
           <section className="space-y-3" data-testid="member-modal-stats">
             <DetailRow
               label="Relationship"
@@ -558,7 +702,7 @@ function MemberModal({
             </div>
           </section>
 
-          {/* Right column: voting record summary + recent votes. */}
+          {/* Right: voting record */}
           <section className="space-y-3" data-testid="member-modal-votes">
             <div>
               <div className="font-mono text-label uppercase tracking-widest text-text-muted mb-2">
@@ -630,3 +774,4 @@ function VoteTotal({
     </div>
   );
 }
+

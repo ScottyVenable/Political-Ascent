@@ -16,9 +16,19 @@ export type PanelId =
   | 'timeline'
   | 'patch-notes';
 
+/** Payload attached to a 'vote-result' modal (todo#85). */
+export interface VoteResultPayload {
+  billTitle: string;
+  passed: boolean;
+  yea: number;
+  nay: number;
+  /** Individual senator votes, sorted yeas-first then nays. */
+  breakdown: Array<{ id: string; name: string; party: 'D' | 'R' | 'I'; state: string; vote: 'yea' | 'nay' }>;
+}
+
 export interface ModalState {
   id: string;
-  type: 'event' | 'bill' | 'dialogue' | 'confirm' | 'info';
+  type: 'event' | 'bill' | 'dialogue' | 'confirm' | 'info' | 'vote-result';
   payload?: unknown;
 }
 

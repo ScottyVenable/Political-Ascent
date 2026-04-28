@@ -276,6 +276,22 @@ const ICONS = {
       <path d="M16 8V6a2 2 0 0 0 -2 -2H6a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2" />
     </>
   ),
+  // Tabler "eye" — show / visibility. Used by the Congress member-list
+  // dim/hide toggle (todo#69).
+  eye: (
+    <>
+      <circle cx="12" cy="12" r="2" />
+      <path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7" />
+    </>
+  ),
+  // Tabler "eye-off" — hide / visibility disabled. Congress dim→hide toggle.
+  'eye-off': (
+    <>
+      <path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" />
+      <path d="M16.681 16.673A8.717 8.717 0 0 1 12 18c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674M19.5 14.3c.222 -.457 .432 -.94 .629 -1.45a2 2 0 0 0 .371 -3.85" />
+      <path d="M3 3l18 18" />
+    </>
+  ),
   // Tabler "menu-2" — three horizontal bars. Mobile drawer toggle in
   // the TopBar (`md:hidden`).
   menu: (
