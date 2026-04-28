@@ -11,7 +11,8 @@ export type PanelId =
   | 'cards'
   | 'collection'
   | 'skills'
-  | 'character';
+  | 'character'
+  | 'glossary';
 
 export interface ModalState {
   id: string;

@@ -206,6 +206,22 @@ const ICONS = {
       <path d="M12 5v14M5 12h14" />
     </>
   ),
+  // Tabler "book-2" — open book with a centre rule. Used by the
+  // Glossary panel nav entry.
+  book: (
+    <>
+      <path d="M19 4v16H7a2 2 0 0 1 -2 -2V6a2 2 0 0 1 2 -2z" />
+      <path d="M19 16H7a2 2 0 0 0 -2 2" />
+      <path d="M9 8h6" />
+    </>
+  ),
+  // Tabler "search" — magnifier. Used by the glossary search field.
+  search: (
+    <>
+      <circle cx="10" cy="10" r="6" />
+      <path d="M21 21l-6 -6" />
+    </>
+  ),
 } as const satisfies Record<string, IconPath>;
 
 /** Public union of every valid icon id. Generated from the registry. */

@@ -21,6 +21,7 @@ import { CardsPanel } from '../panels/CardsPanel';
 import { CollectionPanel } from '../panels/CollectionPanel';
 import { SkillsPanel } from '../panels/SkillsPanel';
 import { CharacterPanel } from '../panels/CharacterPanel';
+import { GlossaryPanel } from '../panels/GlossaryPanel';
 
 /**
  * Game shell — holds the game-world layout.
@@ -108,6 +109,7 @@ export function Game(): JSX.Element {
           {activePanel === 'collection' && <CollectionPanel />}
           {activePanel === 'skills' && <SkillsPanel />}
           {activePanel === 'character' && <CharacterPanel />}
+          {activePanel === 'glossary' && <GlossaryPanel />}
         </main>
       </div>
       <BottomBar />

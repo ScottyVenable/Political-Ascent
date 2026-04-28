@@ -34,6 +34,7 @@ const PANELS: readonly PanelEntry[] = [
   { id: 'collection', label: 'Collection', icon: 'cards' },
   { id: 'skills', label: 'Skills', icon: 'skills' },
   { id: 'character', label: 'Character', icon: 'character' },
+  { id: 'glossary', label: 'Glossary', icon: 'book' },
 ];
 
 function SidebarImpl(): JSX.Element {
