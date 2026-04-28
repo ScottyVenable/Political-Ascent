@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
-import type { VoteResultPayload } from '@/store/uiStore';
+import type { VoteResultPayload, CardEffectsPayload } from '@/store/uiStore';
+import type { Effect } from '@/types';
 import { useWorldStore } from '@/store/worldStore';
 import { useGameStore } from '@/store/gameStore';
 import { TimeEngine } from '@/engine/TimeEngine';
@@ -147,6 +148,7 @@ export function Game(): JSX.Element {
       <BottomBar />
       {activeEvents.length > 0 && <EventModal />}
       <VoteResultModal />
+      <CardEffectsModal />
     </div>
   );
 }
@@ -349,6 +351,181 @@ function VoteResultModal(): JSX.Element | null {
         <footer className="px-6 py-3 border-t border-bg-tertiary flex justify-end">
           <Button variant="primary" onClick={dismiss} data-testid="vote-result-dismiss">
             Dismiss
+          </Button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CARD EFFECTS MODAL (todo#84)
+//
+// Appears immediately after a card is played successfully. Shows the
+// player a readable summary of every effect that was applied — stat
+// changes, resource shifts, group sentiment, economy metrics, etc.
+//
+// Positive numeric changes are styled green (`text-status-success`);
+// negative are red (`text-status-danger`). Non-numeric effects (flag
+// sets, card grants, quest triggers) render as neutral text.
+//
+// The modal is dismissed by clicking the overlay, pressing the Dismiss
+// button, or pressing Escape (handled by the click-outside listener on
+// the overlay div).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Converts a single Effect into a human-readable description and a
+ * sign flag used to choose a colour class.
+ *
+ * `positive` is `true` when the effect is a buff (positive number, or
+ * a flag/grant that is inherently beneficial-in-context). `null` means
+ * the effect has no natural polarity (flag clears, quest triggers).
+ *
+ * @example
+ * describeEffect({ type: 'resource', resource: 'politicalCapital', value: 25 })
+ * // => { label: 'Political Capital', valueStr: '+25', positive: true }
+ */
+function describeEffect(e: Effect): { label: string; valueStr: string; positive: boolean | null } {
+  switch (e.type) {
+    case 'stat': {
+      const name = e.target.charAt(0).toUpperCase() + e.target.slice(1);
+      return { label: name, valueStr: fmt(e.value), positive: e.value >= 0 };
+    }
+    case 'resource': {
+      const RESOURCE_LABELS: Record<string, string> = {
+        politicalCapital: 'Political Capital',
+        actionPoints: 'Action Points',
+        xp: 'XP',
+      };
+      return { label: RESOURCE_LABELS[e.resource] ?? e.resource, valueStr: fmt(e.value), positive: e.value >= 0 };
+    }
+    case 'group_happiness':
+      return { label: `${e.group} Happiness`, valueStr: fmt(e.value), positive: e.value >= 0 };
+    case 'group_loyalty':
+      return { label: `${e.group} Loyalty`, valueStr: fmt(e.value), positive: e.value >= 0 };
+    case 'relationship':
+      return { label: `Relationship: ${e.npcId}`, valueStr: fmt(e.value), positive: e.value >= 0 };
+    case 'economy': {
+      const ECONOMY_LABELS: Record<string, string> = {
+        gdpGrowth: 'GDP Growth',
+        unemployment: 'Unemployment',
+        inflation: 'Inflation',
+        debt: 'Debt',
+        deficit: 'Deficit',
+        gini: 'Gini Coefficient',
+        trade: 'Trade Balance',
+      };
+      return { label: ECONOMY_LABELS[e.metric] ?? e.metric, valueStr: fmt(e.value), positive: e.value >= 0 };
+    }
+    case 'flag':
+      return { label: `Flag: ${e.flag}`, valueStr: String(e.value), positive: null };
+    case 'grant_card':
+      return { label: 'Gained card', valueStr: e.cardId, positive: null };
+    case 'trigger_quest':
+      return { label: 'Quest triggered', valueStr: e.questId, positive: null };
+    default:
+      // Exhaustive guard — TypeScript will error if a new variant is
+      // added to Effect without being handled here.
+      return { label: (e as { type: string }).type, valueStr: '', positive: null };
+  }
+}
+
+/** Prefix a number with `+` when positive so the player reads it as a delta. */
+function fmt(n: number): string {
+  return n >= 0 ? `+${n}` : String(n);
+}
+
+/**
+ * Renders a single effect row inside the card-effects modal.
+ * Kept as a sub-component to isolate the polarity-colour logic
+ * from the outer modal layout.
+ */
+function EffectRow({ effect }: { effect: Effect }): JSX.Element {
+  const { label, valueStr, positive } = describeEffect(effect);
+  const valueClass =
+    positive === true
+      ? 'text-status-success font-semibold'
+      : positive === false
+        ? 'text-status-danger font-semibold'
+        : 'text-text-secondary';
+
+  return (
+    <li className="flex justify-between items-baseline py-1 border-b border-bg-tertiary/40 last:border-0 gap-2">
+      <span className="text-sm text-text-secondary">{label}</span>
+      <span className={`font-mono text-sm tabular-nums shrink-0 ${valueClass}`}>{valueStr}</span>
+    </li>
+  );
+}
+
+/**
+ * CardEffectsModal — overlaid after a successful card play to show the
+ * player exactly what changed (todo#84).
+ *
+ * Reads the first `'card-effects'` modal from the uiStore queue.
+ * If no such modal exists, renders nothing.
+ */
+function CardEffectsModal(): JSX.Element | null {
+  const modals = useUIStore((s) => s.modals);
+  const closeModal = useUIStore((s) => s.closeModal);
+
+  const modal = modals.find((m) => m.type === 'card-effects');
+  if (!modal) return null;
+
+  const { cardName, effects } = modal.payload as CardEffectsPayload;
+  // Cast to Effect[] — the payload was constructed in CardSystem.play()
+  // from a typed readonly Effect[] and round-tripped through `unknown`.
+  const typedEffects = effects as Effect[];
+
+  function dismiss(): void {
+    closeModal(modal!.id);
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Effects of ${cardName}`}
+      onClick={dismiss}
+      data-testid="card-effects-modal"
+    >
+      <div
+        className="w-full max-w-sm bg-bg-secondary rounded-lg border border-bg-tertiary shadow-2xl flex flex-col max-h-[80vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ── HEADER ── */}
+        <header className="px-5 py-4 border-b border-bg-tertiary flex items-center gap-2">
+          <Icon name="cards" size={18} className="text-accent-gold shrink-0" />
+          <div>
+            <p className="font-mono text-label uppercase tracking-widest text-text-muted">Card played</p>
+            <h2
+              className="font-headline text-lg text-text-primary leading-tight"
+              data-testid="card-effects-name"
+            >
+              {cardName}
+            </h2>
+          </div>
+        </header>
+
+        {/* ── EFFECT LIST ── */}
+        <div className="flex-1 overflow-y-auto game-scroll px-5 py-3">
+          {typedEffects.length === 0 ? (
+            <p className="text-sm text-text-muted italic">No immediate effects.</p>
+          ) : (
+            <ul data-testid="card-effects-list">
+              {typedEffects.map((e, i) => (
+                // Index is stable for this static list; no reorder possible.
+                <EffectRow key={i} effect={e} />
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* ── FOOTER ── */}
+        <footer className="px-5 py-3 border-t border-bg-tertiary flex justify-end">
+          <Button variant="primary" onClick={dismiss} data-testid="card-effects-dismiss">
+            Done
           </Button>
         </footer>
       </div>

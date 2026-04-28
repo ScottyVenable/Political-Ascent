@@ -1,4 +1,4 @@
-import type { CardDefinition, CardInstance, CardId } from '@/types';
+import type { CardDefinition, CardInstance, CardId, Effect } from '@/types';
 import { useCharacterStore } from '@/store/characterStore';
 import { useGameStore } from '@/store/gameStore';
 import { useWorldStore } from '@/store/worldStore';
@@ -6,6 +6,17 @@ import { applyEffects } from '@/engine/applyEffect';
 import { SeededRNG } from '@/utils/random';
 import { makeId } from '@/utils/id';
 import { createLogger } from '@/utils/logger';
+
+/**
+ * Result of attempting to play a card.
+ *
+ * When `ok` is `true`, `cardName` and `effects` are present and the caller
+ * is expected to show an effects summary to the player (todo#84).
+ * When `ok` is `false`, `reason` explains the rejection.
+ */
+export type PlayResult =
+  | { ok: true; cardName: string; effects: readonly Effect[] }
+  | { ok: false; reason: string };
 
 const log = createLogger('CardSystem');
 
@@ -33,8 +44,14 @@ export interface CardSystemAPI {
   instantiate(cardId: CardId, rng?: SeededRNG): CardInstance;
   /** Deal up to `max - currentHandSize` cards from deck into hand. */
   drawToHandSize(max: number): number;
-  /** Play a card from hand. Returns true on success. */
-  play(instanceId: string): { ok: boolean; reason?: string };
+  /**
+   * Play a card from hand.
+   *
+   * On success, `ok` is `true` and `cardName` + `effects` are populated
+   * so the UI can show an effects summary modal (todo#84). On failure,
+   * `ok` is `false` and `reason` explains why.
+   */
+  play(instanceId: string): PlayResult;
   /** Discard a card from hand back into the deck. */
   discard(instanceId: string): void;
 }
@@ -96,7 +113,7 @@ class CardSystemImpl implements CardSystemAPI {
     return drawn.length;
   }
 
-  play(instanceId: string): { ok: boolean; reason?: string } {
+  play(instanceId: string): PlayResult {
     // ── 1. Locate card and definition ──────────────────────────
     const char = useCharacterStore.getState();
     const inst = char.hand.find((c) => c.instanceId === instanceId);
@@ -193,7 +210,7 @@ class CardSystemImpl implements CardSystemAPI {
       severity: 'info',
     });
 
-    return { ok: true };
+    return { ok: true, cardName: def.name, effects: def.effects };
   }
 
   discard(instanceId: string): void {

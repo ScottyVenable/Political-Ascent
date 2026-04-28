@@ -26,9 +26,23 @@ export interface VoteResultPayload {
   breakdown: Array<{ id: string; name: string; party: 'D' | 'R' | 'I'; state: string; vote: 'yea' | 'nay' }>;
 }
 
+/**
+ * Payload attached to a 'card-effects' modal (todo#84).
+ *
+ * Shown immediately after a card is played successfully. Lists the
+ * effects that were applied so the player can see what changed.
+ */
+export interface CardEffectsPayload {
+  /** Display name of the card that was played. */
+  cardName: string;
+  /** The raw effects that were applied. `describeEffect` in Game.tsx
+   *  converts each to a human-readable string for the modal body. */
+  effects: Array<{ type: string; [key: string]: unknown }>;
+}
+
 export interface ModalState {
   id: string;
-  type: 'event' | 'bill' | 'dialogue' | 'confirm' | 'info' | 'vote-result';
+  type: 'event' | 'bill' | 'dialogue' | 'confirm' | 'info' | 'vote-result' | 'card-effects';
   payload?: unknown;
 }
 

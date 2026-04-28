@@ -77,11 +77,25 @@ export function CardsPanel(): JSX.Element {
     setPlayingId(instanceId);
     try {
       const res = CardSystem.play(instanceId);
-      pushToast({
-        message: res.ok ? 'Played.' : (res.reason ?? 'Cannot play'),
-        severity: res.ok ? 'success' : 'warning',
-        ttl: 2500,
-      });
+      if (res.ok) {
+        pushToast({
+          message: 'Played.',
+          severity: 'success',
+          ttl: 2000,
+        });
+        // Show the effects modal so the player can see what changed. (#84)
+        useUIStore.getState().openModal({
+          id: `card-effects-${Date.now()}`,
+          type: 'card-effects',
+          payload: { cardName: res.cardName, effects: res.effects },
+        });
+      } else {
+        pushToast({
+          message: res.reason,
+          severity: 'warning',
+          ttl: 2500,
+        });
+      }
     } finally {
       setPlayingId(null);
     }
