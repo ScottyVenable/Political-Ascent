@@ -8,13 +8,20 @@ import { Button } from '../components/Button';
 import { useContextMenu } from '../hooks/useContextMenu';
 
 /**
- * CardsPanel — view and play cards in hand.
+ * CardsPanel — view, reorder, and play cards in hand.
  *
  * Resource gating: a card is *playable* when the character has enough
  * political capital, enough action points, the cooldown has elapsed and
  * any uses-per-game budget hasn't been exhausted. The CardSystem is the
  * authority on all of these; we mirror just enough state here to render
  * the disabled button and a friendly tooltip on the cause.
+ *
+ * Drag-and-drop reordering (todo#3): every card row is HTML5-draggable.
+ * Dropping over another card commits a new hand order through
+ * `reorderHand()`. While a card is being dragged the rest of the grid
+ * receives a subtle `opacity-50` hint so the player can see where the
+ * card came from. The dropped card "lands" via the same lift/transition
+ * declared on `<CardFace />`, giving the move a tactile finish.
  *
  * Double-click protection: `playingId` is set synchronously before the
  * play call so a fast second click on the same card is ignored even if
@@ -23,17 +30,22 @@ import { useContextMenu } from '../hooks/useContextMenu';
 export function CardsPanel(): JSX.Element {
   const hand = useCharacterStore((s) => s.hand);
   const deck = useCharacterStore((s) => s.deck);
+  const reorderHand = useCharacterStore((s) => s.reorderHand);
   const pc = useGameStore((s) => s.politicalCapital);
   const ap = useGameStore((s) => s.actionPoints.current);
   const week = useGameStore((s) => s.week);
   const pushToast = useUIStore((s) => s.pushToast);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  /**
+   * Instance id of the card currently being dragged. Held in component
+   * state (rather than a ref) so the drag visual on the source card
+   * can react to it via Tailwind classes — the drag pseudo-state is
+   * not reliable across browsers for HTML5 drag.
+   */
+  const [dragId, setDragId] = useState<string | null>(null);
   const menu = useContextMenu();
 
   function play(instanceId: string): void {
-    // Guard against rapid double-clicks. Even though `CardSystem.play`
-    // is idempotent (it looks up the instance in the hand each call),
-    // emitting two toasts and two news entries is jarring.
     if (playingId !== null) return;
     setPlayingId(instanceId);
     try {
@@ -44,14 +56,28 @@ export function CardsPanel(): JSX.Element {
         ttl: 2500,
       });
     } finally {
-      // Always clear, even if applyEffects throws — otherwise the panel
-      // would lock up for the rest of the session.
       setPlayingId(null);
     }
   }
 
   function discard(instanceId: string): void {
     CardSystem.discard(instanceId);
+  }
+
+  /**
+   * Reorder the hand so `sourceId` ends up immediately before `targetId`.
+   * Both ids are looked up against the current hand, not against the
+   * snapshot taken at drag-start, so the action is robust against a
+   * draw or discard that happens mid-drag.
+   */
+  function moveBefore(sourceId: string, targetId: string): void {
+    if (sourceId === targetId) return;
+    const ids = hand.map((c) => c.instanceId);
+    const without = ids.filter((id) => id !== sourceId);
+    const targetIdx = without.indexOf(targetId);
+    if (targetIdx === -1) return;
+    without.splice(targetIdx, 0, sourceId);
+    reorderHand(without);
   }
 
   return (
@@ -65,7 +91,10 @@ export function CardsPanel(): JSX.Element {
         <p className="text-sm text-text-muted italic">Your hand is empty. Cards are drawn at the start of each week.</p>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+        data-testid="cards-hand-grid"
+      >
         {hand.map((inst) => {
           const def = CardSystem.getDefinition(inst.cardId);
           if (!def) return null;
@@ -91,16 +120,43 @@ export function CardsPanel(): JSX.Element {
           }
           const canPay = blockedReason === null;
           const pending = playingId === inst.instanceId;
+          const isDragging = dragId === inst.instanceId;
           return (
             <div
               key={inst.instanceId}
-              className="flex flex-col gap-2"
+              className={
+                'flex flex-col gap-2 transition-opacity duration-150 ' +
+                (isDragging ? 'opacity-40' : '')
+              }
               data-testid={`card-row-${def.id}`}
+              data-instance-id={inst.instanceId}
+              draggable={!pending}
+              onDragStart={(e) => {
+                // dataTransfer carries the instance id so a future
+                // cross-region drop (e.g. dropping onto a "discard"
+                // zone) can identify the card without relying on
+                // component state alone.
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', inst.instanceId);
+                setDragId(inst.instanceId);
+              }}
+              onDragEnd={() => setDragId(null)}
+              onDragOver={(e) => {
+                // Required to allow `drop` to fire. The browser will
+                // otherwise treat the element as a no-drop target.
+                if (dragId && dragId !== inst.instanceId) {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                }
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const sourceId =
+                  e.dataTransfer.getData('text/plain') || dragId;
+                if (sourceId) moveBefore(sourceId, inst.instanceId);
+                setDragId(null);
+              }}
               onContextMenu={(e) =>
-                // Right-click brings up a contextual menu of actions for
-                // this specific card instance. Items are derived per
-                // card so we can grey out "Play" with the live block
-                // reason, mirroring the button state below.
                 menu.open(e, [
                   {
                     id: 'play',

@@ -12,6 +12,16 @@ interface CharacterStoreActions {
   setIdeology: (ideology: IdeologyPoint) => void;
   /** Pick an avatar preset id. See `src/data/avatars`. */
   setAvatar: (avatarId: string) => void;
+  /**
+   * Reorder the cards in `hand` to match `orderedInstanceIds`.
+   *
+   * Used by the cards-panel drag-and-drop reordering (see todo#3).
+   * Cards present in `hand` whose ids are missing from
+   * `orderedInstanceIds` are appended at the end in their original
+   * order — the action is therefore safe against a stale id list,
+   * which can happen if a draw lands between drag-start and drop.
+   */
+  reorderHand: (orderedInstanceIds: string[]) => void;
   reset: () => void;
 }
 
@@ -92,6 +102,29 @@ export const useCharacterStore = create<Store>()(
     setAvatar: (avatarId) =>
       set((s) => {
         s.avatarId = avatarId;
+      }),
+
+    reorderHand: (orderedInstanceIds) =>
+      set((s) => {
+        // Build the new hand by walking the requested order and
+        // pulling each matching instance out of the current hand. This
+        // preserves the CardInstance identities (lastPlayedWeek,
+        // timesPlayed, etc.) instead of replacing them with new
+        // objects, which would invalidate React keys and trigger a
+        // full re-mount of every card in the grid.
+        const remaining = new Map(s.hand.map((c) => [c.instanceId, c]));
+        const next: typeof s.hand = [];
+        for (const id of orderedInstanceIds) {
+          const inst = remaining.get(id);
+          if (inst) {
+            next.push(inst);
+            remaining.delete(id);
+          }
+        }
+        // Anything that wasn't in the requested order is appended —
+        // typically a card drawn between drag-start and drop.
+        for (const inst of remaining.values()) next.push(inst);
+        s.hand = next;
       }),
 
     reset: () => set(() => ({ ...BLANK })),

@@ -118,6 +118,19 @@ function CardFaceImpl({
           'rarity-frame rarity-' +
           def.rarity +
           ' bg-bg-secondary rounded-sm flex flex-col ' +
+          // Standardised height (todo#3): every card in a row sits at
+          // the same vertical extent so the hand reads as a row of
+          // equal-weight tiles. `min-h-[280px]` is enough to fit the
+          // header, description, optional stats, and tag row of the
+          // densest current cards without wrapping.
+          (compact ? 'min-h-[180px] ' : 'min-h-[280px] ') +
+          // Hover physics: a small upward translate + slight rotate
+          // makes the card feel like it's being lifted off the table.
+          // We avoid scale to keep neighbour cards from shifting.
+          // Active state mirrors a "pressed" card on a felt surface.
+          'transition-transform duration-150 ease-arrive ' +
+          'hover:-translate-y-1 hover:rotate-[-0.4deg] ' +
+          'active:translate-y-0 active:rotate-0 ' +
           (compact ? 'p-2 gap-1' : 'p-3 gap-2') +
           ' ' +
           (state === 'locked' ? 'opacity-50 grayscale ' : '') +

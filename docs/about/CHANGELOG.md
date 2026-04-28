@@ -4,6 +4,10 @@ All notable changes to Political Ascent are recorded here.
 
 ## [Unreleased]
 
+### Added
+
+- **Card physics: drag-to-reorder + hover lift + standardised height** (`exp--card-physics`, todo#3). The cards panel hand is now reorderable via HTML5 drag-and-drop — every card row is `draggable`, dropping a card onto another commits a new order through the new `reorderHand(orderedInstanceIds)` action on `characterStore`. The action preserves `CardInstance` identity (so React keys don't churn), is robust against draws landing mid-drag, and ignores stale ids surviving a discard. `CardFace` now declares a standardised `min-h` (180px compact / 280px regular) so cards across rows align, and a hover transform (`-translate-y-1 rotate-[-0.4deg]` on a 150ms `ease-arrive` curve) makes each card feel lifted off the table. The dragged source card fades to `opacity-40` so the player sees the move in flight. New unit suite `characterStore.test.ts` (5 cases covering identity preservation, missing target, stale-id, empty-hand). 208 vitest passing.
+
 ### Fixed
 
 - **Mobile portrait layout** (`exp--mobile-portrait-fixes`). The 192px sidebar now collapses into an overlay drawer below the `md` breakpoint (toggled from a new TopBar hamburger), so the main panel keeps the full viewport width on phones. The Game shell applies `env(safe-area-inset-*)` padding and uses `100dvh` so the chrome doesn't clip under the Pixel notch / Dynamic Island / gesture bar. TopBar drops the "XP" suffix and "AP" caption below `sm`; BottomBar shrinks the speed buttons (40→36px) and abbreviates the long week footer; Dashboard KPI tiles use `text-2xl` on phones (vs. `text-data-lg` 32px on desktop) and truncate cleanly. New Pixel-7-portrait Playwright project + 3-test smoke (`tests/e2e/mobile-portrait.spec.ts`).
