@@ -34,16 +34,25 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { Hemicycle } from '../components/Hemicycle';
-import type { Legislator, Party } from '@/types';
+import type { Legislator, Party, LegislatorPersonality } from '@/types';
 
 type PartyFilter = 'all' | Party;
 /** Single-chamber tab — no more "both". */
 type ChamberTab = 'senate' | 'house';
 
 /** Direction to sort the member list. */
-type SortKey = 'name' | 'state' | 'relationship';
+type SortKey = 'name' | 'state' | 'relationship' | 'votes';
 /** Whether filtered-out seats are hidden entirely or dimmed in the hemicycle. */
 type FilterMode = 'dim' | 'hide';
+
+/**
+ * Coarse ideology bucket based on ideology.x axis.
+ * Matches left/right real-world seating convention used by layoutHemicycle.
+ */
+type IdeologyFilter = 'all' | 'left' | 'center' | 'right';
+
+/** Filter by personality archetype. */
+type PersonalityFilter = 'all' | LegislatorPersonality;
 
 const PARTY_LABEL: Record<Party, string> = {
   D: 'Democrat',
@@ -78,6 +87,9 @@ export function CongressPanel(): JSX.Element {
 
   const [chamber, setChamber] = useState<ChamberTab>('senate');
   const [partyFilter, setPartyFilter] = useState<PartyFilter>('all');
+  const [stateFilter, setStateFilter] = useState<string>('all');
+  const [ideologyFilter, setIdeologyFilter] = useState<IdeologyFilter>('all');
+  const [personalityFilter, setPersonalityFilter] = useState<PersonalityFilter>('all');
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [filterMode, setFilterMode] = useState<FilterMode>('dim');
@@ -93,22 +105,36 @@ export function CongressPanel(): JSX.Element {
   const searchLower = search.toLowerCase();
 
   /**
-   * Members that match the current party filter AND search string.
+   * Members that match ALL active filters (party, state, ideology bucket,
+   * personality) AND the search string.
    * This is the set rendered in the right-side list.
    */
   const matchedMembers = useMemo(() => {
     return chamberMembers.filter((l) => {
-      const partyOk = partyFilter === 'all' || l.party === partyFilter;
-      if (!partyOk) return false;
-      if (!searchLower) return true;
-      // Match against name, state, personality (handy for power users).
-      return (
-        l.name.toLowerCase().includes(searchLower) ||
-        l.state.toLowerCase().includes(searchLower) ||
-        l.personality.toLowerCase().includes(searchLower)
-      );
+      // Party
+      if (partyFilter !== 'all' && l.party !== partyFilter) return false;
+      // State
+      if (stateFilter !== 'all' && l.state !== stateFilter) return false;
+      // Ideology bucket: left < -0.33, right > 0.33, center otherwise.
+      if (ideologyFilter !== 'all') {
+        const x = l.ideology.x;
+        if (ideologyFilter === 'left'   && x >= -0.33) return false;
+        if (ideologyFilter === 'center' && (x < -0.33 || x > 0.33)) return false;
+        if (ideologyFilter === 'right'  && x <= 0.33)  return false;
+      }
+      // Personality
+      if (personalityFilter !== 'all' && l.personality !== personalityFilter) return false;
+      // Text search — name, state, or personality.
+      if (searchLower) {
+        const hit =
+          l.name.toLowerCase().includes(searchLower) ||
+          l.state.toLowerCase().includes(searchLower) ||
+          l.personality.toLowerCase().includes(searchLower);
+        if (!hit) return false;
+      }
+      return true;
     });
-  }, [chamberMembers, partyFilter, searchLower]);
+  }, [chamberMembers, partyFilter, stateFilter, ideologyFilter, personalityFilter, searchLower]);
 
   /** Sorted list for the right-side roster. */
   const sortedMembers = useMemo(() => {
@@ -117,6 +143,12 @@ export function CongressPanel(): JSX.Element {
         case 'name': return a.name.localeCompare(b.name);
         case 'state': return a.state.localeCompare(b.state) || a.name.localeCompare(b.name);
         case 'relationship': return b.relationship - a.relationship;
+        // Sort by total votes cast (ascending = fewest recorded votes first).
+        case 'votes': {
+          const av = Object.keys(a.votingHistory).length;
+          const bv = Object.keys(b.votingHistory).length;
+          return bv - av; // descending: most-active first
+        }
         default: return 0;
       }
     });
@@ -131,7 +163,12 @@ export function CongressPanel(): JSX.Element {
    * list passed to Hemicycle (filterMode='hide').
    */
   const dimmedIds = useMemo<ReadonlySet<string>>(() => {
-    const hasFilter = partyFilter !== 'all' || searchLower.length > 0;
+    const hasFilter =
+      partyFilter !== 'all' ||
+      stateFilter !== 'all' ||
+      ideologyFilter !== 'all' ||
+      personalityFilter !== 'all' ||
+      searchLower.length > 0;
     if (!hasFilter) return new Set();
     const matchedSet = new Set(matchedMembers.map((l) => l.id as unknown as string));
     return new Set(
@@ -139,7 +176,7 @@ export function CongressPanel(): JSX.Element {
         .map((l) => l.id as unknown as string)
         .filter((id) => !matchedSet.has(id)),
     );
-  }, [chamberMembers, matchedMembers, partyFilter, searchLower]);
+  }, [chamberMembers, matchedMembers, partyFilter, stateFilter, ideologyFilter, personalityFilter, searchLower]);
 
   /**
    * The legislators list passed to the Hemicycle.
@@ -215,6 +252,13 @@ export function CongressPanel(): JSX.Element {
       <div className="grid lg:grid-cols-[1fr_320px] gap-4 items-start">
 
         {/* ── LEFT: PLINTH + HEMICYCLE ── */}
+        {/*
+          Constrained height (50vh - header offset) so the hemicycle
+          never requires vertical scrolling to see in full (todo#56).
+          The SVG is `w-full h-auto` inside a fixed-height container,
+          so the viewBox scales down to fit. overflow-hidden prevents
+          the rare case where the SVG aspect is taller than the container.
+        */}
         <Card accent="gold" className="overflow-hidden">
           <header className="mb-3 pb-3 border-b border-rule">
             <div className="flex items-baseline justify-between gap-3 flex-wrap">
@@ -227,7 +271,7 @@ export function CongressPanel(): JSX.Element {
             </div>
             <PartyStrip breakdown={breakdown} total={totalSeats} className="mt-2" />
           </header>
-          <div className="px-2 pt-1">
+          <div className="px-2 pt-1 max-h-[45vh] overflow-hidden">
             <Hemicycle
               legislators={hemicycleMembers}
               onSelect={onSeatClick}
@@ -243,8 +287,15 @@ export function CongressPanel(): JSX.Element {
           <MemberListPanel
             members={sortedMembers}
             total={chamberMembers.length}
+            chamberMembers={chamberMembers}
             partyFilter={partyFilter}
             setPartyFilter={setPartyFilter}
+            stateFilter={stateFilter}
+            setStateFilter={setStateFilter}
+            ideologyFilter={ideologyFilter}
+            setIdeologyFilter={setIdeologyFilter}
+            personalityFilter={personalityFilter}
+            setPersonalityFilter={setPersonalityFilter}
             search={search}
             setSearch={setSearch}
             sortKey={sortKey}
@@ -354,8 +405,15 @@ function SeatTooltip({
 function MemberListPanel({
   members,
   total,
+  chamberMembers,
   partyFilter,
   setPartyFilter,
+  stateFilter,
+  setStateFilter,
+  ideologyFilter,
+  setIdeologyFilter,
+  personalityFilter,
+  setPersonalityFilter,
   search,
   setSearch,
   sortKey,
@@ -367,8 +425,16 @@ function MemberListPanel({
 }: {
   members: readonly Legislator[];
   total: number;
+  /** Full unfiltered chamber list — used to derive available states. */
+  chamberMembers: readonly Legislator[];
   partyFilter: PartyFilter;
   setPartyFilter: (p: PartyFilter) => void;
+  stateFilter: string;
+  setStateFilter: (s: string) => void;
+  ideologyFilter: IdeologyFilter;
+  setIdeologyFilter: (i: IdeologyFilter) => void;
+  personalityFilter: PersonalityFilter;
+  setPersonalityFilter: (p: PersonalityFilter) => void;
   search: string;
   setSearch: (s: string) => void;
   sortKey: SortKey;
@@ -379,6 +445,29 @@ function MemberListPanel({
   selected: Legislator | null;
 }): JSX.Element {
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Collect the states that actually appear in this chamber (avoid
+  // showing states with no representatives in that chamber).
+  const availableStates = useMemo(() => {
+    const seen = new Set<string>();
+    for (const l of chamberMembers) seen.add(l.state);
+    return ['all', ...Array.from(seen).sort()] as const;
+  }, [chamberMembers]);
+
+  // Track whether the advanced-filter accordion is open.
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  // How many advanced filters are currently active (for badge).
+  const advancedCount =
+    (stateFilter !== 'all' ? 1 : 0) +
+    (ideologyFilter !== 'all' ? 1 : 0) +
+    (personalityFilter !== 'all' ? 1 : 0);
+
+  function clearAdvanced(): void {
+    setStateFilter('all');
+    setIdeologyFilter('all');
+    setPersonalityFilter('all');
+  }
 
   return (
     <Card title="Members" subtitle={`${members.length} of ${total}`}>
@@ -427,12 +516,112 @@ function MemberListPanel({
         </button>
       </div>
 
+      {/* ── ADVANCED FILTERS (collapsible) ── */}
+      <div className="mb-2 border border-rule rounded-sm overflow-hidden">
+        <button
+          type="button"
+          className="w-full flex items-center justify-between px-2 py-1.5 font-mono text-label uppercase tracking-widest text-text-muted hover:text-text-primary hover:bg-bg-tertiary/50 transition-colors"
+          onClick={() => setAdvancedOpen(!advancedOpen)}
+          aria-expanded={advancedOpen}
+          data-testid="congress-advanced-toggle"
+        >
+          <span className="flex items-center gap-1.5">
+            <Icon name="filter" size={12} />
+            Advanced Filters
+            {advancedCount > 0 && (
+              <span className="ml-1 px-1.5 py-0 rounded-full bg-accent-gold text-bg-primary font-bold text-[0.625rem] tabular-nums">
+                {advancedCount}
+              </span>
+            )}
+          </span>
+          <Icon name={advancedOpen ? 'chevron-up' : 'chevron-down'} size={12} />
+        </button>
+
+        {advancedOpen && (
+          <div className="px-2 pb-2 pt-1 space-y-2 border-t border-rule bg-bg-tertiary/30">
+            {/* State filter */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="congress-state-filter"
+                className="font-mono text-label uppercase tracking-widest text-text-muted shrink-0 w-20"
+              >
+                State
+              </label>
+              <select
+                id="congress-state-filter"
+                value={stateFilter}
+                onChange={(e) => setStateFilter(e.target.value)}
+                className="flex-1 bg-bg-secondary border border-rule rounded-sm px-2 py-1 font-mono text-[0.8125rem] text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-gold/40"
+                data-testid="congress-state-filter"
+              >
+                <option value="all">All States</option>
+                {availableStates.filter((s) => s !== 'all').map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Ideology bucket */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-label uppercase tracking-widest text-text-muted shrink-0 w-20">
+                Ideology
+              </span>
+              <div className="flex items-center gap-1 flex-wrap">
+                {(['all', 'left', 'center', 'right'] as const).map((i) => (
+                  <Button
+                    key={i}
+                    size="sm"
+                    variant={ideologyFilter === i ? 'primary' : 'secondary'}
+                    onClick={() => setIdeologyFilter(i)}
+                    data-testid={`congress-ideology-${i}`}
+                  >
+                    {i.charAt(0).toUpperCase() + i.slice(1)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Personality */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-label uppercase tracking-widest text-text-muted shrink-0 w-20">
+                Personality
+              </span>
+              <div className="flex items-center gap-1 flex-wrap">
+                {(['all', 'loyalist', 'maverick', 'opportunist', 'ideologue', 'pragmatist'] as const).map((p) => (
+                  <Button
+                    key={p}
+                    size="sm"
+                    variant={personalityFilter === p ? 'primary' : 'secondary'}
+                    onClick={() => setPersonalityFilter(p)}
+                    data-testid={`congress-personality-${p}`}
+                  >
+                    {p === 'all' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Clear all advanced filters */}
+            {advancedCount > 0 && (
+              <button
+                type="button"
+                onClick={clearAdvanced}
+                className="font-mono text-label uppercase tracking-widest text-status-danger hover:text-status-danger/80 transition-colors"
+                data-testid="congress-advanced-clear"
+              >
+                Clear Advanced Filters
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* ── SORT ── */}
-      <div className="flex items-center gap-1 mb-3">
+      <div className="flex items-center gap-1 mb-3 flex-wrap">
         <span className="font-mono text-label uppercase tracking-widest text-text-muted mr-1">
           Sort
         </span>
-        {(['name', 'state', 'relationship'] as const).map((key) => (
+        {(['name', 'state', 'relationship', 'votes'] as const).map((key) => (
           <Button
             key={key}
             size="sm"
@@ -440,7 +629,7 @@ function MemberListPanel({
             onClick={() => setSortKey(key)}
             data-testid={`congress-sort-${key}`}
           >
-            {key === 'relationship' ? 'Rel.' : key.charAt(0).toUpperCase() + key.slice(1)}
+            {key === 'relationship' ? 'Rel.' : key === 'votes' ? 'Votes' : key.charAt(0).toUpperCase() + key.slice(1)}
           </Button>
         ))}
       </div>
