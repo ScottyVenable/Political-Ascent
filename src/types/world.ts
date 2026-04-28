@@ -52,6 +52,12 @@ export interface GameState {
   isPaused: boolean;
   actionPoints: Bounded;
   politicalCapital: number;
+  /**
+   * Liquid campaign cash, distinct from political capital. Funds ads,
+   * staff, and any card whose flavour text talks about money rather
+   * than influence. Defaults to 0 in scenarios that haven't opted in.
+   */
+  treasury: number;
   week: number;
   month: number;
   year: number;

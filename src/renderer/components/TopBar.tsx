@@ -3,6 +3,7 @@ import { useGameStore } from '@/store/gameStore';
 import { useCharacterStore } from '@/store/characterStore';
 import { ResourcePips } from './ResourcePips';
 import { ExtendedTooltip } from './tooltip';
+import { Icon } from './Icon';
 
 /**
  * TopBar — slim, fixed header showing identity, date, and political resources.
@@ -42,6 +43,7 @@ function TopBarImpl(): JSX.Element {
   // invalidate the character-name span).
   const date = useGameStore((s) => s.currentDate);
   const pc = useGameStore((s) => s.politicalCapital);
+  const treasury = useGameStore((s) => s.treasury);
   const ap = useGameStore((s) => s.actionPoints.current);
   const apMax = useGameStore((s) => s.actionPoints.max);
 
@@ -88,6 +90,28 @@ function TopBarImpl(): JSX.Element {
             <span className="font-mono text-label text-text-muted">PC</span>
           </div>
         </ExtendedTooltip>
+        {/* Treasury — money. Distinct from PC (which is influence). The
+            coin icon plus the dollar-formatted number reads at a glance
+            as "campaign cash" without needing a label. We always show
+            it, even at $0, so the player learns the resource exists.
+            See docs/todo.md item 12. */}
+        <ExtendedTooltip term="treasury">
+          <div
+            tabIndex={0}
+            className="flex items-baseline gap-1.5 cursor-help focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm"
+            data-testid="topbar-treasury"
+          >
+            <Icon
+              name="economy"
+              size={14}
+              className="text-accent-gold self-center"
+              aria-hidden
+            />
+            <span className="font-mono text-sm text-text-primary tabular-nums">
+              {formatTreasury(treasury)}
+            </span>
+          </div>
+        </ExtendedTooltip>
         <ExtendedTooltip term="action-points">
           <div tabIndex={0} className="flex items-center gap-1.5 cursor-help focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm">
             <ResourcePips value={ap} max={apMax} tone="gold" label="Action Points" />
@@ -97,6 +121,22 @@ function TopBarImpl(): JSX.Element {
       </div>
     </header>
   );
+}
+
+/**
+ * Format a treasury amount as a compact dollar string. The bar is tight
+ * on horizontal real estate, so we collapse thousands → "k" and
+ * millions → "m" once the number is too wide for the slot.
+ *
+ *   0          → "$0"
+ *   850        → "$850"
+ *   12_400     → "$12.4k"
+ *   1_300_000  → "$1.3m"
+ */
+function formatTreasury(amount: number): string {
+  if (amount < 1_000) return `$${amount}`;
+  if (amount < 1_000_000) return `$${(amount / 1_000).toFixed(1)}k`;
+  return `$${(amount / 1_000_000).toFixed(1)}m`;
 }
 
 export const TopBar = memo(TopBarImpl);

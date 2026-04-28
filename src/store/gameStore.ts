@@ -14,6 +14,8 @@ interface GameStoreActions {
   setPaused: (paused: boolean) => void;
   advanceDay: () => void;
   addPoliticalCapital: (delta: number) => void;
+  /** Adjust treasury by `delta`. Floors at 0 — we do not model debt yet. */
+  addTreasury: (delta: number) => void;
   spendAP: (amount: number) => boolean;
   regenerateAP: (amount: number) => void;
   setMaxAP: (max: number) => void;
@@ -33,6 +35,7 @@ const DEFAULT_STATE: GameState = {
   isPaused: true,
   actionPoints: { current: 6, max: 6 },
   politicalCapital: 50,
+  treasury: 0,
   week: 1,
   month: 1,
   year: 2025,
@@ -72,6 +75,13 @@ export const useGameStore = create<Store>()(
         s.politicalCapital = Math.max(0, s.politicalCapital + delta);
       }),
 
+    addTreasury: (delta) =>
+      set((s) => {
+        // Floor at zero — negative balances would need a debt UI we
+        // haven't designed yet.
+        s.treasury = Math.max(0, s.treasury + delta);
+      }),
+
     spendAP: (amount) => {
       let success = false;
       set((s) => {
@@ -106,6 +116,11 @@ export const useGameStore = create<Store>()(
       set((s) => {
         s.scenarioId = scenarioId;
         s.politicalCapital = startingPC;
+        // Reset treasury alongside PC so a new scenario doesn't inherit
+        // funds from a previously abandoned save in the same session.
+        // Scenarios will eventually carry their own starting treasury;
+        // until then, every campaign begins broke.
+        s.treasury = 0;
         s.actionPoints = { current: maxAP, max: maxAP };
         s.isPaused = true;
         s.speed = 0;

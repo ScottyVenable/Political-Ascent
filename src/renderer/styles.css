@@ -42,6 +42,35 @@ body,
   min-height: 100%;
 }
 
+/* ────────────────────────────────────────────────────────────────
+   GLOBAL NO-SELECT — game-feel rule
+   The application is treated as a game UI, not a document. Accidental
+   text selection while clicking through the dashboard, tooltips, or
+   cards reads as a bug to most players. We disable text selection
+   globally and re-enable it only on inputs/textareas/contenteditable
+   regions where the user actually expects to manipulate text.
+   See docs/todo.md item 4.
+   ──────────────────────────────────────────────────────────────── */
+html, body {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* Prevent the iOS long-press magnifier and the Android tap-highlight
+     callout, both of which feel out of place in a game UI. */
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+input,
+textarea,
+[contenteditable='true'],
+[contenteditable=''] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
 /* The previous rule here hard-forced Inter, which silently defeated the
    Tailwind `font-body` token on every element that did not explicitly opt
    in. The game's primary typeface is Inria Serif; the shell inherits it. */

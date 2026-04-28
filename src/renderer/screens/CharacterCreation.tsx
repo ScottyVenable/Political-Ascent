@@ -6,8 +6,27 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { IdeologyCompass } from '../components/IdeologyCompass';
 import { Slider } from '../components/Slider';
+import { ExtendedTooltip } from '../components/tooltip';
 import { useRouter } from '../router';
 import { useCharacterStore } from '@/store/characterStore';
+
+/**
+ * Map a CoreStats key to its glossary tooltip term id. Keeping this as a
+ * static record makes it a typo-checked lookup rather than a string
+ * concatenation; renaming a stat key is then a TypeScript error here.
+ */
+const STAT_TOOLTIP_TERM: Record<keyof CoreStats, string> = {
+  charisma: 'stat-charisma',
+  strategy: 'stat-strategy',
+  connections: 'stat-connections',
+  integrity: 'stat-integrity',
+  wealth: 'stat-wealth',
+  stamina: 'stat-stamina',
+};
+
+/** Stat budget bounds — keep in sync with CharacterSystem.validateStatDistribution. */
+const BUDGET_MIN = 24;
+const BUDGET_MAX = 36;
 
 /**
  * Character creation — background → stats → traits → ideology → name.
@@ -131,25 +150,44 @@ export function CharacterCreation(): JSX.Element {
         )}
 
         {step === 1 && (
-          <Card title="Core Stats" subtitle={`Budget: ${totalPoints} / 24–36`}>
-            <div className="grid md:grid-cols-2 gap-3">
+          <Card title="Core Stats" subtitle="Spend your starting points across the six stats.">
+            {/* Budget bar — visual progress with a tone that flips to
+                warning at the edges. The numeric readout is the source
+                of truth; the bar is decoration that makes "you have
+                room" or "you're over" obvious without reading. */}
+            <StatBudget total={totalPoints} min={BUDGET_MIN} max={BUDGET_MAX} valid={validation.valid} />
+            <div className="grid md:grid-cols-2 gap-3 mt-4">
               {(Object.keys(baseStats) as (keyof CoreStats)[]).map((key) => (
                 <div key={key} className="bg-bg-tertiary rounded p-3">
                   <div className="flex items-baseline justify-between mb-2">
-                    <span className="capitalize font-headline text-text-primary">{key}</span>
-                    <span className="font-mono text-accent-gold">
+                    {/* Wrap the stat name in an ExtendedTooltip so a
+                        hover surfaces what the stat does. The dotted
+                        underline is the standard glossary-link cue. */}
+                    <ExtendedTooltip term={STAT_TOOLTIP_TERM[key]}>
+                      <span
+                        tabIndex={0}
+                        className="capitalize font-headline text-text-primary cursor-help underline decoration-dotted decoration-accent-gold/50 underline-offset-2 focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm"
+                        data-testid={`stat-name-${key}`}
+                      >
+                        {key}
+                      </span>
+                    </ExtendedTooltip>
+                    <span className="font-mono text-accent-gold tabular-nums">
                       {baseStats[key]} → <span className="text-accent-gold">{finalStats[key]}</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button size="sm" variant="secondary" onClick={() => setStat(key, -1)} aria-label={`Decrease ${key}`}>−</Button>
                     <div className="flex-1">
+                      {/* Removed `segments={10}` — the tick lines did
+                          not visually align with the discrete 1..10
+                          snap points and were misleading. The slider
+                          still snaps via step=1. */}
                       <Slider
                         min={1}
                         max={10}
                         value={baseStats[key]}
                         onChange={(v) => setBaseStats((s) => ({ ...s, [key]: v }))}
-                        segments={10}
                         ariaLabel={`${key} stat value`}
                       />
                     </div>
@@ -159,7 +197,9 @@ export function CharacterCreation(): JSX.Element {
               ))}
             </div>
             {!validation.valid && (
-              <p className="mt-3 text-sm text-status-warning">{validation.reason}</p>
+              <p className="mt-3 text-sm text-status-warning" role="status">
+                {validation.reason}
+              </p>
             )}
           </Card>
         )}
@@ -271,4 +311,84 @@ function backgroundBlurb(bg: Background): string {
     case 'executive':
       return 'A corporate insider with money and media access. Low integrity ceiling.';
   }
+}
+
+/**
+ * Visual budget meter for stat allocation. Replaces the old plain-text
+ * "Budget: N / 24–36" subtitle so the player can see at a glance whether
+ * they have room to spend more or have over-allocated.
+ *
+ * Tone:
+ *   - `under` (total < min): muted blue — "spend more".
+ *   - `valid` (min ≤ total ≤ max): gold — the standard active tone.
+ *   - `over`  (total > max): red — "this won't be accepted".
+ *
+ * The bar fills proportionally up to `max`; when `total > max` we let
+ * the bar overflow visually with a warning stripe so the player sees
+ * exactly how far over they are.
+ */
+function StatBudget({
+  total,
+  min,
+  max,
+  valid,
+}: {
+  total: number;
+  min: number;
+  max: number;
+  valid: boolean;
+}): JSX.Element {
+  const tone: 'under' | 'valid' | 'over' = total < min ? 'under' : total > max ? 'over' : 'valid';
+  // Clamp the visible fill to the bar width; over-allocation gets its
+  // own striped overlay so the player still sees the overflow.
+  const clampedPct = Math.min(100, (total / max) * 100);
+  const overflowPct = total > max ? Math.min(100, ((total - max) / max) * 100) : 0;
+  const fillClass =
+    tone === 'over'
+      ? 'bg-status-danger/70'
+      : tone === 'under'
+      ? 'bg-accent-blue/60'
+      : 'bg-accent-gold/70';
+  const labelClass =
+    tone === 'over'
+      ? 'text-status-danger'
+      : tone === 'under'
+      ? 'text-text-secondary'
+      : 'text-accent-gold';
+  return (
+    <div
+      className="rounded border border-rule bg-bg-secondary px-3 py-2"
+      data-testid="stat-budget"
+      data-tone={tone}
+      data-valid={valid ? 'true' : 'false'}
+    >
+      <div className="flex items-baseline justify-between mb-1.5">
+        <span className="font-headline text-sm text-text-secondary uppercase tracking-wide">
+          Budget
+        </span>
+        <span className={`font-mono text-sm tabular-nums ${labelClass}`}>
+          {total} / {min}–{max}
+        </span>
+      </div>
+      <div className="relative h-2 rounded-sm bg-bg-tertiary overflow-hidden">
+        <div
+          className={`absolute inset-y-0 left-0 ${fillClass} transition-[width] duration-200`}
+          style={{ width: `${clampedPct}%` }}
+        />
+        {/* When over-allocated, paint a danger-striped overlay sized to
+            how far past the cap the player went. Caps at 100% so the
+            UI does not visibly explode at extreme values. */}
+        {overflowPct > 0 && (
+          <div
+            className="absolute inset-y-0 right-0 bg-status-danger/40"
+            style={{
+              width: `${overflowPct}%`,
+              backgroundImage:
+                'repeating-linear-gradient(45deg, rgba(0,0,0,0.25) 0 4px, transparent 4px 8px)',
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
 }

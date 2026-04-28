@@ -5,6 +5,14 @@ All notable changes to Political Ascent are recorded here.
 ## [Unreleased]
 
 ### Added
+- **Polish pack** (`exp--polish-pack`).
+  - **Global no-select chrome** (todo#4). `body, html` now carry `user-select: none` plus `-webkit-touch-callout: none` and `-webkit-tap-highlight-color: transparent` so accidental clicks no longer paint blue selection ranges across the dashboard, tooltips, or cards. Inputs, textareas, and `[contenteditable]` regions opt back in to text selection.
+  - **Stat allocation polish** (todo#8). The character-creation Core Stats sliders no longer render the misaligned `pa-slider-ticks` border lines (they did not align to the integer snap points and were misleading). Each stat name is now wrapped in an `ExtendedTooltip` keyed to its glossary entry (`stat-charisma`, `stat-strategy`, `stat-connections`, `stat-integrity`, `stat-wealth`, `stat-stamina`) with a dotted-underline cursor-help affordance. The plain-text "Budget: N / 24–36" subtitle is replaced with a `StatBudget` meter — a labelled progress bar that flips tone (`under` muted-blue / `valid` gold / `over` red-striped) and exposes `data-tone` and `data-valid` attributes for testing.
+  - **Treasury indicator** (todo#12). New `treasury: number` field on `GameState` (default `0`, floored at `0` — no debt yet) plus `addTreasury(delta)` store action. The TopBar now renders a third resource pill between PC and AP: a tabler `economy` (stacked-coins) icon plus a `$0` / `$12.4k` / `$1.3m` formatted readout, wrapped in an `ExtendedTooltip` for the new `treasury` glossary term. `initializeFromScenario` resets the treasury so a new run never inherits funds from a previous session.
+  - 6 new Vitest cases (`gameStore.test.ts`) cover treasury default, additive behaviour, the zero floor, scenario reset, and PC parity.
+  - 6 new Playwright tests (`tests/e2e/polish-pack.spec.ts`) cover `user-select: none` on body, `user-select: text` on inputs, the absence of slider ticks, the stat-name tooltip, the budget meter, and the treasury pill.
+  - New glossary entries: `stat-wealth` (Wealth — financial standing) and `treasury` (campaign cash, distinct from PC).
+
 - **Cards UX hardening** (`exp--cards-ux-hardening`).
   - **AP cost enforcement** in `CardSystem.play`: cards with `apCost` now require sufficient action points; both PC and AP are spent atomically (PC is refunded if AP spend somehow fails). `CardsPanel` Play button is disabled when AP is insufficient and exposes a `title` tooltip explaining the block reason.
   - **Cooldown & uses-per-game enforcement**: `CardStats.cooldownWeeks` and `CardStats.usesPerGame` are now honoured. `CardInstance.lastPlayedWeek` and `timesPlayed` are updated on a successful play. Multi-use cards stay in the deck across plays; single-use cards remain consumed (legacy behaviour). 6 new Vitest cases (AP block, AP+PC spend, cooldown record, cooldown block, cooldown elapsed, uses exhausted).

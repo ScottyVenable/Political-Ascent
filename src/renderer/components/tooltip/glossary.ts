@@ -157,6 +157,45 @@ registerTooltip(
     seeAlso: ['action-points'],
     aliases: ['Stamina'],
   },
+  {
+    id: 'stat-wealth',
+    title: 'Wealth',
+    subtitle: 'Stat',
+    summary: 'Personal financial standing — opens donor and lifestyle paths.',
+    sections: [
+      {
+        kind: 'paragraph',
+        text:
+          'Wealth gates self-funded campaign moves, certain dialogue ' +
+          'options with industry donors, and the size of your starting ' +
+          'treasury. Executive characters begin with a Wealth bonus; ' +
+          'low-Wealth characters trade financial leverage for reach into ' +
+          'working-class cohorts.',
+      },
+    ],
+    seeAlso: ['treasury', 'stat-connections'],
+    aliases: ['Wealth'],
+  },
+  {
+    id: 'treasury',
+    title: 'Treasury',
+    subtitle: 'Resource',
+    icon: 'economy',
+    summary: 'Money on hand for ads, staff, and donor maneuvers.',
+    sections: [
+      {
+        kind: 'paragraph',
+        text:
+          'Treasury is your campaign\u2019s liquid cash. It funds ad buys, ' +
+          'staff hires, travel, and a handful of bribery-adjacent card ' +
+          'effects. Distinct from Political Capital: PC is influence and ' +
+          'goodwill spent in the chamber; Treasury is dollars spent ' +
+          'outside it.',
+      },
+    ],
+    seeAlso: ['political-capital', 'stat-wealth'],
+    aliases: ['Treasury'],
+  },
 
   // ─────────────── Card system ───────────────
   {
