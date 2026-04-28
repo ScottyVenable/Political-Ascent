@@ -41,34 +41,49 @@ import { Icon, type IconName } from '../Icon';
 import { useSettingsStore } from '@/store/settingsStore';
 
 // ────────────────────────────────────────────────────────────────
-// PIN COORDINATOR (todo#29)
+// PIN COORDINATOR (todo#29, todo#77)
 // ────────────────────────────────────────────────────────────────
 // Per docs/todo.md item 29: "When pinning another tooltip, the
 // previous one is closed automatically."
+// Per docs/todo.md item 77: nested (parent–child) tooltips CAN be
+// pinned simultaneously; only same-level (sibling) ones cannot.
 //
-// We keep a module-level set of "close" callbacks belonging to every
-// currently-pinned tooltip. The moment a new tooltip transitions into
-// the pinned state, it asks the coordinator to evict any other
-// pinned tooltip. The coordinator stays in this file rather than
-// going through React context because pinning behaviour is global
-// (it crosses portal boundaries) and we don't want every consumer to
-// have to wrap their tree in another provider.
+// We track pinned tooltips by depth. A new pin at depth D evicts all
+// other pinned tooltips at depth D or shallower that are NOT an
+// ancestor of this one — i.e., only peers get closed. A child pinning
+// does not evict its parent.
 //
 // Memory hygiene: callbacks self-unregister via the cleanup returned
 // by `registerPin` so a tooltip closing for any reason (Esc, outside
 // click, unmount) won't leave a stale closer behind.
 
-const pinnedClosers = new Set<() => void>();
+interface PinnedEntry {
+  depth: number;
+  close: () => void;
+}
 
-function registerPin(closeMe: () => void): () => void {
-  // Close any other currently-pinned tooltip first; only one can be
-  // pinned at any time.
-  for (const other of pinnedClosers) {
-    if (other !== closeMe) other();
+const pinnedEntries = new Set<PinnedEntry>();
+
+/**
+ * Register a newly-pinned tooltip. Returns an unregister function.
+ *
+ * Eviction rule (todo#77):
+ *   - Same depth AND already in the set → evict (only one peer pinned at a time).
+ *   - Lower depth (ancestor) → keep (nested tooltips can stack pinned).
+ *   - Higher depth (deeper descendant) → keep (callers handle their own).
+ */
+function registerPin(depth: number, closeMe: () => void): () => void {
+  const entry: PinnedEntry = { depth, close: closeMe };
+  // Evict any currently-pinned tooltip at the SAME depth (siblings).
+  // Ancestors (lower depth) are intentionally preserved. (#77)
+  for (const other of pinnedEntries) {
+    if (other.close !== closeMe && other.depth >= depth) {
+      other.close();
+    }
   }
-  pinnedClosers.add(closeMe);
+  pinnedEntries.add(entry);
   return () => {
-    pinnedClosers.delete(closeMe);
+    pinnedEntries.delete(entry);
   };
 }
 
@@ -94,6 +109,15 @@ const TooltipDepthContext = createContext<number>(0);
 /** Per-level z-index increment. */
 const TOOLTIP_BASE_Z = 10000;
 const TOOLTIP_DEPTH_STEP = 10;
+
+/**
+ * Context that tracks the set of term IDs currently being shown by
+ * ancestor tooltips in the stack. Used for todo#50 to prevent showing
+ * a tooltip for a term that is already visible in an ancestor — the
+ * player is already reading it, so opening another for the same term
+ * would be redundant and confusing.
+ */
+const OpenTermsContext = createContext<ReadonlySet<string>>(new Set());
 
 // ────────────────────────────────────────────────────────────────
 // PUBLIC API
@@ -148,6 +172,19 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
   const parentDepth = useContext(TooltipDepthContext);
   const ownDepth = parentDepth + 1;
   const tooltipZ = TOOLTIP_BASE_Z + ownDepth * TOOLTIP_DEPTH_STEP;
+
+  // todo#50: If an ancestor tooltip in the stack is already showing
+  // this term, don't open another instance — the player is already
+  // reading it. We detect this by checking `OpenTermsContext`.
+  const openTerms = useContext(OpenTermsContext);
+  const isAlreadyOpen = term !== undefined && openTerms.has(term);
+
+  // Build the new open-terms Set to pass to our children so that they
+  // can detect if one of their terms matches something we're showing.
+  const ownOpenTerms = useMemo<ReadonlySet<string>>(
+    () => (term ? new Set([...openTerms, term]) : openTerms),
+    [openTerms, term],
+  );
 
   const [open, setOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -312,17 +349,16 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, close]);
 
-  // Pin coordinator (todo#29): when this tooltip transitions into the
-  // pinned state, register with the module-level coordinator. The act
-  // of registering evicts every other currently-pinned tooltip so the
-  // player only ever has one pinned popup on screen at a time. The
-  // returned cleanup function unregisters us when we unpin or unmount,
-  // so a closed tooltip never lingers as a stale closer.
+  // Pin coordinator (todo#29, todo#77): when this tooltip transitions
+  // into the pinned state, register with the module-level coordinator.
+  // Passing `ownDepth` allows the coordinator to evict only same-depth
+  // peers (siblings), not ancestors (parents) — so a child can pin
+  // without closing its parent.
   useEffect(() => {
     if (!pinned) return;
-    const unregister = registerPin(close);
+    const unregister = registerPin(ownDepth, close);
     return unregister;
-  }, [pinned, close]);
+  }, [pinned, ownDepth, close]);
 
   // Pin while shift is held during mouse-leave: stays open. Otherwise
   // close (and abort any in-flight hold animation).
@@ -363,6 +399,16 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
     cancelOpen();
     cancelHold();
   }, [cancelOpen, cancelHold]);
+
+  // todo#50: if an ancestor is already showing this term, render the
+  // child element without any tooltip behaviour. The player is already
+  // reading the tooltip — opening a second identical one would just
+  // confuse them. We still need to clone to forward refs, but we strip
+  // the hover handlers so no tooltip is triggered.
+  if (isAlreadyOpen) {
+    // Just render the child as-is, no tooltip wrapping.
+    return <>{children}</>;
+  }
 
   // Clone trigger to attach handlers.
   if (!isValidElement(children)) {
@@ -424,30 +470,32 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
   } as Record<string, unknown>);
 
   return (
-    <TooltipDepthContext.Provider value={ownDepth}>
-      {trigger}
-      {open && resolved && coords && typeof document !== 'undefined' &&
-        createPortal(
-          <TooltipCard
-            id={tooltipId}
-            content={resolved}
-            coords={coords}
-            pinned={pinned}
-            holdProgress={holdProgress}
-            onClose={close}
-            onLeave={(relatedTarget) => {
-              // Close the tooltip when the cursor leaves the card, UNLESS it
-              // moved back onto the trigger (the trigger's onMouseEnter will
-              // re-open it) or into another tooltip (nested stack). (#57)
-              if (triggerRef.current?.contains(relatedTarget ?? null)) return;
-              if (relatedTarget && relatedTarget.closest?.('[role="tooltip"]')) return;
-              if (!pinned) close();
-            }}
-            zIndex={tooltipZ}
-          />,
-          document.body,
-        )}
-    </TooltipDepthContext.Provider>
+    <OpenTermsContext.Provider value={ownOpenTerms}>
+      <TooltipDepthContext.Provider value={ownDepth}>
+        {trigger}
+        {open && resolved && coords && typeof document !== 'undefined' &&
+          createPortal(
+            <TooltipCard
+              id={tooltipId}
+              content={resolved}
+              coords={coords}
+              pinned={pinned}
+              holdProgress={holdProgress}
+              onClose={close}
+              onLeave={(relatedTarget) => {
+                // Close the tooltip when the cursor leaves the card, UNLESS it
+                // moved back onto the trigger (the trigger's onMouseEnter will
+                // re-open it) or into another tooltip (nested stack). (#57)
+                if (triggerRef.current?.contains(relatedTarget ?? null)) return;
+                if (relatedTarget && relatedTarget.closest?.('[role="tooltip"]')) return;
+                if (!pinned) close();
+              }}
+              zIndex={tooltipZ}
+            />,
+            document.body,
+          )}
+      </TooltipDepthContext.Provider>
+    </OpenTermsContext.Provider>
   );
 }
 
