@@ -5,6 +5,13 @@ All notable changes to Political Ascent are recorded here.
 ## [Unreleased]
 
 ### Added
+- **Ideology compass redesign** (`exp--ideology-compass`).
+  - `IdeologyCompass` rebuilt as a larger (default `size=320`, `360` in character creation) interactive picker. Click anywhere, drag the marker (Pointer Events with `setPointerCapture`), or use arrow keys (Shift = larger step) to set position. `role="slider"` + `aria-valuetext` for screen readers.
+  - **Raw numeric coordinates are no longer shown.** The `x = … · y = …` font-mono readout in character-creation step 3 is gone. In its place a live orientation label (`data-testid="ideology-orientation"`, `aria-live="polite"`) reads e.g. "Centrist", "Moderate Right", "Strong Left-Libertarian".
+  - New `ideologyLabel(point)` utility (`src/renderer/components/ideologyLabel.ts`) maps a 2-axis point to a human label using a 0.15 axis dead-zone, "Moderate" prefix below 0.4 magnitude, and "Strong" prefix at/above 0.75. 7 Vitest cases.
+  - **Historical reference figures**: 20 ghost markers (FDR, JFK, Lincoln, Reagan, Sanders, AOC, Thatcher, Goldwater, Friedman, Chomsky, Mill, Rand, MLK, …) loaded from `src/data/ideology/reference-figures.json`. Hover (or focus) shows a tooltip with name and era. Quadrant labels (Lib-Left / Lib-Right / Auth-Left / Auth-Right) inset into the field.
+  - 4 new Playwright tests (`tests/e2e/ideology-compass.spec.ts`) verifying live orientation, no raw-coord exposure, ghost-figure plotting, hover tooltip, and real-time label updates across `1280×720`, `1440×900`, `1920×1080`.
+
 - **Auto-tooltip terms + hold-to-lock** (`exp--auto-tooltip-terms`).
   - `<TermText text="..." />` (`src/renderer/components/tooltip/TermText.tsx`) auto-links any registered glossary surface (title or alias) found in plain prose, eliminating the need to wrap each term manually.
   - Glossary matcher (`registry.ts → findTermMatches`): longest-first preference, non-overlapping ranges, unicode word-boundary regex, lazy compiled-pattern cache invalidated on `registerTooltip` / `clearTooltips`. 11 new Vitest cases.

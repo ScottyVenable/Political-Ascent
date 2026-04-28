@@ -41,7 +41,12 @@ export function CharacterPanel(): JSX.Element {
       </Card>
 
       <Card title="Ideology">
-        <IdeologyCompass value={char.ideology} size={220} label />
+        <IdeologyCompass
+          value={char.ideology}
+          size={240}
+          label
+          showReferenceFigures={false}
+        />
       </Card>
 
       <Card title="Progression" accent="gold">

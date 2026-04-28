@@ -195,13 +195,17 @@ export function CharacterCreation(): JSX.Element {
         {step === 3 && (
           <Card title="Ideology" subtitle="Where do you stand?">
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              <IdeologyCompass value={ideology} onChange={setIdeology} />
-              <div className="text-sm text-text-secondary max-w-sm">
-                <p>Your ideology influences how legislators in each party react to you and which
-                  events/cards you&rsquo;ll naturally lean into. You can drift later, but this is your
-                  starting posture.</p>
-                <p className="mt-3 font-mono text-xs">
-                  x = {ideology.x.toFixed(2)} &middot; y = {ideology.y.toFixed(2)}
+              <IdeologyCompass value={ideology} onChange={setIdeology} size={360} />
+              <div className="text-sm text-text-secondary max-w-sm space-y-3">
+                <p>
+                  Your ideology influences how legislators in each party react to you and
+                  which events/cards you&rsquo;ll naturally lean into. You can drift later,
+                  but this is your starting posture.
+                </p>
+                <p>
+                  Drag the marker, click anywhere on the grid, or use the arrow keys
+                  (Shift for larger steps). Hover the small grey dots to compare your
+                  position to historical and contemporary figures.
                 </p>
               </div>
             </div>
