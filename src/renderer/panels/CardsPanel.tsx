@@ -24,6 +24,21 @@ import { writeClipboard } from '@/utils/clipboard';
  * card came from. The dropped card "lands" via the same lift/transition
  * declared on `<CardFace />`, giving the move a tactile finish.
  *
+ * Card-like UX additions (todo#33):
+ *   - **Drag-to-play drop zone** at the top of the hand. Dragging a
+ *     card onto it triggers the same play flow as the Play button,
+ *     giving the panel the tactile feel of a real TCG. Cards that
+ *     fail their resource check fall back to the existing toast.
+ *   - **Insertion indicator** — when a drag is in flight, the card
+ *     currently being hovered renders a left-edge gold bar so the
+ *     player can see where the dropped card will land.
+ *   - **Playable glow ring** — the CardFace receives a subtle gold
+ *     outline when its resource gates are clear, so a player can see
+ *     at a glance which cards are live.
+ *   - The **drag image** is the card art itself rather than the full
+ *     row including action buttons (looks like a torn-off block in
+ *     Chrome). We point `setDragImage` at the CardFace article.
+ *
  * Double-click protection: `playingId` is set synchronously before the
  * play call so a fast second click on the same card is ignored even if
  * the Zustand subscription hasn't propagated yet.
@@ -44,6 +59,17 @@ export function CardsPanel(): JSX.Element {
    * not reliable across browsers for HTML5 drag.
    */
   const [dragId, setDragId] = useState<string | null>(null);
+  /**
+   * Instance id the dragged card is currently hovered over. Used to
+   * paint the left-edge insertion indicator. Cleared on dragLeave so
+   * the indicator never lingers after the cursor moves on.
+   */
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  /**
+   * `true` while the cursor is over the dedicated "drop to play"
+   * zone. Drives the zone's highlighted state.
+   */
+  const [overPlayZone, setOverPlayZone] = useState(false);
   const menu = useContextMenu();
 
   function play(instanceId: string): void {
@@ -92,6 +118,59 @@ export function CardsPanel(): JSX.Element {
         <p className="text-sm text-text-muted italic">Your hand is empty. Cards are drawn at the start of each week.</p>
       )}
 
+      {/* Drag-to-play drop zone (todo#33). Always rendered when the
+          hand is non-empty so the player learns it exists; when no
+          drag is in flight it sits as a quiet hint, when the player
+          starts dragging it lights up. The zone also responds to a
+          plain click for keyboard/mouse users by surfacing a hint
+          toast directing them to the per-card Play button. */}
+      {hand.length > 0 && (
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Drop a card here to play it"
+          data-testid="card-play-zone"
+          data-active={dragId !== null ? 'true' : 'false'}
+          data-over={overPlayZone ? 'true' : 'false'}
+          onDragOver={(e) => {
+            if (!dragId) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (!overPlayZone) setOverPlayZone(true);
+          }}
+          onDragLeave={() => setOverPlayZone(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            const sourceId =
+              e.dataTransfer.getData('text/plain') || dragId;
+            setOverPlayZone(false);
+            setDragId(null);
+            if (sourceId) play(sourceId);
+          }}
+          onClick={() =>
+            pushToast({
+              message: 'Drag a card here, or click its Play button below.',
+              severity: 'info',
+              ttl: 2500,
+            })
+          }
+          className={
+            'rounded border-2 border-dashed transition-colors text-center text-sm py-3 px-4 ' +
+            (overPlayZone
+              ? 'border-accent-gold bg-accent-gold/15 text-accent-gold'
+              : dragId
+                ? 'border-accent-gold/60 bg-bg-tertiary/40 text-accent-gold/80'
+                : 'border-rule text-text-muted')
+          }
+        >
+          {overPlayZone
+            ? 'Release to play'
+            : dragId
+              ? 'Drop here to play'
+              : 'Tip: drag a card here to play it.'}
+        </div>
+      )}
+
       <div
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
         data-testid="cards-hand-grid"
@@ -122,15 +201,23 @@ export function CardsPanel(): JSX.Element {
           const canPay = blockedReason === null;
           const pending = playingId === inst.instanceId;
           const isDragging = dragId === inst.instanceId;
+          const isDropTarget = dropTargetId === inst.instanceId && dragId !== inst.instanceId;
           return (
             <div
               key={inst.instanceId}
               className={
-                'flex flex-col gap-2 transition-opacity duration-150 ' +
-                (isDragging ? 'opacity-40' : '')
+                'relative flex flex-col gap-2 transition-opacity duration-150 ' +
+                (isDragging ? 'opacity-40 ' : '') +
+                // Playable glow (todo#33). Pulsing gold ring around
+                // the entire row when the card is currently legal to
+                // play. Faded when on cooldown or unaffordable so the
+                // hand reads as "live cards versus dead cards" at a
+                // glance.
+                (canPay && !pending ? 'card-row-playable ' : '')
               }
               data-testid={`card-row-${def.id}`}
               data-instance-id={inst.instanceId}
+              data-playable={canPay ? 'true' : 'false'}
               draggable={!pending}
               onDragStart={(e) => {
                 // dataTransfer carries the instance id so a future
@@ -139,9 +226,29 @@ export function CardsPanel(): JSX.Element {
                 // component state alone.
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', inst.instanceId);
+                // Prefer the card art as the drag image — the full
+                // row including the action buttons looks ragged
+                // when torn off in Chrome. We grab the first
+                // child <article> rendered by CardFace.
+                const article = (e.currentTarget as HTMLElement).querySelector(
+                  'article[data-card-id]',
+                );
+                if (article instanceof HTMLElement) {
+                  const r = article.getBoundingClientRect();
+                  e.dataTransfer.setDragImage(article, r.width / 2, 24);
+                }
                 setDragId(inst.instanceId);
               }}
-              onDragEnd={() => setDragId(null)}
+              onDragEnd={() => {
+                setDragId(null);
+                setDropTargetId(null);
+                setOverPlayZone(false);
+              }}
+              onDragEnter={() => {
+                if (dragId && dragId !== inst.instanceId) {
+                  setDropTargetId(inst.instanceId);
+                }
+              }}
               onDragOver={(e) => {
                 // Required to allow `drop` to fire. The browser will
                 // otherwise treat the element as a no-drop target.
@@ -150,12 +257,16 @@ export function CardsPanel(): JSX.Element {
                   e.dataTransfer.dropEffect = 'move';
                 }
               }}
+              onDragLeave={() => {
+                if (dropTargetId === inst.instanceId) setDropTargetId(null);
+              }}
               onDrop={(e) => {
                 e.preventDefault();
                 const sourceId =
                   e.dataTransfer.getData('text/plain') || dragId;
                 if (sourceId) moveBefore(sourceId, inst.instanceId);
                 setDragId(null);
+                setDropTargetId(null);
               }}
               onContextMenu={(e) =>
                 menu.open(e, [
@@ -193,6 +304,17 @@ export function CardsPanel(): JSX.Element {
                 ])
               }
             >
+              {/* Insertion indicator — a left-edge gold bar that
+                  appears when this row is the active drop target.
+                  Absolutely-positioned so it doesn't shift any other
+                  cards in the grid. */}
+              {isDropTarget && (
+                <span
+                  aria-hidden
+                  data-testid="card-drop-indicator"
+                  className="absolute -left-1.5 top-0 bottom-0 w-1 bg-accent-gold rounded-sm shadow-[0_0_8px_rgba(201,168,76,0.6)]"
+                />
+              )}
               <CardFace def={def} state={canPay ? 'playable' : 'locked'} />
               <div className="flex gap-2">
                 <Button

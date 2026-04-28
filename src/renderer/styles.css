@@ -419,3 +419,28 @@ body {
 .animate-tooltip-enter {
   animation: pa-tooltip-enter 120ms var(--pa-ease-arrive) both;
 }
+
+
+/* ────────────────────────────────────────────────────────────
+   Cards panel — playable glow ring (todo#33)
+   Surrounds an entire card-row-playable row with a faint gold
+   pulse so the player can scan the hand and see at a glance which
+   cards are currently legal to play. The pulse uses a longer 1.8s
+   period than the standard hover so it reads as a "live" indicator
+   rather than a hover effect. Reduced motion users see the static
+   ring without the pulse.
+   ──────────────────────────────────────────────────────────── */
+@keyframes pa-card-playable-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.20), 0 0 6px rgba(201, 168, 76, 0.18); }
+  50%      { box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.55), 0 0 14px rgba(201, 168, 76, 0.40); }
+}
+.card-row-playable {
+  border-radius: 0.25rem;
+  animation: pa-card-playable-pulse 1.8s var(--pa-ease-standard) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-row-playable {
+    animation: none;
+    box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.45);
+  }
+}

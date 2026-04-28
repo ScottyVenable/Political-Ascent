@@ -6,6 +6,12 @@ All notable changes to Political Ascent are recorded here.
 
 ### Added
 
+- **Cards panel — drag-to-play, drop indicator, playable glow** (`exp--card-play-polish`, todo#33). The hand panel now feels like a TCG instead of a list with arrows.
+  - **Drag-to-play drop zone** at the top of the hand: dragging a card onto it triggers the same play flow as the per-card Play button. Failure surfaces as a toast (existing behaviour). Click on the zone surfaces a hint toast for keyboard/mouse users so the discoverability doesn't depend on a hover.
+  - **Insertion indicator** — when a drag is in flight the row currently being hovered renders a left-edge gold bar. Absolutely-positioned so it never reflows the grid.
+  - **Playable glow ring** — entire `card-row-playable` rows get a faint pulsing gold outline (1.8s period) when their resource gates clear. Reduced-motion users see a static ring. Cards on cooldown / unaffordable stay quiet so the hand reads as "live cards versus dead cards" at a glance.
+  - **Drag image** is now the card art itself (CardFace `<article>`), not the row including the action buttons. Looks like a card you've picked up off the table rather than a torn UI fragment in Chrome.
+
 - **Build Your Candidate — Stats step UX** (`exp--candidate-stats-ux`, todo#27 / #28). The Core Stats step now answers two questions a numeric score can't: "what tier is this?" and "what does that mean in play?".
   - **Tier chips per stat row** — Weak / Average / Strong / Exceptional, colour-coded via `statTierChipClass` (red / neutral / gold / blue). The chip reads the *final* value (after background bonuses) so the player sees the effective tier, not the raw allocation.
   - **One-line gameplay-impact blurb per row** — six stats × four tiers = 24 hand-written lines describing what the score *opens or closes* in the simulation. Wording targets loops (rallies, whip counts, donor calls) rather than mechanical multipliers so the copy stays accurate when the engine rebalances.
