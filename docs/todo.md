@@ -34,7 +34,7 @@
 32. ~~More detailed data in the "Economy" tab as well.~~ (PR exp--economy-detail — added trend deltas vs ~12 weeks, debt-to-GDP ratio, Gini distribution meter.)
 33. Improve the rendering and UX of the cards even more and fix the system for playing cards. Optimize the clicking and dragging of cards as well. Make the cards more styled and "card like".
 34. Turn the skills tab into a full skill tab area with all the skills, and a full mapped out skill tree that can be unlocked. The skill tree should be stylized and should map out appropriately like an RPG skill tree. It should be well balanced and offer many different "paths" to take.
-35. Expand on the Timeline view and make it more stylized and detailed, and allow more detailed view and management of the items in here.
+35. ~~Expand on the Timeline view and make it more stylized and detailed, and allow more detailed view and management of the items in here.~~ (PR exp--timeline-filters — severity chips with counts + free-text search; deeper management deferred to follow-up.)
 36. ~~Implement a save and load system that works.~~ (PR exp--save-load)
 37. Have all Expanded Tooltips render at the mouse anchored to the top left of the tooltip.
 38. Expand and improve the bottom bar UI and UX of the game where the week view and time controls are.
@@ -65,4 +65,6 @@
 64. When a vote happens, the player has the option to view the roll, showing the map of the chamber and a progression of votes being counted. A hero showing the member and how they voted is at the top with a map of the chamber below to see dots populate as time goes on (green yay, red nay, gray present). Time is stopped for this to not take up days and can be skipped or rushed at any time. An event log menu shows stylized updates on vote counts and a decent sized stylized counter at the bottom shows the roll as it is called.
 65. Have bills randomly come up from various members based on their ideology, the country sentiment, and the member's ambitions. Bills may be randomly generated for this.
 66. Implement a better graph renderer for the bar graphs and implement where possible other types of graphs.
-67. 
+67. In the cohort detailed view, show a list of their biggest issues and how the player is performing with them based on the stats and data. Include quotes from members of the cohort in a panel that shows "Public Opinion" as a snapshot of their attitude towards the government.
+68. Allow to filter the cohort views based on national level, state level, or local level to see more details based on where the player chooses to have their character come from and their role. Implement this into the game in the character creator to choose their state and their district.
+69. 

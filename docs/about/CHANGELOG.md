@@ -6,6 +6,10 @@ All notable changes to Political Ascent are recorded here.
 
 ### Added
 
+- **Timeline filters and search** (`exp--timeline-filters`, todo#35). The Timeline panel grows a filter bar above the chronology: three severity chips (Info / Warning / Danger) with live count badges plus a free-text search input that scans both headline and body. Toggling the last severity off auto-restores all three (matches the affordance pattern used by Steam and Slack log filters). New `data-testid` selectors: `timeline-filter-bar`, `timeline-filter-{info,warning,danger}`, `timeline-search`, `timeline-count`.
+
+### Added
+
 - **Economy panel detail** (`exp--economy-detail`, todo#32). Indicator rows now carry trend chips comparing the latest snapshot to one ~12 weeks back, with arrows colour-coded by metric direction (a falling unemployment rate is good news and renders in `text-status-success`, even though the delta is negative). Two new derived cards sit beneath the snapshot/trends grid: **Fiscal pressure** (debt-to-GDP ratio with a 100% danger threshold, tone-shifting bar) and **Distribution** (Gini coefficient as a 0–100 meter, with explanatory copy). New `data-testid` selectors: `economy-panel`, `economy-debt-to-gdp`, `economy-gini`.
 
 ### Added
