@@ -97,6 +97,7 @@ class CardSystemImpl implements CardSystemAPI {
   }
 
   play(instanceId: string): { ok: boolean; reason?: string } {
+    // ── 1. Locate card and definition ──────────────────────────
     const char = useCharacterStore.getState();
     const inst = char.hand.find((c) => c.instanceId === instanceId);
     if (!inst) return { ok: false, reason: 'Card not in hand' };
@@ -104,19 +105,80 @@ class CardSystemImpl implements CardSystemAPI {
     if (!def) return { ok: false, reason: 'Unknown card definition' };
 
     const game = useGameStore.getState();
+
+    // ── 2. Resource gates ─────────────────────────────────────
+    // Political capital — checked first because it's the most common
+    // reason a play is denied.
     if (game.politicalCapital < def.cost) {
       return { ok: false, reason: 'Insufficient political capital' };
     }
+    // Action points — defaults to 0 so legacy cards (no apCost) keep
+    // working unchanged.
+    const apCost = def.apCost ?? 0;
+    if (apCost > 0 && game.actionPoints.current < apCost) {
+      return { ok: false, reason: 'Insufficient action points' };
+    }
 
+    // ── 3. Cooldown & uses-per-game gates ─────────────────────
+    // These were declared in CardStats but never enforced. We track per
+    // *instance* so two copies of the same card can be on different
+    // cooldowns (relevant when cards are duplicated by future effects).
+    const stats = def.stats;
+    if (stats?.cooldownWeeks && stats.cooldownWeeks > 0 && inst.lastPlayedWeek != null) {
+      const weeksSince = game.week - inst.lastPlayedWeek;
+      if (weeksSince < stats.cooldownWeeks) {
+        const wait = stats.cooldownWeeks - weeksSince;
+        return {
+          ok: false,
+          reason: `On cooldown (${wait} week${wait === 1 ? '' : 's'} left)`,
+        };
+      }
+    }
+    if (
+      stats?.usesPerGame != null &&
+      stats.usesPerGame > 0 &&
+      (inst.timesPlayed ?? 0) >= stats.usesPerGame
+    ) {
+      return { ok: false, reason: 'No uses remaining this game' };
+    }
+
+    // ── 4. Spend resources & apply effects ────────────────────
     game.addPoliticalCapital(-def.cost);
+    if (apCost > 0) {
+      // spendAP returns false only when balance < amount, which we just
+      // verified. The defensive branch keeps the type honest.
+      const spent = game.spendAP(apCost);
+      if (!spent) {
+        // Refund PC and bail — should not happen, but a hard invariant.
+        game.addPoliticalCapital(def.cost);
+        return { ok: false, reason: 'Action point spend failed' };
+      }
+    }
     applyEffects(def.effects);
 
-    // Remove from hand (played cards are consumed in MVP).
-    useCharacterStore.setState((s) => ({
-      ...s,
-      hand: s.hand.filter((c) => c.instanceId !== instanceId),
-      deck: s.deck.filter((c) => c.instanceId !== instanceId),
-    }));
+    // ── 5. Update instance bookkeeping then remove from hand ──
+    // For uses-per-game cards we keep the instance in the deck so the
+    // play count persists; otherwise (default MVP behaviour) we consume
+    // the card outright.
+    const consumed = !(stats?.usesPerGame && stats.usesPerGame > 1);
+    useCharacterStore.setState((s) => {
+      const updatedDeck = s.deck.map((c) =>
+        c.instanceId === instanceId
+          ? {
+              ...c,
+              lastPlayedWeek: game.week,
+              timesPlayed: (c.timesPlayed ?? 0) + 1,
+            }
+          : c,
+      );
+      return {
+        ...s,
+        hand: s.hand.filter((c) => c.instanceId !== instanceId),
+        deck: consumed
+          ? updatedDeck.filter((c) => c.instanceId !== instanceId)
+          : updatedDeck,
+      };
+    });
 
     useWorldStore.getState().pushNews({
       id: makeId('news'),

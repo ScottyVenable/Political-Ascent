@@ -102,7 +102,18 @@ export function CardPackOpening({ packId, seed, onClose }: CardPackOpeningProps)
       role="dialog"
       aria-modal="true"
       aria-label={`Opening ${def?.name ?? 'pack'}`}
+      onClick={(e) => {
+        // Backdrop dismiss — only after the reveal completes, so the
+        // user can't accidentally dismiss the animation. The check
+        // `target === currentTarget` ensures we only close on clicks
+        // landing on the dimmed background, not bubbled clicks from
+        // child cards or the Done button.
+        if (phase === 'settled' && e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
       className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6"
+      data-testid="pack-opening-backdrop"
     >
       <div className="bg-bg-secondary border border-rule rounded-sm shadow-glow-gold max-w-5xl w-full p-6">
         <header className="flex items-center justify-between mb-4">

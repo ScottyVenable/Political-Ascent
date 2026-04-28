@@ -273,7 +273,22 @@ body {
 }
 
 /* Prismatic — an animated conic-gradient overlay. We set it as the
-   border via a pseudo-element so the card body's content stays crisp. */
+   border via a pseudo-element so the card body's content stays crisp.
+
+   Robustness notes:
+   - `isolation: isolate` on the parent contains the stacking context
+     so the gradient never bleeds onto siblings or gets clipped by an
+     ancestor's `overflow`.
+   - The pseudo-element animates its own `transform` so we hint the
+     compositor with `will-change`. Without this, browsers occasionally
+     freeze the rotation while the parent is being animated by the
+     pack-reveal flip (`pa-card-reveal` uses `transform: rotateY`).
+   - `pointer-events: none` keeps the gradient from intercepting hover
+     so the card's own onMouseEnter still fires for the tooltip.
+   - We force a fresh stacking context per card by giving the parent a
+     non-auto z-index; otherwise sibling cards in the reveal grid can
+     steal the gradient (observed when grid uses CSS Grid with implicit
+     row tracks). */
 @keyframes pa-prismatic-spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
@@ -281,6 +296,8 @@ body {
 .rarity-prismatic.rarity-frame {
   border-color: transparent;
   background-clip: padding-box;
+  isolation: isolate;
+  z-index: 0;
 }
 .rarity-prismatic.rarity-frame::before {
   content: '';
@@ -294,6 +311,18 @@ body {
   );
   animation: pa-prismatic-spin 6s linear infinite;
   filter: blur(0.5px);
+  pointer-events: none;
+  transform-origin: center center;
+  will-change: transform;
+}
+/* Honour reduced-motion for the spin specifically. The global
+   reduced-motion rule already sets `animation-duration: 0s` but we
+   keep the gradient visible (just static) so the rarity is still
+   communicated. */
+@media (prefers-reduced-motion: reduce) {
+  .rarity-prismatic.rarity-frame::before {
+    animation: none;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════

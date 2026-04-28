@@ -5,6 +5,13 @@ All notable changes to Political Ascent are recorded here.
 ## [Unreleased]
 
 ### Added
+- **Cards UX hardening** (`exp--cards-ux-hardening`).
+  - **AP cost enforcement** in `CardSystem.play`: cards with `apCost` now require sufficient action points; both PC and AP are spent atomically (PC is refunded if AP spend somehow fails). `CardsPanel` Play button is disabled when AP is insufficient and exposes a `title` tooltip explaining the block reason.
+  - **Cooldown & uses-per-game enforcement**: `CardStats.cooldownWeeks` and `CardStats.usesPerGame` are now honoured. `CardInstance.lastPlayedWeek` and `timesPlayed` are updated on a successful play. Multi-use cards stay in the deck across plays; single-use cards remain consumed (legacy behaviour). 6 new Vitest cases (AP block, AP+PC spend, cooldown record, cooldown block, cooldown elapsed, uses exhausted).
+  - **Double-click protection**: `CardsPanel` tracks a `playingId` and disables both Play and Discard while a play is in flight. Try/finally guarantees the lock is released even if `applyEffects` throws.
+  - **Pack-opening backdrop close**: `CardPackOpening` now dismisses on backdrop click, but only after the reveal state machine reaches `settled` and only if the click target is the backdrop itself (so child clicks don't bubble through). 2 new Playwright cases (close after settle, ignored during reveal).
+  - **Prismatic rarity robustness**: the rotating conic-gradient border (used by The Statesman) is now hardened against the pack-reveal flip — the parent gets `isolation: isolate` + a fresh `z-index` stacking context, the pseudo-element gets `will-change: transform`, `pointer-events: none`, and explicit `transform-origin`. Reduced-motion users see a static gradient instead of a frozen frame.
+
 - **Ideology compass redesign** (`exp--ideology-compass`).
   - `IdeologyCompass` rebuilt as a larger (default `size=320`, `360` in character creation) interactive picker. Click anywhere, drag the marker (Pointer Events with `setPointerCapture`), or use arrow keys (Shift = larger step) to set position. `role="slider"` + `aria-valuetext` for screen readers.
   - **Raw numeric coordinates are no longer shown.** The `x = … · y = …` font-mono readout in character-creation step 3 is gone. In its place a live orientation label (`data-testid="ideology-orientation"`, `aria-live="polite"`) reads e.g. "Centrist", "Moderate Right", "Strong Left-Libertarian".
