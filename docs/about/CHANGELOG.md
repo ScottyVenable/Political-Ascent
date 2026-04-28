@@ -5,6 +5,16 @@ All notable changes to Political Ascent are recorded here.
 ## [Unreleased]
 
 ### Added
+- **Auto-tooltip terms + hold-to-lock** (`exp--auto-tooltip-terms`).
+  - `<TermText text="..." />` (`src/renderer/components/tooltip/TermText.tsx`) auto-links any registered glossary surface (title or alias) found in plain prose, eliminating the need to wrap each term manually.
+  - Glossary matcher (`registry.ts → findTermMatches`): longest-first preference, non-overlapping ranges, unicode word-boundary regex, lazy compiled-pattern cache invalidated on `registerTooltip` / `clearTooltips`. 11 new Vitest cases.
+  - `TooltipContent.aliases?: string[]` lets terms match shorthand surfaces like "PC" → Political Capital, "AP" → Action Points.
+  - Glossary expanded with 16 new terms covering legislation (`bill`, `committee`, `floor-vote`, `whip`, `veto`), population (`cohort`, `radicalism`, `approval`, `turnout`), economy (`gdp`, `unemployment`, `deficit`), and structural concepts (`scandal`, `quest`, `event`, `scenario`). Every existing entry gained aliases.
+  - `<TermText>` wired into `CardFace` (description + flavour), `DashboardPanel` (news body), `LegislationPanel` (template + bill descriptions), and `QuestsPanel` (quest descriptions). Auto-linking is one prop away for any future panel.
+  - **Hold-to-lock**: `ExtendedTooltip` gained an `lockHoldMs` prop (default 1200ms). Hovering a term shows a gold radial progress arc in the tooltip's top-right corner; when the arc completes, the tooltip auto-pins. Outside-click (capture-phase `pointerdown`) closes a pinned tooltip; `Esc` still works. Footer text updates to reflect mode ("Hold to lock · Shift to pin now" → "Click outside or press Esc to close").
+  - 3 new Playwright tests (`tests/e2e/auto-tooltip.spec.ts`) verifying radial-then-lock, outside-click-close, and Escape-close across `1280×720`, `1440×900`, `1920×1080`.
+
+### Added (previous unreleased)
 - **Card rarity, pack-opening, and stats system** (`exp--cards-and-tooltips`).
   - `CardRarity` union (`common | uncommon | rare | epic | legendary | prismatic`) with deterministic seeded distribution per pack template (`src/engine/cardPackEngine.ts`, 10 unit tests).
   - Optional `stats` block on `CardDefinition`: `power`, `cooldownWeeks`, `usesPerGame`, `level`, `factionAffinity`, `factionBonusMultiplier`. Backwards compatible — legacy cards continue to load.

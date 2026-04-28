@@ -8,6 +8,7 @@ import { Bar } from '../components/Bar';
 import { Button } from '../components/Button';
 import { Icon, type IconName } from '../components/Icon';
 import { IdeologyCompass } from '../components/IdeologyCompass';
+import { TermText } from '../components/tooltip';
 import { formatBillionsUSD, describeIdeology } from '@/utils/format';
 import type { Bill, BillStage } from '@/types';
 
@@ -415,7 +416,7 @@ function NewsColumn({
               </div>
               {n.body && (
                 <p className="text-[0.8125rem] text-text-secondary mt-0.5 leading-snug">
-                  {n.body}
+                  <TermText text={n.body} />
                 </p>
               )}
             </li>

@@ -5,6 +5,7 @@ import { useWorldStore } from '@/store/worldStore';
 import { useUIStore } from '@/store/uiStore';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { TermText } from '../components/tooltip';
 import type { QuestDefinition, QuestId } from '@/types';
 
 export function QuestsPanel(): JSX.Element {
@@ -50,7 +51,7 @@ export function QuestsPanel(): JSX.Element {
             const doneCount = def.objectives.filter((o) => inst.progress[o.id]).length;
             return (
               <Card key={inst.instanceId} title={def.title} subtitle={`Status: ${inst.status}`} accent="gold">
-                <p className="text-sm text-text-secondary mb-3">{def.description}</p>
+                <p className="text-sm text-text-secondary mb-3"><TermText text={def.description} /></p>
                 <ul className="space-y-1 text-sm">
                   {def.objectives.map((o) => (
                     <li key={o.id} className="flex items-start gap-2">

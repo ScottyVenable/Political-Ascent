@@ -12,3 +12,5 @@ export {
   type TooltipSection,
   type ModifierRow,
 } from './ExtendedTooltip';
+export { TermText } from './TermText';
+export { findTermMatches, type TermMatch } from './registry';

@@ -16,7 +16,7 @@
 import { memo } from 'react';
 import type { CardDefinition, CardRarity, CardType } from '@/types';
 import { Icon, type IconName } from './Icon';
-import { ExtendedTooltip, type TooltipContent } from './tooltip';
+import { ExtendedTooltip, TermText, type TooltipContent } from './tooltip';
 
 export interface CardFaceProps {
   def: CardDefinition;
@@ -162,9 +162,9 @@ function CardFaceImpl({
           </div>
         </header>
 
-        {/* Body: description */}
+        {/* Body: description — auto-link any glossary terms in the prose. */}
         <p className={(compact ? 'text-xs' : 'text-sm') + ' text-text-secondary leading-snug'}>
-          {def.description}
+          <TermText text={def.description} />
         </p>
 
         {/* Stats strip */}
@@ -176,10 +176,10 @@ function CardFaceImpl({
           </div>
         )}
 
-        {/* Flavor */}
+        {/* Flavor — auto-link glossary terms inside the in-character quote. */}
         {def.flavorText && !compact && (
           <p className="text-[0.6875rem] italic text-text-muted font-flavor border-t border-rule pt-2 mt-auto">
-            &ldquo;{def.flavorText}&rdquo;
+            &ldquo;<TermText text={def.flavorText} />&rdquo;
           </p>
         )}
 

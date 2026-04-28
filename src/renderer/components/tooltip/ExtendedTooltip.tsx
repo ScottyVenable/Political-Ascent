@@ -50,6 +50,13 @@ export interface ExtendedTooltipProps {
   /** Delay before the tooltip appears, in ms. Default 350. */
   openDelay?: number;
   /**
+   * How long the player must hover before the tooltip auto-locks (in
+   * ms). A radial progress arc fills during the hold. Set to 0 to
+   * disable hold-to-lock; the tooltip then only locks on Shift-leave
+   * (legacy behaviour). Default 1200ms.
+   */
+  lockHoldMs?: number;
+  /**
    * Children must accept `onMouseEnter`, `onMouseLeave`, `onFocus`,
    * `onBlur`. The component clones the child to attach handlers — most
    * built-in elements work. Pass a single React element.
@@ -66,14 +73,24 @@ export interface ExtendedTooltipProps {
  *   </ExtendedTooltip>
  */
 export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
-  const { term, content, openDelay = 350, children } = props;
+  const { term, content, openDelay = 350, lockHoldMs = 1200, children } = props;
 
   const [open, setOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
+  /**
+   * 0–1 progress of the hover-hold timer. While > 0 and < 1, the card
+   * renders a radial progress arc in its corner. Reaches 1 → the
+   * tooltip auto-pins.
+   */
+  const [holdProgress, setHoldProgress] = useState(0);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
 
   const triggerRef = useRef<HTMLElement | null>(null);
   const timerRef = useRef<number | null>(null);
+  /** rAF handle for the hold-progress animation loop. */
+  const holdRafRef = useRef<number | null>(null);
+  /** Timestamp (performance.now) when the current hold started. */
+  const holdStartRef = useRef<number | null>(null);
   const tooltipId = useId();
 
   const resolved: TooltipContent | undefined = useMemo(() => {
@@ -103,6 +120,48 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
     }, openDelay);
   }, [openDelay, positionTooltip]);
 
+  /**
+   * Cancel any in-flight hold animation and reset the progress arc.
+   * Called on mouse-leave (when not pinning) and on close.
+   */
+  const cancelHold = useCallback(() => {
+    if (holdRafRef.current != null) {
+      cancelAnimationFrame(holdRafRef.current);
+      holdRafRef.current = null;
+    }
+    holdStartRef.current = null;
+    setHoldProgress(0);
+  }, []);
+
+  /**
+   * Start (or restart) the hover-hold timer. Drives the radial progress
+   * via rAF so the arc animates smoothly without re-render thrash; once
+   * it reaches 100%, flip `pinned=true` and stop the loop.
+   *
+   * Bypassed entirely when `lockHoldMs <= 0`.
+   */
+  const startHold = useCallback(() => {
+    if (lockHoldMs <= 0) return;
+    cancelHold();
+    holdStartRef.current = performance.now();
+    const tick = (): void => {
+      const start = holdStartRef.current;
+      if (start == null) return;
+      const elapsed = performance.now() - start;
+      const p = Math.min(1, elapsed / lockHoldMs);
+      setHoldProgress(p);
+      if (p >= 1) {
+        // Lock the tooltip and stop the loop.
+        setPinned(true);
+        holdRafRef.current = null;
+        holdStartRef.current = null;
+        return;
+      }
+      holdRafRef.current = requestAnimationFrame(tick);
+    };
+    holdRafRef.current = requestAnimationFrame(tick);
+  }, [lockHoldMs, cancelHold]);
+
   const cancelOpen = useCallback(() => {
     if (timerRef.current != null) {
       window.clearTimeout(timerRef.current);
@@ -112,9 +171,26 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
 
   const close = useCallback(() => {
     cancelOpen();
+    cancelHold();
     setOpen(false);
     setPinned(false);
-  }, [cancelOpen]);
+  }, [cancelOpen, cancelHold]);
+
+  // Outside-click closes a pinned tooltip. The tooltip card sets
+  // `pointerEvents:auto` only when pinned, so clicks inside it are
+  // delivered to the card (and don't reach window).
+  useEffect(() => {
+    if (!open || !pinned) return;
+    function onPointerDown(e: PointerEvent): void {
+      const target = e.target as Node | null;
+      if (target && triggerRef.current?.contains(target)) return;
+      // The tooltip element itself stops propagation in TooltipCard,
+      // so anything that bubbles up here is genuinely "outside".
+      close();
+    }
+    window.addEventListener('pointerdown', onPointerDown, true);
+    return () => window.removeEventListener('pointerdown', onPointerDown, true);
+  }, [open, pinned, close]);
 
   // Keyboard: Esc closes a pinned tooltip and returns focus.
   useEffect(() => {
@@ -129,21 +205,29 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, close]);
 
-  // Pin while shift is held during mouse-leave: stays open.
+  // Pin while shift is held during mouse-leave: stays open. Otherwise
+  // close (and abort any in-flight hold animation).
   const handleLeave = useCallback(
     (e: React.MouseEvent | React.FocusEvent) => {
       const shift = (e as React.MouseEvent).shiftKey;
       if (shift) {
+        cancelHold();
         setPinned(true);
         return;
       }
-      if (!pinned) close();
+      if (!pinned) {
+        cancelHold();
+        close();
+      }
     },
-    [pinned, close],
+    [pinned, close, cancelHold],
   );
 
   // Clean up on unmount.
-  useEffect(() => () => cancelOpen(), [cancelOpen]);
+  useEffect(() => () => {
+    cancelOpen();
+    cancelHold();
+  }, [cancelOpen, cancelHold]);
 
   // Clone trigger to attach handlers.
   if (!isValidElement(children)) {
@@ -160,6 +244,7 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
     },
     onMouseEnter: (e: React.MouseEvent) => {
       scheduleOpen();
+      startHold();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (children.props as any).onMouseEnter?.(e);
     },
@@ -170,6 +255,7 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
     },
     onFocus: (e: React.FocusEvent) => {
       scheduleOpen();
+      startHold();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (children.props as any).onFocus?.(e);
     },
@@ -191,6 +277,7 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
             content={resolved}
             coords={coords}
             pinned={pinned}
+            holdProgress={holdProgress}
             onClose={close}
           />,
           document.body,
@@ -208,11 +295,13 @@ interface TooltipCardProps {
   content: TooltipContent;
   coords: { top: number; left: number };
   pinned: boolean;
+  /** 0–1 hover-hold progress; renders the corner arc when 0 < p < 1. */
+  holdProgress: number;
   onClose: () => void;
 }
 
 function TooltipCard(props: TooltipCardProps): JSX.Element {
-  const { id, content, coords, pinned, onClose } = props;
+  const { id, content, coords, pinned, holdProgress, onClose } = props;
   const ref = useRef<HTMLDivElement | null>(null);
   const [adjusted, setAdjusted] = useState<CSSProperties | null>(null);
 
@@ -230,11 +319,21 @@ function TooltipCard(props: TooltipCardProps): JSX.Element {
     setAdjusted({ top, left });
   }, [coords]);
 
+  // The radial appears only while we are still actively holding (i.e.
+  // not yet pinned and progress is between epsilon and 1). At p=1 the
+  // parent has already pinned the tooltip and stopped feeding progress.
+  const showHoldRing = !pinned && holdProgress > 0.02 && holdProgress < 1;
+
   return (
     <div
       ref={ref}
       id={id}
       role="tooltip"
+      onPointerDown={(e) => {
+        // Stop pointerdown inside the (pinned) card from bubbling to
+        // the window-level outside-click handler that would close us.
+        if (pinned) e.stopPropagation();
+      }}
       style={{
         position: 'fixed',
         top: adjusted?.top ?? coords.top,
@@ -247,6 +346,7 @@ function TooltipCard(props: TooltipCardProps): JSX.Element {
       }}
       className="bg-bg-secondary border border-rule-strong rounded-sm shadow-glow-gold animate-tooltip-enter"
     >
+      {showHoldRing && <HoldRing progress={holdProgress} />}
       <header className="flex items-start gap-2 px-3 py-2 border-b border-rule">
         {content.icon && (
           <Icon name={content.icon as IconName} size={16} className="text-accent-gold mt-0.5 shrink-0" />
@@ -294,11 +394,56 @@ function TooltipCard(props: TooltipCardProps): JSX.Element {
 
         {!pinned && (
           <p className="font-mono text-[0.625rem] tracking-wider text-text-muted opacity-70 pt-1">
-            Hold <kbd className="px-1 border border-rule rounded-sm">Shift</kbd> to pin
+            Hold to lock · <kbd className="px-1 border border-rule rounded-sm">Shift</kbd> to pin now
+          </p>
+        )}
+        {pinned && (
+          <p className="font-mono text-[0.625rem] tracking-wider text-text-muted opacity-70 pt-1">
+            Click outside or press <kbd className="px-1 border border-rule rounded-sm">Esc</kbd> to close
           </p>
         )}
       </div>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// HOLD RING — radial progress shown in the tooltip's top-right corner
+// while the player is hover-holding to lock. Pure SVG, no animations
+// library: we re-render at 60Hz only while the hold is active, which
+// is bounded to ~1–2 seconds total.
+// ─────────────────────────────────────────────────────────────
+
+function HoldRing({ progress }: { progress: number }): JSX.Element {
+  // 14px radius, 2px stroke; circumference ≈ 87.96.
+  const r = 7;
+  const c = 2 * Math.PI * r;
+  const offset = c * (1 - progress);
+  return (
+    <svg
+      aria-hidden="true"
+      width={20}
+      height={20}
+      viewBox="0 0 20 20"
+      className="absolute top-1.5 right-1.5 pointer-events-none"
+    >
+      {/* Track */}
+      <circle cx={10} cy={10} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={2} />
+      {/* Progress arc — starts at the top (−90deg rotation) and sweeps clockwise. */}
+      <circle
+        cx={10}
+        cy={10}
+        r={r}
+        fill="none"
+        stroke="var(--pa-accent-gold, #c9a84c)"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={offset}
+        transform="rotate(-90 10 10)"
+        style={{ transition: 'stroke-dashoffset 60ms linear' }}
+      />
+    </svg>
   );
 }
 

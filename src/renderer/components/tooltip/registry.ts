@@ -93,6 +93,14 @@ export interface TooltipContent {
    * via a "See also" link row at the bottom.
    */
   seeAlso?: string[];
+  /**
+   * Surface forms that should auto-link to this tooltip when found in
+   * prose. The title is added implicitly. Aliases are case-insensitive
+   * and matched on whole-word boundaries only.
+   *
+   * @example aliases: ['PC', 'political capital'] for `political-capital`
+   */
+  aliases?: string[];
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -104,6 +112,7 @@ const REGISTRY = new Map<string, TooltipContent>();
 /** Register one or more tooltip definitions. Later writes override. */
 export function registerTooltip(...defs: TooltipContent[]): void {
   for (const d of defs) REGISTRY.set(d.id, d);
+  invalidateMatcher();
 }
 
 /** Look up a tooltip by id. Returns `undefined` if not registered. */
@@ -119,4 +128,129 @@ export function allTooltipIds(): string[] {
 /** Wipe the registry. Test-only convenience. */
 export function clearTooltips(): void {
   REGISTRY.clear();
+  invalidateMatcher();
+}
+
+// ────────────────────────────────────────────────────────────────
+// AUTO-MATCHER
+// ────────────────────────────────────────────────────────────────
+
+/**
+ * One match emitted by {@link findTermMatches}.
+ *
+ * Indexes are character offsets into the *original* input string so
+ * the caller can splice the prose around them.
+ */
+export interface TermMatch {
+  /** Term id resolved from the registry. */
+  id: string;
+  /** Inclusive start offset in the source text. */
+  start: number;
+  /** Exclusive end offset in the source text. */
+  end: number;
+  /** The exact substring that matched (preserves original casing). */
+  surface: string;
+}
+
+/**
+ * The compiled matcher table. Built lazily from the registry the first
+ * time {@link findTermMatches} is called and invalidated whenever the
+ * registry changes.
+ *
+ * Each entry pairs a single regex (whole-word, case-insensitive) with
+ * the term id it resolves to. Surfaces are sorted longest-first so
+ * "political capital" wins over "capital" when both register.
+ */
+interface MatcherEntry {
+  id: string;
+  pattern: RegExp;
+}
+let MATCHER: MatcherEntry[] | null = null;
+
+function invalidateMatcher(): void {
+  MATCHER = null;
+}
+
+/** Escape a literal surface for use inside a RegExp. */
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Compile (or reuse) the surface → term-id matcher table. */
+function buildMatcher(): MatcherEntry[] {
+  if (MATCHER) return MATCHER;
+  // Collect (surface, id) pairs from titles + aliases. Surfaces are
+  // de-duplicated case-insensitively; later writes override earlier ones.
+  const surfaces = new Map<string, string>();
+  for (const def of REGISTRY.values()) {
+    const all = [def.title, ...(def.aliases ?? [])];
+    for (const surface of all) {
+      const key = surface.toLowerCase();
+      if (!surfaces.has(key)) surfaces.set(key, def.id);
+    }
+  }
+  // Longest-first so multi-word surfaces win over their suffixes.
+  const sorted = Array.from(surfaces.entries()).sort(
+    (a, b) => b[0].length - a[0].length,
+  );
+  // "Word boundary" here is a unicode-friendly assertion: the surface
+  // must not be touching letters/digits on either side. Plain `\b`
+  // does not work for multi-word surfaces because the inner spaces
+  // count as boundaries themselves.
+  MATCHER = sorted.map(([surface, id]) => ({
+    id,
+    pattern: new RegExp(`(^|[^\\p{L}\\p{N}])(${escapeRegex(surface)})(?=$|[^\\p{L}\\p{N}])`, 'iu'),
+  }));
+  return MATCHER;
+}
+
+/**
+ * Scan `text` for any registered term surface and return the matches
+ * in document order, with no overlaps.
+ *
+ * Algorithm: for each registered surface (longest-first), find every
+ * occurrence; reject matches that overlap an already-accepted match.
+ * Cost: O(terms × text) — fine for tooltip prose (rarely >1 KB).
+ *
+ * @example
+ *   findTermMatches('Spend PC to whip a vote.')
+ *   // → [{ id: 'political-capital', start: 6, end: 8, surface: 'PC' }]
+ */
+export function findTermMatches(text: string): TermMatch[] {
+  if (!text) return [];
+  const matcher = buildMatcher();
+  const accepted: TermMatch[] = [];
+
+  // Walk every term and collect candidate hits.
+  for (const { id, pattern } of matcher) {
+    // Build a global flavour of the per-term pattern for iteration.
+    const global = new RegExp(pattern.source, pattern.flags + 'g');
+    let m: RegExpExecArray | null;
+    while ((m = global.exec(text)) !== null) {
+      // The leading non-letter char is captured in group 1 and is *not*
+      // part of the term surface; strip it from the offset.
+      const lead = m[1] ?? '';
+      const surfaceStart = m.index + lead.length;
+      const surface = m[2];
+      const surfaceEnd = surfaceStart + surface.length;
+
+      // Reject if it overlaps any already-accepted match.
+      const overlaps = accepted.some(
+        (a) => surfaceStart < a.end && surfaceEnd > a.start,
+      );
+      if (overlaps) continue;
+      accepted.push({ id, start: surfaceStart, end: surfaceEnd, surface });
+      // Advance past the match to avoid zero-width loops on edge cases.
+      if (global.lastIndex === m.index) global.lastIndex++;
+    }
+  }
+
+  // Sort the accepted matches by document order for the consumer.
+  accepted.sort((a, b) => a.start - b.start);
+  return accepted;
+}
+
+/** Force the matcher to recompile. Test-only. */
+export function _resetMatcherForTest(): void {
+  invalidateMatcher();
 }
