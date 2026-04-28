@@ -6,6 +6,10 @@ All notable changes to Political Ascent are recorded here.
 
 ### Added
 
+- **Economy panel detail** (`exp--economy-detail`, todo#32). Indicator rows now carry trend chips comparing the latest snapshot to one ~12 weeks back, with arrows colour-coded by metric direction (a falling unemployment rate is good news and renders in `text-status-success`, even though the delta is negative). Two new derived cards sit beneath the snapshot/trends grid: **Fiscal pressure** (debt-to-GDP ratio with a 100% danger threshold, tone-shifting bar) and **Distribution** (Gini coefficient as a 0–100 meter, with explanatory copy). New `data-testid` selectors: `economy-panel`, `economy-debt-to-gdp`, `economy-gini`.
+
+### Added
+
 - **Population focus pages** (`exp--population-focus`, todo#31). Population tab cards become clickable surfaces. Each card opens a `<GroupFocusModal />` with a two-column layout: mood (Happiness / Radicalism / Activism / Loyalty as bars, with a single-axis ideology compass strip showing the group's economic bias) on the left, demographics (size, income index, full tag chips, and a placeholder for group-targeted player actions like rallies and ad buys) on the right. Escape and backdrop click dismiss. New `data-testid` selectors: `population-grid`, `population-group-card`, `population-focus-modal`, `population-focus-mood`, `population-focus-demographics`. New Playwright case in `tests/e2e/population-focus.spec.ts`.
 
 ### Added
