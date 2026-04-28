@@ -5,6 +5,7 @@ import { useUIStore } from '@/store/uiStore';
 import { CardSystem } from '@/systems/CardSystem';
 import { CardFace } from '../components/CardFace';
 import { Button } from '../components/Button';
+import { useContextMenu } from '../hooks/useContextMenu';
 
 /**
  * CardsPanel — view and play cards in hand.
@@ -27,6 +28,7 @@ export function CardsPanel(): JSX.Element {
   const week = useGameStore((s) => s.week);
   const pushToast = useUIStore((s) => s.pushToast);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const menu = useContextMenu();
 
   function play(instanceId: string): void {
     // Guard against rapid double-clicks. Even though `CardSystem.play`
@@ -90,7 +92,55 @@ export function CardsPanel(): JSX.Element {
           const canPay = blockedReason === null;
           const pending = playingId === inst.instanceId;
           return (
-            <div key={inst.instanceId} className="flex flex-col gap-2">
+            <div
+              key={inst.instanceId}
+              className="flex flex-col gap-2"
+              data-testid={`card-row-${def.id}`}
+              onContextMenu={(e) =>
+                // Right-click brings up a contextual menu of actions for
+                // this specific card instance. Items are derived per
+                // card so we can grey out "Play" with the live block
+                // reason, mirroring the button state below.
+                menu.open(e, [
+                  {
+                    id: 'play',
+                    label: pending ? 'Playing\u2026' : 'Play card',
+                    icon: 'check',
+                    onSelect: () => play(inst.instanceId),
+                    disabled: !canPay || pending,
+                  },
+                  {
+                    id: 'copy-id',
+                    label: 'Copy card ID',
+                    icon: 'copy',
+                    onSelect: () => {
+                      void navigator.clipboard?.writeText(def.id).then(
+                        () =>
+                          pushToast({
+                            message: `Copied: ${def.id}`,
+                            severity: 'info',
+                            ttl: 2000,
+                          }),
+                        () =>
+                          pushToast({
+                            message: 'Clipboard unavailable',
+                            severity: 'warning',
+                            ttl: 2500,
+                          }),
+                      );
+                    },
+                  },
+                  {
+                    id: 'discard',
+                    label: 'Discard',
+                    icon: 'x',
+                    onSelect: () => discard(inst.instanceId),
+                    disabled: pending,
+                    danger: true,
+                  },
+                ])
+              }
+            >
               <CardFace def={def} state={canPay ? 'playable' : 'locked'} />
               <div className="flex gap-2">
                 <Button
@@ -116,6 +166,7 @@ export function CardsPanel(): JSX.Element {
           );
         })}
       </div>
+      {menu.element}
     </div>
   );
 }

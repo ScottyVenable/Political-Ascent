@@ -4,6 +4,10 @@ All notable changes to Political Ascent are recorded here.
 
 ## [Unreleased]
 
+### Added
+
+- **Right-click context menus on cards and timeline** (`exp--right-click-menus`, todo#5). New `<ContextMenu />` portal component + `useContextMenu` hook deliver lightweight, viewport-clamped contextual menus. Cards in the hand expose Play / Copy ID / Discard. Timeline entries expose Open detail (when the entry has a `relatedEntity`) and Copy headline. Menus close on Escape, outside pointerdown, scroll, or resize, and re-clamp into the viewport after layout. 7 unit tests + 1 Playwright smoke (`tests/e2e/right-click-menus.spec.ts`).
+
 ### Fixed
 
 - **Codex review fixes across PR #50–#62** (`exp--review-fixes`). Single bundled PR addressing inline feedback from the automated Codex reviewer:

@@ -23,9 +23,11 @@
 
 import { useMemo } from 'react';
 import { useWorldStore } from '@/store/worldStore';
+import { useUIStore } from '@/store/uiStore';
 import { Card } from '../components/Card';
 import { TermText } from '../components/tooltip';
-import { EntityLink, type EntityRefType } from '../components/EntityLink';
+import { EntityLink, type EntityRefType, panelForEntity } from '../components/EntityLink';
+import { useContextMenu } from '../hooks/useContextMenu';
 import type { NewsItem } from '@/types';
 
 const MONTH_NAMES = [
@@ -96,6 +98,9 @@ export function TimelinePanel(): JSX.Element {
   // crash the panel and the player still sees recent history.
   const news = useWorldStore((s) => s.newsArchive ?? s.news);
   const grouped = useMemo(() => groupByMonth(news), [news]);
+  const setActivePanel = useUIStore((s) => s.setActivePanel);
+  const pushToast = useUIStore((s) => s.pushToast);
+  const menu = useContextMenu();
 
   return (
     <div className="flex flex-col gap-4" data-testid="timeline-panel">
@@ -132,6 +137,45 @@ export function TimelinePanel(): JSX.Element {
                     'pl-3 py-2 pr-3 border-l-4 bg-bg-secondary rounded-sm ' +
                     SEVERITY_BORDER[item.severity]
                   }
+                  onContextMenu={(e) => {
+                    // Build a per-headline menu. "Open detail" appears
+                    // only when the item links to an entity; "Copy
+                    // headline" is always available.
+                    const items = [];
+                    if (item.relatedEntity) {
+                      const target = panelForEntity(
+                        item.relatedEntity.type as EntityRefType,
+                      );
+                      items.push({
+                        id: 'open-detail',
+                        label: 'Open detail',
+                        icon: 'external-link' as const,
+                        onSelect: () => setActivePanel(target),
+                      });
+                    }
+                    items.push({
+                      id: 'copy-headline',
+                      label: 'Copy headline',
+                      icon: 'copy' as const,
+                      onSelect: () => {
+                        void navigator.clipboard?.writeText(item.headline).then(
+                          () =>
+                            pushToast({
+                              message: 'Headline copied',
+                              severity: 'info',
+                              ttl: 2000,
+                            }),
+                          () =>
+                            pushToast({
+                              message: 'Clipboard unavailable',
+                              severity: 'warning',
+                              ttl: 2500,
+                            }),
+                        );
+                      },
+                    });
+                    menu.open(e, items);
+                  }}
                 >
                   <div className="flex items-baseline justify-between gap-3">
                     <h3
@@ -173,6 +217,7 @@ export function TimelinePanel(): JSX.Element {
           </section>
         ))
       )}
+      {menu.element}
     </div>
   );
 }

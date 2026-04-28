@@ -261,6 +261,21 @@ const ICONS = {
       <path d="m6 6 12 12" />
     </>
   ),
+  // Tabler "external-link" — used in context menus for "Open detail".
+  'external-link': (
+    <>
+      <path d="M12 6H6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
+      <path d="M11 13l9 -9" />
+      <path d="M15 4h5v5" />
+    </>
+  ),
+  // Tabler "copy" — used in context menus for "Copy …" actions.
+  copy: (
+    <>
+      <rect x="8" y="8" width="12" height="12" rx="2" />
+      <path d="M16 8V6a2 2 0 0 0 -2 -2H6a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2" />
+    </>
+  ),
 } as const satisfies Record<string, IconPath>;
 
 /** Public union of every valid icon id. Generated from the registry. */
