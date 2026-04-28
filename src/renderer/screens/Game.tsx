@@ -88,18 +88,32 @@ export function Game(): JSX.Element {
   return (
     // Three-row grid: the top and bottom rows have fixed pixel heights
     // (48px shell + 72px command strip) so the middle row inherits
-    // `1fr` and can scroll internally. `h-screen` guarantees the layout
-    // fills the viewport regardless of content height.
+    // `1fr` and can scroll internally. `100dvh` (with a `100vh`
+    // fallback baked in by Tailwind's `h-screen` if needed) handles the
+    // dynamic viewport on mobile so the bottom bar isn't hidden by the
+    // browser/system chrome on Android Chrome / iOS Safari.
+    //
+    // Safe-area insets (Pixel notch, Dynamic Island, gesture bars) are
+    // applied via CSS env() variables so the top bar isn't clipped and
+    // the bottom bar isn't pushed under the home indicator.
     <div
-      className="bg-bg-primary text-text-primary grid h-screen"
-      style={{ gridTemplateRows: '48px 1fr 72px' }}
+      className="bg-bg-primary text-text-primary grid"
+      style={{
+        gridTemplateRows: '48px 1fr 72px',
+        height: '100dvh',
+        minHeight: '100vh',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)',
+      }}
     >
       <TopBar />
       <div className="flex overflow-hidden">
         <Sidebar />
         <main
           key={activePanel}
-          className="flex-1 overflow-y-auto game-scroll p-5 md:p-6 animate-panel-enter"
+          className="flex-1 overflow-y-auto game-scroll p-3 sm:p-5 md:p-6 animate-panel-enter"
         >
           {activePanel === 'dashboard' && <DashboardPanel />}
           {activePanel === 'legislation' && <LegislationPanel />}

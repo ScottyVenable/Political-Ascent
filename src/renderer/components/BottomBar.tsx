@@ -79,11 +79,11 @@ function BottomBarImpl(): JSX.Element {
 
   return (
     <footer
-      className="h-[72px] bg-bg-secondary border-t border-rule px-5 grid items-center"
+      className="h-[72px] bg-bg-secondary border-t border-rule px-2 sm:px-5 grid items-center gap-1"
       style={{ gridTemplateColumns: '1fr auto 1fr' }}
     >
       {/* ─── LEFT: Speed controls ─────────────────────────────── */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1 sm:gap-1.5">
         {SPEEDS.map((s) => {
           // "Active" = the engine is currently running at this speed.
           // Pause is active both when explicitly paused and when speed
@@ -99,7 +99,10 @@ function BottomBarImpl(): JSX.Element {
               aria-pressed={isActive}
               onClick={() => TimeEngine.setSpeed(s.value)}
               className={
-                'w-10 h-10 rounded-sm flex items-center justify-center ' +
+                // Slightly smaller hit-target on phones so all four
+                // speeds fit alongside the centre week readout without
+                // pushing it off-axis.
+                'w-9 h-9 sm:w-10 sm:h-10 rounded-sm flex items-center justify-center ' +
                 'transition-all duration-instant active:translate-y-px ' +
                 (isActive
                   ? 'bg-accent-gold text-bg-primary shadow-glow-gold'
@@ -114,12 +117,17 @@ function BottomBarImpl(): JSX.Element {
       </div>
 
       {/* ─── CENTER: Week readout ─────────────────────────────── */}
-      <div className="flex flex-col items-center leading-none">
-        <span className="font-mono text-data-lg text-text-primary tabular-nums">
+      <div className="flex flex-col items-center leading-none min-w-0">
+        <span className="font-mono text-base sm:text-data-lg text-text-primary tabular-nums">
           WEEK {week}
         </span>
-        <span className="font-mono text-label uppercase tracking-widest text-text-muted mt-1">
+        {/* Long form on tablet+, abbreviated month on phones so the
+            line doesn't wrap into the speed buttons. */}
+        <span className="hidden sm:inline font-mono text-label uppercase tracking-widest text-text-muted mt-1">
           of 52 · {monthName} {date.year}
+        </span>
+        <span className="sm:hidden font-mono text-[0.625rem] uppercase tracking-widest text-text-muted mt-1">
+          of 52
         </span>
       </div>
 

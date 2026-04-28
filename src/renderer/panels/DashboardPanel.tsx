@@ -330,19 +330,19 @@ function Kpi({
   // navigation, focus rings, and screen-reader semantics come for free.
   const inner = (
     <>
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-label uppercase tracking-widest text-text-muted">
+      <div className="flex items-center justify-between gap-1 min-w-0">
+        <span className="font-mono text-label uppercase tracking-wider sm:tracking-widest text-text-muted truncate">
           {label}
         </span>
         <span
-          className={`font-mono text-[0.625rem] ${TREND_CLS[trend]}`}
+          className={`font-mono text-[0.625rem] shrink-0 ${TREND_CLS[trend]}`}
           aria-hidden
         >
           {TREND_GLYPH[trend]}
         </span>
       </div>
       <div
-        className={`font-mono text-data-lg tabular-nums mt-1 leading-none ${TONE_CLS[tone]}`}
+        className={`font-mono text-2xl sm:text-data-lg tabular-nums mt-1 leading-none ${TONE_CLS[tone]} truncate`}
       >
         {value}
       </div>

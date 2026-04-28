@@ -4,6 +4,10 @@ All notable changes to Political Ascent are recorded here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Mobile portrait layout** (`exp--mobile-portrait-fixes`). The 192px sidebar now collapses into an overlay drawer below the `md` breakpoint (toggled from a new TopBar hamburger), so the main panel keeps the full viewport width on phones. The Game shell applies `env(safe-area-inset-*)` padding and uses `100dvh` so the chrome doesn't clip under the Pixel notch / Dynamic Island / gesture bar. TopBar drops the "XP" suffix and "AP" caption below `sm`; BottomBar shrinks the speed buttons (40→36px) and abbreviates the long week footer; Dashboard KPI tiles use `text-2xl` on phones (vs. `text-data-lg` 32px on desktop) and truncate cleanly. New Pixel-7-portrait Playwright project + 3-test smoke (`tests/e2e/mobile-portrait.spec.ts`).
+
 ### Added
 
 - **Character panel optimisation + avatar presets + reference-figure relocation** (`exp--character-panel`, todo#6, todo#9, todo#10). New `<AvatarMedallion />` and `<AvatarPicker />` components plus a curated 8-entry preset registry under `src/data/avatars/` (icon-glyph medallions, no AI-generated portraits per AGENTS.md §2.9). Character creation now opens with a live avatar preview alongside the name field and a preset picker beneath the background tiles. The Character panel is rebuilt around a hero header (avatar + name + background blurb + change-avatar toggle), separate Stats / Traits / Progression cards, and a full-width ideology compass that now shows the historical reference figures (FDR, Reagan, Sanders, Thatcher, etc.). The dashboard mini-compass explicitly hides reference figures so the two surfaces don't compete. New `setAvatar` action on `characterStore`. 11 unit tests + 1 Playwright smoke (`tests/e2e/character-panel.spec.ts`).

@@ -54,6 +54,16 @@ export default defineConfig({
       name: "chromium-1920x1080",
       use: { ...devices["Desktop Chrome"], viewport: { width: 1920, height: 1080 } },
     },
+    // Mobile portrait — Pixel-class viewport. Used by the
+    // mobile-portrait.spec.ts smoke that guards the drawer sidebar,
+    // safe-area handling, and TopBar/BottomBar compaction below the
+    // `md` breakpoint.
+    {
+      name: "chromium-pixel-portrait",
+      use: {
+        ...devices["Pixel 7"],
+      },
+    },
   ],
 
   // Boot the Vite dev server before the suite and tear it down afterwards.

@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useCharacterStore } from '@/store/characterStore';
+import { useUIStore } from '@/store/uiStore';
 import { ResourcePips } from './ResourcePips';
 import { ExtendedTooltip } from './tooltip';
 import { Icon } from './Icon';
@@ -51,23 +52,48 @@ function TopBarImpl(): JSX.Element {
   const level = useCharacterStore((s) => s.level);
   const xp = useCharacterStore((s) => s.xp);
 
+  const toggleSidebar = useUIStore((s) => s.toggleMobileSidebar);
+  const sidebarOpen = useUIStore((s) => s.mobileSidebarOpen);
+
   // 1-indexed month → 0-indexed lookup. Defensive clamp in case a save
   // file carries a bad value.
   const monthAbbrev = MONTH_ABBREV[Math.max(0, Math.min(11, date.month - 1))];
 
   return (
     <header
-      className="h-12 bg-bg-secondary border-b border-rule px-5 grid items-center"
+      className="h-12 bg-bg-secondary border-b border-rule px-2 sm:px-5 grid items-center gap-2"
       style={{ gridTemplateColumns: '1fr auto 1fr' }}
     >
-      {/* ─── LEFT: Identity ──────────────────────────────────── */}
-      <div className="flex items-baseline gap-3 min-w-0">
-        <span className="font-headline text-sm text-accent-gold truncate">
-          {name || 'Senator'}
-        </span>
-        <span className="font-mono text-label text-text-muted shrink-0">
-          LV {level} · {xp} XP
-        </span>
+      {/* ─── LEFT: Identity (and mobile hamburger) ──────────── */}
+      <div className="flex items-center gap-2 min-w-0">
+        {/* Hamburger — only visible below md, where the sidebar is a
+            drawer. Above md the sidebar is always inline so the toggle
+            would be a no-op. */}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+          aria-expanded={sidebarOpen}
+          aria-controls="sidebar-drawer"
+          data-testid="topbar-menu-button"
+          className="md:hidden w-9 h-9 flex items-center justify-center rounded-sm text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/60 transition-colors duration-instant shrink-0"
+        >
+          <Icon name="menu" size={20} aria-hidden />
+        </button>
+        <div className="flex items-baseline gap-2 sm:gap-3 min-w-0">
+          <span className="font-headline text-sm text-accent-gold truncate">
+            {name || 'Senator'}
+          </span>
+          {/* LV/XP is a tertiary readout — we keep it visible at all
+              widths but tighten the gap on phones so it doesn't push
+              the date readout out of the centre slot. */}
+          <span className="hidden sm:inline font-mono text-label text-text-muted shrink-0">
+            LV {level} · {xp} XP
+          </span>
+          <span className="sm:hidden font-mono text-label text-text-muted shrink-0">
+            LV {level}
+          </span>
+        </div>
       </div>
 
       {/* ─── CENTER: Date ────────────────────────────────────── */}
@@ -81,7 +107,7 @@ function TopBarImpl(): JSX.Element {
       </div>
 
       {/* ─── RIGHT: Resources ────────────────────────────────── */}
-      <div className="flex items-center justify-end gap-5">
+      <div className="flex items-center justify-end gap-2 sm:gap-5 min-w-0">
         <ExtendedTooltip term="political-capital">
           <div tabIndex={0} className="flex items-baseline gap-1.5 cursor-help focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm">
             <span className="font-mono text-data text-accent-gold tabular-nums">
@@ -115,7 +141,10 @@ function TopBarImpl(): JSX.Element {
         <ExtendedTooltip term="action-points">
           <div tabIndex={0} className="flex items-center gap-1.5 cursor-help focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm">
             <ResourcePips value={ap} max={apMax} tone="gold" label="Action Points" />
-            <span className="font-mono text-label text-text-muted">AP</span>
+            {/* "AP" caption is redundant on phones where the pip row
+                already telegraphs the resource; hide it below sm to
+                save horizontal real estate. */}
+            <span className="hidden sm:inline font-mono text-label text-text-muted">AP</span>
           </div>
         </ExtendedTooltip>
       </div>

@@ -276,6 +276,15 @@ const ICONS = {
       <path d="M16 8V6a2 2 0 0 0 -2 -2H6a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2" />
     </>
   ),
+  // Tabler "menu-2" — three horizontal bars. Mobile drawer toggle in
+  // the TopBar (`md:hidden`).
+  menu: (
+    <>
+      <path d="M4 6h16" />
+      <path d="M4 12h16" />
+      <path d="M4 18h16" />
+    </>
+  ),
 } as const satisfies Record<string, IconPath>;
 
 /** Public union of every valid icon id. Generated from the registry. */
