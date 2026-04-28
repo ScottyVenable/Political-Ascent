@@ -4,6 +4,13 @@ All notable changes to Political Ascent are recorded here.
 
 ## [Unreleased]
 
+### Added
+
+- **In-app logger ring buffer** (`src/utils/logger.ts`, todo#22). The existing thin `createLogger` wrapper is replaced with a full logging subsystem: every entry is appended to a 500-entry ring buffer with timestamp, level (`debug` / `info` / `warn` / `error`), scope, message, and structured args. Errors are serialised correctly. Subscribers can listen for buffer updates so a future in-game log viewer panel can render live. Console pass-through is preserved in dev builds, suppressed in production. Ships with 5 unit tests covering each level, the level filter, subscription, ring-buffer trim, and Error serialisation.
+- **Top-level ErrorBoundary** (`src/renderer/components/ErrorBoundary.tsx`, todo#20). Wraps `<App />` in `index.tsx`. On any uncaught render error, presents a player-friendly crash overlay with a collapsible technical-detail block, four actions (Reload / Return to main menu / Download logs / Copy logs), and clear language directing players to the issue tracker. The downloaded payload includes the error, component stack, full log buffer, and user-agent string. Global `window.onerror` and `unhandledrejection` listeners feed into the same log buffer so async failures land in any subsequent crash report.
+- **Developer-mode store** (`src/store/devStore.ts`, todo#21). New Zustand slice with master `enabled` switch, `enabledAt` timestamp (consumed by the future save subsystem to tag developer saves), and five cheats: `godMode`, `infiniteResources`, `instantActions`, `revealHidden`, `verboseLogging`. Cheats are inert while the master switch is off; disabling wipes every cheat back to false. Convenience helper `devCheatActive(cheat)` for engine/systems call sites that don't want to touch React. Ships with 6 unit tests.
+- **Settings → Developer card**. New section in the Settings screen surfaces the dev-mode toggle behind a confirmation dialog ("Saves created while developer mode is on will be tagged as developer saves"). Once armed, exposes individual toggles for each cheat. The verbose-logging toggle is mirrored into `setLogLevel` so debug entries start being captured immediately.
+
 ### Changed
 
 - **Tooltip polish pass** (`exp--tooltip-polish`, todo#26 / #29 / #37 / #39). Behavioural changes to `<ExtendedTooltip />` that affect every panel:
