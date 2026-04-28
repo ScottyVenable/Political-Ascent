@@ -12,6 +12,11 @@ import { useCharacterStore } from '@/store/characterStore';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarMedallion } from '../components/AvatarMedallion';
 import { DEFAULT_AVATAR_ID } from '@/data/avatars';
+import {
+  statTier,
+  statTierLabel,
+  statTierChipClass,
+} from '@/utils/statTier';
 
 /**
  * Map a CoreStats key to its glossary tooltip term id. Keeping this as a
@@ -30,6 +35,77 @@ const STAT_TOOLTIP_TERM: Record<keyof CoreStats, string> = {
 /** Stat budget bounds — keep in sync with CharacterSystem.validateStatDistribution. */
 const BUDGET_MIN = 24;
 const BUDGET_MAX = 36;
+
+/**
+ * One-line gameplay-impact blurb per stat tier. Surfaced under each
+ * stat slider so the player can see *why* a number matters at a
+ * glance instead of inferring it from the numeric value (todo#27).
+ *
+ * Wording targets the role each stat plays in the simulation rather
+ * than precise mechanical numbers — the precise multipliers live in
+ * the engine and may rebalance during early access. The blurb tells
+ * the player which loops a tier opens or closes.
+ */
+const STAT_IMPACT: Record<keyof CoreStats, Record<ReturnType<typeof statTier>, string>> = {
+  charisma: {
+    weak: 'Speeches struggle to land. Crowds drift. Endorsements are scarce.',
+    average: 'You hold a room. Persuasion checks land at the expected rate.',
+    strong: 'You move undecideds. Cards with "rally" effects scale with you.',
+    exceptional: 'You shift narratives. Hostile pressers can be turned mid-question.',
+  },
+  strategy: {
+    weak: 'Misreads the room. Whip counts often surprise you.',
+    average: 'You see two moves ahead. Your bills survive committee.',
+    strong: 'You spot wedge issues before opponents. Coalitions cohere around you.',
+    exceptional: 'You shape the calendar. Crisis events find you already prepared.',
+  },
+  connections: {
+    weak: 'Few favours to call in. Donor calls go to voicemail.',
+    average: 'A working network. Standard endorsements are reachable.',
+    strong: 'Open doors at the leadership level. Faction asks come back warm.',
+    exceptional: 'Power-broker access. Off-the-books deals become a routine option.',
+  },
+  integrity: {
+    weak: 'Easily tarred. Scandals stick. Press treats every move as suspect.',
+    average: 'A clean enough record. Most ethics challenges glance off.',
+    strong: 'Press gives you the benefit of the doubt. Reformer cards land harder.',
+    exceptional: 'Untouchable on character. You can wage scandal-driven campaigns.',
+  },
+  wealth: {
+    weak: 'Self-funding is impossible. Every ad buy hurts.',
+    average: 'Standard fundraising loop. You can compete in median races.',
+    strong: 'Comfortable cushion. You can absorb a bad week without folding.',
+    exceptional: 'Access-level money. PAC and SuperPAC tools open up.',
+  },
+  stamina: {
+    weak: 'Burns out. Long campaigns and crisis weeks erode your output.',
+    average: 'Holds the standard schedule. AP regen is normal.',
+    strong: 'Extra weekly action capacity. You can run two cycles without rest.',
+    exceptional: 'Iron health. You set the pace; opponents try to keep up.',
+  },
+};
+
+/**
+ * Suggested base distributions per background. Total = 30 (the centre
+ * of the 24–36 budget) so the suggestion is always valid, and each
+ * profile leans into the background's natural strengths and away from
+ * its weaknesses (todo#28). The numbers are intentionally tame — the
+ * Stats step is meant to be where the player makes the *interesting*
+ * choices, not where they pick a single optimal preset.
+ */
+const SUGGESTED_STATS: Record<Background, CoreStats> = {
+  citizen: { charisma: 7, strategy: 5, connections: 3, integrity: 7, wealth: 3, stamina: 5 },
+  veteran: { charisma: 4, strategy: 7, connections: 6, integrity: 5, wealth: 4, stamina: 4 },
+  executive: { charisma: 6, strategy: 5, connections: 6, integrity: 3, wealth: 7, stamina: 3 },
+};
+const RESET_STATS: CoreStats = {
+  charisma: 5,
+  strategy: 5,
+  connections: 5,
+  integrity: 5,
+  wealth: 5,
+  stamina: 5,
+};
 
 /**
  * Character creation — background → stats → traits → ideology → name.
@@ -177,45 +253,96 @@ export function CharacterCreation(): JSX.Element {
                 of truth; the bar is decoration that makes "you have
                 room" or "you're over" obvious without reading. */}
             <StatBudget total={totalPoints} min={BUDGET_MIN} max={BUDGET_MAX} valid={validation.valid} />
+
+            {/* Preset row (todo#28). Two one-click distributions: a
+                neutral 5/5/5/5/5/5 reset and a background-tailored
+                "Suggested" build that totals 30 and emphasises the
+                strengths of the chosen background without ever being
+                outright optimal. The aim is a productive starting
+                point for new players, not an autopilot button. */}
+            <div className="mt-3 flex flex-wrap gap-2" data-testid="stats-presets">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setBaseStats(RESET_STATS)}
+                aria-label="Reset all stats to 5"
+              >
+                Reset to even
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setBaseStats(SUGGESTED_STATS[background])}
+                aria-label={`Apply suggested distribution for ${background}`}
+              >
+                Suggested for {background}
+              </Button>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-3 mt-4">
-              {(Object.keys(baseStats) as (keyof CoreStats)[]).map((key) => (
-                <div key={key} className="bg-bg-tertiary rounded p-3">
-                  <div className="flex items-baseline justify-between mb-2">
-                    {/* Wrap the stat name in an ExtendedTooltip so a
-                        hover surfaces what the stat does. The dotted
-                        underline is the standard glossary-link cue. */}
-                    <ExtendedTooltip term={STAT_TOOLTIP_TERM[key]}>
-                      <span
-                        tabIndex={0}
-                        className="capitalize font-headline text-text-primary cursor-help underline decoration-dotted decoration-accent-gold/50 underline-offset-2 focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm"
-                        data-testid={`stat-name-${key}`}
-                      >
-                        {key}
-                      </span>
-                    </ExtendedTooltip>
-                    <span className="font-mono text-accent-gold tabular-nums">
-                      {baseStats[key]} → <span className="text-accent-gold">{finalStats[key]}</span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => setStat(key, -1)} aria-label={`Decrease ${key}`}>−</Button>
-                    <div className="flex-1">
-                      {/* Removed `segments={10}` — the tick lines did
-                          not visually align with the discrete 1..10
-                          snap points and were misleading. The slider
-                          still snaps via step=1. */}
-                      <Slider
-                        min={1}
-                        max={10}
-                        value={baseStats[key]}
-                        onChange={(v) => setBaseStats((s) => ({ ...s, [key]: v }))}
-                        ariaLabel={`${key} stat value`}
-                      />
+              {(Object.keys(baseStats) as (keyof CoreStats)[]).map((key) => {
+                const finalValue = finalStats[key];
+                const tier = statTier(finalValue);
+                return (
+                  <div key={key} className="bg-bg-tertiary rounded p-3" data-testid={`stat-row-${key}`}>
+                    <div className="flex items-baseline justify-between mb-2">
+                      {/* Wrap the stat name in an ExtendedTooltip so a
+                          hover surfaces what the stat does. The dotted
+                          underline is the standard glossary-link cue. */}
+                      <ExtendedTooltip term={STAT_TOOLTIP_TERM[key]}>
+                        <span
+                          tabIndex={0}
+                          className="capitalize font-headline text-text-primary cursor-help underline decoration-dotted decoration-accent-gold/50 underline-offset-2 focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm"
+                          data-testid={`stat-name-${key}`}
+                        >
+                          {key}
+                        </span>
+                      </ExtendedTooltip>
+                      <div className="flex items-center gap-2">
+                        {/* Tier chip — colour-coded from the
+                            statTierChipClass mapping. Reads the
+                            *final* value (after background bonuses)
+                            so the player sees the effective tier, not
+                            the raw allocation. */}
+                        <span
+                          className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${statTierChipClass(tier)}`}
+                          data-testid={`stat-tier-${key}`}
+                          data-tier={tier}
+                        >
+                          {statTierLabel(tier)}
+                        </span>
+                        <span className="font-mono text-accent-gold tabular-nums">
+                          {baseStats[key]} → <span className="text-accent-gold">{finalValue}</span>
+                        </span>
+                      </div>
                     </div>
-                    <Button size="sm" variant="secondary" onClick={() => setStat(key, +1)} aria-label={`Increase ${key}`}>+</Button>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="secondary" onClick={() => setStat(key, -1)} aria-label={`Decrease ${key}`}>−</Button>
+                      <div className="flex-1">
+                        {/* Removed `segments={10}` — the tick lines did
+                            not visually align with the discrete 1..10
+                            snap points and were misleading. The slider
+                            still snaps via step=1. */}
+                        <Slider
+                          min={1}
+                          max={10}
+                          value={baseStats[key]}
+                          onChange={(v) => setBaseStats((s) => ({ ...s, [key]: v }))}
+                          ariaLabel={`${key} stat value`}
+                        />
+                      </div>
+                      <Button size="sm" variant="secondary" onClick={() => setStat(key, +1)} aria-label={`Increase ${key}`}>+</Button>
+                    </div>
+                    {/* Gameplay-impact blurb (todo#27). One sentence
+                        per tier, chosen so the player can read the
+                        whole row top-to-bottom and know what their
+                        choice means in play. */}
+                    <p className="mt-2 text-xs text-text-muted leading-snug">
+                      {STAT_IMPACT[key][tier]}
+                    </p>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             {!validation.valid && (
               <p className="mt-3 text-sm text-status-warning" role="status">
