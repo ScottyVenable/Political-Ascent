@@ -9,12 +9,12 @@ import type { Effect } from '@/types';
 describe('describeEffect', () => {
   it('humanises a positive resource grant', () => {
     const eff: Effect = { type: 'resource', resource: 'politicalCapital', value: 10 };
-    expect(describeEffect(eff)).toBe('+10 politicalCapital');
+    expect(describeEffect(eff)).toBe('+10 Political Capital');
   });
 
   it('humanises a negative stat penalty without a stray plus', () => {
     const eff: Effect = { type: 'stat', target: 'integrity', value: -2 };
-    expect(describeEffect(eff)).toBe('-2 integrity');
+    expect(describeEffect(eff)).toBe('-2 Integrity');
   });
 
   it('describes a flag effect with the flag value', () => {
@@ -39,6 +39,6 @@ describe('describeEffect', () => {
 
   it('describes an economy effect', () => {
     const eff: Effect = { type: 'economy', metric: 'gdpGrowth', value: 1.2 };
-    expect(describeEffect(eff)).toBe('+1.2 gdpGrowth');
+    expect(describeEffect(eff)).toBe('+1.2 GDP Growth');
   });
 });

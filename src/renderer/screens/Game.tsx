@@ -100,6 +100,18 @@ export function Game(): JSX.Element {
     };
   }, []);
 
+  // Lock body scroll when any modal or event dialog is open (todo#76).
+  // Prevents background panels from scrolling while a modal overlay is
+  // visible. The cleanup restores overflow so switching screens works.
+  const modals = useUIStore((s) => s.modals);
+  useEffect(() => {
+    const anyOpen = modals.length > 0 || activeEvents.length > 0;
+    document.body.style.overflow = anyOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [modals.length, activeEvents.length]);
+
   return (
     // Three-row grid: the top and bottom rows have fixed pixel heights
     // (48px shell + 72px command strip) so the middle row inherits

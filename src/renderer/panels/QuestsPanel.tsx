@@ -69,20 +69,47 @@ const STATUS_ORDER: Record<RowEntry['status'], number> = {
  * and fall back to a JSON-ish summary for anything we haven't yet
  * spelled out. Exported so it can be unit-tested without rendering React.
  */
+
+/** Map camelCase resource keys to display labels (todo#51). */
+const RESOURCE_LABEL: Record<string, string> = {
+  politicalCapital: 'Political Capital',
+  actionPoints: 'Action Points',
+  xp: 'XP',
+};
+
+/** Map camelCase economy metric keys to display labels (todo#75). */
+const ECONOMY_LABEL: Record<string, string> = {
+  gdpGrowth: 'GDP Growth',
+  unemployment: 'Unemployment',
+  inflation: 'Inflation',
+  debt: 'Debt',
+  deficit: 'Deficit',
+  gini: 'Gini Coefficient',
+  trade: 'Trade Balance',
+};
+
 export function describeEffect(effect: Effect): string {
   switch (effect.type) {
-    case 'stat':
-      return `${effect.value > 0 ? '+' : ''}${effect.value} ${effect.target}`;
-    case 'resource':
-      return `${effect.value > 0 ? '+' : ''}${effect.value} ${effect.resource}`;
+    case 'stat': {
+      // Capitalise the first letter of stat name for display (todo#51).
+      const statName = effect.target.charAt(0).toUpperCase() + effect.target.slice(1);
+      return `${effect.value > 0 ? '+' : ''}${effect.value} ${statName}`;
+    }
+    case 'resource': {
+      const label = RESOURCE_LABEL[effect.resource] ?? effect.resource;
+      return `${effect.value > 0 ? '+' : ''}${effect.value} ${label}`;
+    }
     case 'group_happiness':
       return `${effect.value > 0 ? '+' : ''}${effect.value} happiness for ${effect.group}`;
     case 'group_loyalty':
       return `${effect.value > 0 ? '+' : ''}${effect.value} loyalty with ${effect.group}`;
     case 'relationship':
       return `${effect.value > 0 ? '+' : ''}${effect.value} relationship with ${effect.npcId}`;
-    case 'economy':
-      return `${effect.value > 0 ? '+' : ''}${effect.value} ${effect.metric}`;
+    case 'economy': {
+      // Humanise economy metric names (todo#75).
+      const label = ECONOMY_LABEL[effect.metric] ?? effect.metric;
+      return `${effect.value > 0 ? '+' : ''}${effect.value} ${label}`;
+    }
     case 'flag':
       return `Sets flag "${effect.flag}" to ${String(effect.value)}`;
     case 'grant_card':

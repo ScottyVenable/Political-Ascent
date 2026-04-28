@@ -238,7 +238,7 @@ export function GlossaryPanel(): JSX.Element {
 
         {/* Detail pane — renders the same shape as the tooltip body */}
         <Card className="md:col-span-2 overflow-y-auto game-scroll" data-testid="glossary-detail">
-          {selected ? <DetailView term={selected} /> : (
+          {selected ? <DetailView term={selected} onNavigate={setSelectedId} /> : (
             <p className="text-body text-text-muted italic">Select a term on the left.</p>
           )}
         </Card>
@@ -255,7 +255,13 @@ export function GlossaryPanel(): JSX.Element {
 // room than the floating-card layout.
 // ─────────────────────────────────────────────────────────────
 
-function DetailView({ term }: { term: TooltipContent }): JSX.Element {
+/**
+ * Full detail view for a single glossary term in the right pane.
+ *
+ * `onNavigate` is called when the player clicks a "See also" tag,
+ * navigating the glossary to that term (todo#44).
+ */
+function DetailView({ term, onNavigate }: { term: TooltipContent; onNavigate: (id: string) => void }): JSX.Element {
   return (
     <article className="space-y-4" data-testid={`glossary-detail-${term.id}`}>
       <header>
@@ -377,8 +383,16 @@ function DetailView({ term }: { term: TooltipContent }): JSX.Element {
               const linked = getTooltip(id);
               if (!linked) return null;
               return (
+                // Wrap in Term for hover tooltip; clicking navigates to
+                // that entry in the glossary list pane (todo#44).
                 <Term key={id} term={id}>
-                  {linked.title}
+                  <button
+                    type="button"
+                    className="underline decoration-dotted text-accent-gold hover:text-text-primary transition-colors text-sm"
+                    onClick={() => onNavigate(id)}
+                  >
+                    {linked.title}
+                  </button>
                 </Term>
               );
             })}

@@ -133,7 +133,10 @@ function TopBarImpl(): JSX.Element {
               className="text-accent-gold self-center"
               aria-hidden
             />
-            <span className="font-mono text-sm text-text-primary tabular-nums">
+            <span
+              className="font-mono text-sm text-text-primary tabular-nums"
+              title={`$${treasury.toLocaleString('en-US')}`}
+            >
               {formatTreasury(treasury)}
             </span>
           </div>
