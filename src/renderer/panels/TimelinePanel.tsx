@@ -25,6 +25,7 @@ import { useMemo } from 'react';
 import { useWorldStore } from '@/store/worldStore';
 import { Card } from '../components/Card';
 import { TermText } from '../components/tooltip';
+import { EntityLink, type EntityRefType } from '../components/EntityLink';
 import type { NewsItem } from '@/types';
 
 const MONTH_NAMES = [
@@ -135,7 +136,19 @@ export function TimelinePanel(): JSX.Element {
                         SEVERITY_TEXT[item.severity]
                       }
                     >
-                      {item.headline}
+                      {item.relatedEntity ? (
+                        // Wrap the headline as a clickable EntityLink so
+                        // the player can jump to the relevant panel
+                        // (legislation/congress/population/timeline).
+                        <EntityLink
+                          type={item.relatedEntity.type as EntityRefType}
+                          id={item.relatedEntity.id}
+                        >
+                          {item.headline}
+                        </EntityLink>
+                      ) : (
+                        item.headline
+                      )}
                     </h3>
                     <time
                       className="font-mono text-label text-text-muted shrink-0 tabular-nums"
