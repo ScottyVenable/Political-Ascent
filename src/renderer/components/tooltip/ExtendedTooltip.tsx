@@ -36,7 +36,40 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { getTooltip, type ModifierRow, type TooltipContent, type TooltipSection } from './registry';
+import { findTermMatches } from './registry';
 import { Icon, type IconName } from '../Icon';
+
+// ────────────────────────────────────────────────────────────────
+// PIN COORDINATOR (todo#29)
+// ────────────────────────────────────────────────────────────────
+// Per docs/todo.md item 29: "When pinning another tooltip, the
+// previous one is closed automatically."
+//
+// We keep a module-level set of "close" callbacks belonging to every
+// currently-pinned tooltip. The moment a new tooltip transitions into
+// the pinned state, it asks the coordinator to evict any other
+// pinned tooltip. The coordinator stays in this file rather than
+// going through React context because pinning behaviour is global
+// (it crosses portal boundaries) and we don't want every consumer to
+// have to wrap their tree in another provider.
+//
+// Memory hygiene: callbacks self-unregister via the cleanup returned
+// by `registerPin` so a tooltip closing for any reason (Esc, outside
+// click, unmount) won't leave a stale closer behind.
+
+const pinnedClosers = new Set<() => void>();
+
+function registerPin(closeMe: () => void): () => void {
+  // Close any other currently-pinned tooltip first; only one can be
+  // pinned at any time.
+  for (const other of pinnedClosers) {
+    if (other !== closeMe) other();
+  }
+  pinnedClosers.add(closeMe);
+  return () => {
+    pinnedClosers.delete(closeMe);
+  };
+}
 
 // ────────────────────────────────────────────────────────────────
 // NESTED Z-INDEX SUPPORT
@@ -78,7 +111,9 @@ export interface ExtendedTooltipProps {
    * How long the player must hover before the tooltip auto-locks (in
    * ms). A radial progress arc fills during the hold. Set to 0 to
    * disable hold-to-lock; the tooltip then only locks on Shift-leave
-   * (legacy behaviour). Default 1200ms.
+   * (legacy behaviour). Default 3000ms — bumped from 1200ms per
+   * docs/todo.md item 26 so the player has a full three-second
+   * window before a tooltip auto-pins.
    */
   lockHoldMs?: number;
   /**
@@ -98,7 +133,7 @@ export interface ExtendedTooltipProps {
  *   </ExtendedTooltip>
  */
 export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
-  const { term, content, openDelay = 350, lockHoldMs = 1200, children } = props;
+  const { term, content, openDelay = 350, lockHoldMs = 3000, children } = props;
 
   // Read parent depth so a nested tooltip stacks above its ancestor.
   // The depth we publish is parentDepth+1; the popup z-index is
@@ -123,6 +158,16 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
   const holdRafRef = useRef<number | null>(null);
   /** Timestamp (performance.now) when the current hold started. */
   const holdStartRef = useRef<number | null>(null);
+  /**
+   * Last-known mouse position relative to the viewport. Captured on
+   * every mouseenter/mousemove on the trigger. Used as the tooltip's
+   * top-left anchor (todo#37) so the popup follows the cursor instead
+   * of the trigger's bounding rect. `null` while the trigger has not
+   * been hovered (e.g. keyboard focus); we then fall back to the
+   * trigger's bounding rect so keyboard users still get a tooltip in
+   * a sensible spot.
+   */
+  const mouseRef = useRef<{ x: number; y: number } | null>(null);
   const tooltipId = useId();
 
   const resolved: TooltipContent | undefined = useMemo(() => {
@@ -131,17 +176,33 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
     return undefined;
   }, [term, content]);
 
-  /** Compute desired tooltip position relative to the trigger. */
+  /**
+   * Compute desired tooltip position. Per docs/todo.md item 37 we
+   * anchor the *top-left of the tooltip* at the mouse cursor (with a
+   * small offset so the cursor doesn't sit on the border). When the
+   * tooltip was opened by keyboard focus there is no mouse position,
+   * so we fall back to the trigger's bounding rect.
+   *
+   * The viewport-clamp pass inside `TooltipCard` still runs after the
+   * card knows its own size, so a cursor near the right or bottom
+   * edge produces a tooltip that flips back into the viewport.
+   */
   const positionTooltip = useCallback(() => {
+    // Small offset so the cursor itself doesn't sit on the tooltip's
+    // top-left corner (it would intercept hover-out otherwise on the
+    // 1px boundary and produce flicker).
+    const CURSOR_OFFSET_X = 12;
+    const CURSOR_OFFSET_Y = 12;
+    const m = mouseRef.current;
+    if (m) {
+      setCoords({ top: m.y + CURSOR_OFFSET_Y, left: m.x + CURSOR_OFFSET_X });
+      return;
+    }
+    // Keyboard fallback: anchor below the trigger as before.
     const el = triggerRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    // Anchor: just below the trigger, left-aligned. The actual element
-    // re-clamps once it knows its size (effect below).
-    setCoords({
-      top: rect.bottom + 8,
-      left: rect.left,
-    });
+    setCoords({ top: rect.bottom + 8, left: rect.left });
   }, []);
 
   const scheduleOpen = useCallback(() => {
@@ -244,6 +305,18 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, close]);
 
+  // Pin coordinator (todo#29): when this tooltip transitions into the
+  // pinned state, register with the module-level coordinator. The act
+  // of registering evicts every other currently-pinned tooltip so the
+  // player only ever has one pinned popup on screen at a time. The
+  // returned cleanup function unregisters us when we unpin or unmount,
+  // so a closed tooltip never lingers as a stale closer.
+  useEffect(() => {
+    if (!pinned) return;
+    const unregister = registerPin(close);
+    return unregister;
+  }, [pinned, close]);
+
   // Pin while shift is held during mouse-leave: stays open. Otherwise
   // close (and abort any in-flight hold animation).
   const handleLeave = useCallback(
@@ -282,17 +355,38 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
       else if (original && typeof original === 'object') original.current = node;
     },
     onMouseEnter: (e: React.MouseEvent) => {
+      // Capture cursor position so positionTooltip() can anchor the
+      // popup's top-left to the mouse instead of the trigger rect.
+      mouseRef.current = { x: e.clientX, y: e.clientY };
       scheduleOpen();
       startHold();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (children.props as any).onMouseEnter?.(e);
     },
+    onMouseMove: (e: React.MouseEvent) => {
+      // Track the cursor while the open delay is still pending so the
+      // tooltip lands wherever the cursor settled, not where it first
+      // entered. Once the popup has opened we stop following — a
+      // moving popup would interfere with reading.
+      if (!open) {
+        mouseRef.current = { x: e.clientX, y: e.clientY };
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (children.props as any).onMouseMove?.(e);
+    },
     onMouseLeave: (e: React.MouseEvent) => {
+      // Drop the cursor anchor so the next entry recaptures fresh
+      // coordinates rather than re-using a stale position.
+      mouseRef.current = null;
       handleLeave(e);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (children.props as any).onMouseLeave?.(e);
     },
     onFocus: (e: React.FocusEvent) => {
+      // Keyboard activation: clear the mouse anchor so positionTooltip
+      // falls back to the trigger's bounding rect instead of using a
+      // stale cursor position from the last hover.
+      mouseRef.current = null;
       scheduleOpen();
       startHold();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -642,9 +736,20 @@ function SeeAlsoLink({ termId }: { termId: string }): JSX.Element | null {
  * into a mixed string + Term nodes. The closing `[/]` is optional —
  * if absent, the term consumes whatever text immediately follows up to
  * the next `[term:` or end of string.
+ *
+ * Per docs/todo.md item 39, plain-text segments between markers (or
+ * the entire text when no markers are present) are also scanned for
+ * registered glossary surfaces via `findTermMatches`, so authors get
+ * automatic nested tooltips inside paragraphs and list items without
+ * having to wrap every term by hand. Authors can still opt out for a
+ * specific surface by simply omitting it from the registry.
  */
 function renderInlineTerms(text: string): ReactNode {
-  if (!text.includes('[term:')) return text;
+  if (!text.includes('[term:')) {
+    // Fast path: no explicit markers at all. Run the auto-linker over
+    // the whole string and return the resulting mixed nodes.
+    return autoLinkPlainText(text);
+  }
 
   const out: ReactNode[] = [];
   let lastIdx = 0;
@@ -654,7 +759,7 @@ function renderInlineTerms(text: string): ReactNode {
   let match: RegExpExecArray | null;
   while ((match = open.exec(text)) !== null) {
     const before = text.slice(lastIdx, match.index);
-    if (before) out.push(before);
+    if (before) out.push(autoLinkPlainText(before, `pre-${match.index}`));
     const id = match[1];
     // Find label up to [/] or next [term: or EOS.
     const after = text.slice(open.lastIndex);
@@ -679,7 +784,35 @@ function renderInlineTerms(text: string): ReactNode {
     lastIdx = open.lastIndex;
   }
   const tail = text.slice(lastIdx);
-  if (tail) out.push(tail);
+  if (tail) out.push(autoLinkPlainText(tail, 'tail'));
+  return <>{out}</>;
+}
+
+/**
+ * Auto-link any registered term surfaces in a plain (marker-free)
+ * string. Returns either the bare string (no matches) or a fragment
+ * with `<Term>` nodes spliced in. The cap matches `<TermText>` so a
+ * dense paragraph doesn't turn into a wall of underlines.
+ */
+function autoLinkPlainText(text: string, keyPrefix = 'al'): ReactNode {
+  if (!text) return text;
+  // Avoid pulling in TermText (which adds <Fragment> wrappers we don't
+  // need here) and call the matcher directly. Keep the cap modest —
+  // sectionRenderer paragraphs are short by design.
+  const matches = findTermMatches(text).slice(0, 6);
+  if (matches.length === 0) return text;
+  const out: ReactNode[] = [];
+  let cursor = 0;
+  for (const m of matches) {
+    if (m.start > cursor) out.push(text.slice(cursor, m.start));
+    out.push(
+      <Term key={`${keyPrefix}-${m.id}-${m.start}`} term={m.id}>
+        {m.surface}
+      </Term>,
+    );
+    cursor = m.end;
+  }
+  if (cursor < text.length) out.push(text.slice(cursor));
   return <>{out}</>;
 }
 

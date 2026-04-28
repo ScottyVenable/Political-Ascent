@@ -4,6 +4,15 @@ All notable changes to Political Ascent are recorded here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Tooltip polish pass** (`exp--tooltip-polish`, todo#26 / #29 / #37 / #39). Behavioural changes to `<ExtendedTooltip />` that affect every panel:
+  - **Hover-hold default lengthened to 3000ms** (todo#26). The radial progress ring still animates via rAF + `stroke-dashoffset`; the player now has a full three-second window before a tooltip auto-pins instead of the snappy 1.2s default.
+  - **Single-pinned-tooltip discipline** (todo#29). New module-level `pinnedClosers` coordinator: when a tooltip transitions into the pinned state it evicts every other currently-pinned popup. Cleanup self-unregisters on unpin/unmount so a stale closer can never linger and silently swallow a future pin.
+  - **Mouse-anchored top-left positioning** (todo#37). Hover tooltips now anchor their top-left corner at the cursor (with a 12px cursor-offset to avoid flicker on the 1px boundary). Keyboard-focus activations still fall back to the trigger's bounding rect since there's no mouse position to read. The viewport-clamp pass still runs after the popup measures itself, so a cursor near the right/bottom edge still flips the popup into view.
+  - **Auto-link registered terms inside paragraph prose** (todo#39). `renderInlineTerms` now feeds plain (marker-free) text segments through `findTermMatches`, so any registered glossary surface anywhere in a section paragraph or list item becomes a nested `<Term>` link automatically. Explicit `[term:...]` markers still take precedence — authors can override the matcher whenever they want a non-matching label to point at a specific id.
+  - 2 new component tests in `ExtendedTooltip.test.tsx`. 213 vitest passing. Lint/typecheck clean.
+
 ### Fixed
 
 - **Codex review fixes across PR #63 / #64 / #66** (`exp--review-fixes-2`). Round-2 review pass on the most recent stack:
