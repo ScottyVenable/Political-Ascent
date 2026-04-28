@@ -264,7 +264,7 @@ export function QuestsPanel(): JSX.Element {
         {/* Detail pane */}
         <div data-testid="quest-detail">
           {selected ? (
-            <QuestDetail row={selected} onStart={start} />
+            <QuestDetail row={selected} onStart={start} defs={defs} onNavigate={setSelectedId} />
           ) : (
             <Card>
               <p className="text-body text-text-muted italic">
@@ -303,9 +303,20 @@ function QuestStatusIcon(props: { status: RowEntry['status'] }): JSX.Element {
 function QuestDetail(props: {
   row: RowEntry;
   onStart: (id: QuestId) => void;
+  /** Full quest definitions list — used to look up prerequisite titles. */
+  defs: readonly QuestDefinition[];
+  /** Navigate to another quest by ID (e.g. clicking a prerequisite). */
+  onNavigate: (id: QuestId) => void;
 }): JSX.Element {
-  const { row, onStart } = props;
+  const { row, onStart, defs, onNavigate } = props;
   const { def, instance, status } = row;
+
+  // Build a lookup map so prerequisites can show their title instead
+  // of the raw QuestId brand value. (todo#52)
+  const defById = useMemo(
+    () => new Map<string, QuestDefinition>(defs.map((d) => [d.id as unknown as string, d])),
+    [defs],
+  );
 
   const doneCount = instance
     ? def.objectives.filter((o) => instance.progress[o.id]).length
@@ -357,11 +368,29 @@ function QuestDetail(props: {
             Prerequisites
           </h3>
           <ul className="space-y-1">
-            {def.prerequisites.map((p) => (
-              <li key={p as unknown as string} className="text-body text-text-secondary">
-                {p as unknown as string}
-              </li>
-            ))}
+            {def.prerequisites.map((p) => {
+              const pid = p as unknown as string;
+              const prereqDef = defById.get(pid);
+              const label = prereqDef?.title ?? pid;
+              return (
+                <li key={pid}>
+                  {/*
+                    todo#52: clicking a prerequisite navigates to that quest's
+                    detail view so the player can see what they need to complete.
+                    The button is styled as a dotted-underline link to match the
+                    EntityLink / Term visual language used elsewhere.
+                  */}
+                  <button
+                    type="button"
+                    onClick={() => onNavigate(p)}
+                    className="text-body text-accent-gold underline decoration-dotted underline-offset-2 hover:text-text-primary transition-colors text-left"
+                    title={`View quest: ${label}`}
+                  >
+                    {label}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

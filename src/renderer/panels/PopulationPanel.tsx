@@ -12,7 +12,7 @@
  *
  * @module renderer/panels/PopulationPanel
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useWorldStore } from '@/store/worldStore';
 import { Card } from '../components/Card';
 import { Bar } from '../components/Bar';
@@ -103,9 +103,104 @@ function moodTone(value: number, mode: 'happiness' | 'radicalism'): 'success' | 
 }
 
 /**
- * Group focus modal \u2014 full-page detail for a single PopulationGroup.
+ * GroupFocusModal — full-page detail for a single PopulationGroup.
  * Opens on card click; Escape and backdrop click dismiss.
+ *
+ * todo#67: adds "Biggest Issues" and "Public Opinion" panels derived
+ * from the group's current stats. Issues are ranked by how much a stat
+ * diverges from a healthy baseline; quotes are templated text that
+ * describes the mood in plain language so the player can read the bloc
+ * at a glance.
  */
+
+/**
+ * Derive the top N "issues" for a group from their current stats.
+ * An issue is any dimension where the group deviates significantly from
+ * a "neutral comfortable" baseline. Returns items sorted by urgency
+ * (most severe first).
+ */
+function deriveIssues(g: PopulationGroup): Array<{ label: string; score: number; tone: 'danger' | 'warning' | 'good' }> {
+  const issues: Array<{ label: string; score: number; tone: 'danger' | 'warning' | 'good' }> = [];
+
+  // Happiness below 40 = major issue; 40-55 = concern; above 65 = positive indicator.
+  if (g.happiness < 40) {
+    issues.push({ label: 'Widespread discontent with current conditions', score: 40 - g.happiness, tone: 'danger' });
+  } else if (g.happiness < 55) {
+    issues.push({ label: 'Low morale among group members', score: 55 - g.happiness, tone: 'warning' });
+  } else if (g.happiness > 70) {
+    issues.push({ label: 'Group is broadly satisfied with current direction', score: g.happiness - 70, tone: 'good' });
+  }
+
+  // Radicalism above 50 = concern; above 70 = danger.
+  if (g.radicalism > 70) {
+    issues.push({ label: 'High radicalism: group is mobilising for direct action', score: g.radicalism - 70, tone: 'danger' });
+  } else if (g.radicalism > 50) {
+    issues.push({ label: 'Elevated radicalism: opposition voices are louder', score: g.radicalism - 50, tone: 'warning' });
+  }
+
+  // Loyalty below -25 = adversarial; -25 to 25 = neutral; above 60 = strong ally.
+  if (g.loyalty < -50) {
+    issues.push({ label: 'Group is actively opposing your administration', score: -g.loyalty, tone: 'danger' });
+  } else if (g.loyalty < -25) {
+    issues.push({ label: 'Group is broadly hostile to your platform', score: -g.loyalty, tone: 'warning' });
+  } else if (g.loyalty > 60) {
+    issues.push({ label: 'Strong base: group is reliably supportive', score: g.loyalty - 60, tone: 'good' });
+  }
+
+  // Ideology extremes.
+  if (Math.abs(g.ideologyBias) > 0.7) {
+    const dir = g.ideologyBias > 0 ? 'right-wing' : 'left-wing';
+    issues.push({ label: `Strongly ${dir} bloc — centrist messaging will underperform`, score: Math.abs(g.ideologyBias) * 30, tone: 'warning' });
+  }
+
+  // Activism above 70 = high-energy (good or bad depending on loyalty).
+  if (g.activism > 70 && g.loyalty < 0) {
+    issues.push({ label: 'High activism among an opposing bloc — expect protests', score: g.activism - 70 + (-g.loyalty / 2), tone: 'danger' });
+  } else if (g.activism > 70 && g.loyalty > 25) {
+    issues.push({ label: 'High activism among supporters — strong get-out-the-vote potential', score: g.activism - 70, tone: 'good' });
+  }
+
+  return issues.sort((a, b) => b.score - a.score).slice(0, 4);
+}
+
+/**
+ * Generate templated "public opinion" quotes for a group based on their
+ * current stats. Returns 2–3 short representative statements as if
+ * sampled from group members.
+ */
+function generateQuotes(g: PopulationGroup): string[] {
+  const quotes: string[] = [];
+
+  // Happiness-driven quote.
+  if (g.happiness < 35) {
+    quotes.push(`"Things have not been this bad for our community in a long time. We need real change."`);
+  } else if (g.happiness < 55) {
+    quotes.push(`"We're watching closely. The leadership needs to do more for people like us."`);
+  } else if (g.happiness > 70) {
+    quotes.push(`"I genuinely believe we're heading in the right direction. My neighbours feel it too."`);
+  } else {
+    quotes.push(`"It's not perfect, but we're managing. Let's see what happens next."`);
+  }
+
+  // Radicalism-driven quote.
+  if (g.radicalism > 65) {
+    quotes.push(`"Half-measures aren't going to cut it anymore. We're tired of waiting for gradual reform."`);
+  } else if (g.radicalism > 40) {
+    quotes.push(`"There's frustration out there. People want to see action, not just talk."`);
+  }
+
+  // Loyalty-driven quote.
+  if (g.loyalty < -40) {
+    quotes.push(`"I wouldn't vote for the current administration if they paid me. They've let us down completely."`);
+  } else if (g.loyalty > 50) {
+    quotes.push(`"I've supported this candidate from the start and I'm proud of it. They get us."`);
+  } else if (g.loyalty > 20) {
+    quotes.push(`"I'm cautiously optimistic. So far they've kept most of their promises to us."`);
+  }
+
+  return quotes.slice(0, 3);
+}
+
 function GroupFocusModal({
   group,
   onClose,
@@ -134,6 +229,11 @@ function GroupFocusModal({
   const loyaltyPct = Math.min(100, Math.abs(group.loyalty));
   const loyaltyTone: 'success' | 'danger' | 'neutral' =
     group.loyalty > 25 ? 'success' : group.loyalty < -25 ? 'danger' : 'neutral';
+
+  // todo#67: derive issues and opinion quotes from the group's current stats.
+  // Memoised — group data doesn't change while the modal is open.
+  const issues = useMemo(() => deriveIssues(group), [group]);
+  const quotes = useMemo(() => generateQuotes(group), [group]);
 
   return (
     <div
@@ -271,6 +371,72 @@ function GroupFocusModal({
               </Button>
             </div>
           </section>
+        </div>
+
+        {/*
+          todo#67: Biggest Issues panel — shows which dimensions deviate
+          most from healthy baselines, ranked by severity. Gives the
+          player a quick read on what this bloc cares about most.
+        */}
+        {issues.length > 0 && (
+          <div className="px-5 pb-4 border-t border-bg-tertiary/60 pt-4" data-testid="population-focus-issues">
+            <h3 className="font-mono text-label uppercase tracking-widest text-text-muted mb-3">
+              Biggest Issues
+            </h3>
+            <ul className="space-y-2">
+              {issues.map((issue) => (
+                <li
+                  key={issue.label}
+                  className="flex items-start gap-2 text-sm"
+                >
+                  {/* Tone dot — red = danger, amber = warning, green = positive */}
+                  <span
+                    className={[
+                      'mt-1 flex-shrink-0 w-2 h-2 rounded-full',
+                      issue.tone === 'danger'
+                        ? 'bg-status-danger'
+                        : issue.tone === 'warning'
+                          ? 'bg-status-warning'
+                          : 'bg-status-success',
+                    ].join(' ')}
+                    aria-hidden="true"
+                  />
+                  <span
+                    className={
+                      issue.tone === 'danger'
+                        ? 'text-status-danger'
+                        : issue.tone === 'warning'
+                          ? 'text-amber-400'
+                          : 'text-status-success'
+                    }
+                  >
+                    {issue.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/*
+          todo#67: Public Opinion panel — templated quotes from members
+          of this bloc that give the player a sense of the group's
+          attitude towards the current government in plain language.
+        */}
+        <div className="px-5 pb-5 border-t border-bg-tertiary/60 pt-4" data-testid="population-focus-opinion">
+          <h3 className="font-mono text-label uppercase tracking-widest text-text-muted mb-3">
+            Public Opinion
+          </h3>
+          <div className="space-y-3">
+            {quotes.map((quote, i) => (
+              <blockquote
+                key={i}
+                className="border-l-2 border-accent-gold/50 pl-3 text-body text-text-secondary italic leading-relaxed"
+              >
+                {quote}
+              </blockquote>
+            ))}
+          </div>
         </div>
       </div>
     </div>
