@@ -222,6 +222,29 @@ const ICONS = {
       <path d="M21 21l-6 -6" />
     </>
   ),
+  // Tabler "circle" — empty ring. Used to mark incomplete objectives.
+  circle: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+    </>
+  ),
+  // Tabler "trophy" — used to indicate quest rewards.
+  trophy: (
+    <>
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+      <path d="M7 4h10v6a5 5 0 0 1 -10 0z" />
+      <path d="M17 4h3v3a3 3 0 0 1 -3 3" />
+      <path d="M7 4h-3v3a3 3 0 0 0 3 3" />
+    </>
+  ),
+  // Tabler "lock" — prerequisites not met.
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </>
+  ),
 } as const satisfies Record<string, IconPath>;
 
 /** Public union of every valid icon id. Generated from the registry. */
