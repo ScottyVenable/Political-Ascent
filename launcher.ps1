@@ -274,7 +274,11 @@ function Invoke-SyncDrive {
         return 1
     }
     Write-Panel -Title 'Sync with Drive' -Tone 'info' -Body 'Mirroring repo to Google Drive backup folder...'
-    & pwsh -NoProfile -ExecutionPolicy Bypass -File $script
+    # Run in the current host (Windows PowerShell 5.1 or PowerShell 7+).
+    # Hard-coding `pwsh` made the task unusable on stock Windows where
+    # only Windows PowerShell ships, even though that host is fully
+    # capable of executing the script.
+    & $script
     return $LASTEXITCODE
 }
 

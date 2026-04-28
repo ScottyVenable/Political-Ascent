@@ -155,7 +155,12 @@ export function IdeologyCompass(props: IdeologyCompassProps): JSX.Element {
     <div className="inline-block">
       <div
         ref={ref}
-        role={interactive ? 'slider' : 'img'}
+        // 2D compass: a single `slider` role would require scalar
+        // aria-valuenow/min/max which don't model two axes. WAI-ARIA's
+        // recommendation for 2D, keyboard-driven custom widgets is
+        // `application`, which tells assistive tech the page handles
+        // arrow-key navigation. We keep `img` for the read-only case.
+        role={interactive ? 'application' : 'img'}
         tabIndex={interactive ? 0 : -1}
         aria-label={
           interactive
@@ -234,14 +239,19 @@ export function IdeologyCompass(props: IdeologyCompassProps): JSX.Element {
         )}
       </div>
 
-      {/* Live orientation readout — replaces the raw numeric coordinates. */}
-      <div
-        className="mt-2 text-sm font-headline text-accent-gold text-center"
-        data-testid="ideology-orientation"
-        aria-live="polite"
-      >
-        {orientation}
-      </div>
+      {/* Live orientation readout — gated behind `label` so compact call
+          sites (DashboardPanel mini-compass) don't render redundant
+          text below the puck. The dashboard already shows the player's
+          ideology in a separate identity card. */}
+      {label && (
+        <div
+          className="mt-2 text-sm font-headline text-accent-gold text-center"
+          data-testid="ideology-orientation"
+          aria-live="polite"
+        >
+          {orientation}
+        </div>
+      )}
 
       {label && (
         <div

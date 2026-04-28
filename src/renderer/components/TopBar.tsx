@@ -133,9 +133,18 @@ function TopBarImpl(): JSX.Element {
  *   12_400     → "$12.4k"
  *   1_300_000  → "$1.3m"
  */
-function formatTreasury(amount: number): string {
+export function formatTreasury(amount: number): string {
   if (amount < 1_000) return `$${amount}`;
-  if (amount < 1_000_000) return `$${(amount / 1_000).toFixed(1)}k`;
+  if (amount < 1_000_000) {
+    // Round first, then check for the suffix boundary: a value like
+    // 999,950 rounds to "1000.0k", which is wrong-suffix and reads as
+    // a thousand units of magnitude rather than the million it is.
+    const k = (amount / 1_000).toFixed(1);
+    if (parseFloat(k) >= 1_000) {
+      return `$${(amount / 1_000_000).toFixed(1)}m`;
+    }
+    return `$${k}k`;
+  }
   return `$${(amount / 1_000_000).toFixed(1)}m`;
 }
 

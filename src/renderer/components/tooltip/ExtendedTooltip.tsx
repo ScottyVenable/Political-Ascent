@@ -208,16 +208,23 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
     setPinned(false);
   }, [cancelOpen, cancelHold]);
 
-  // Outside-click closes a pinned tooltip. The tooltip card sets
-  // `pointerEvents:auto` only when pinned, so clicks inside it are
-  // delivered to the card (and don't reach window).
+  // Outside-click closes a pinned tooltip. The listener is on capture
+  // so React's bubbling-phase `stopPropagation()` inside the card
+  // wouldn't help us here — the listener fires first. Instead we
+  // detect "inside" by walking up from the event target looking for a
+  // `role="tooltip"` ancestor (every tooltip card sets this attribute,
+  // including any tooltip nested inside another tooltip's content).
+  // Without this guard, clicking a Term link or button inside a pinned
+  // tooltip would immediately close the tooltip you were trying to
+  // interact with — exactly the case hold-to-lock is designed to enable.
   useEffect(() => {
     if (!open || !pinned) return;
     function onPointerDown(e: PointerEvent): void {
-      const target = e.target as Node | null;
+      const target = e.target as Element | null;
       if (target && triggerRef.current?.contains(target)) return;
-      // The tooltip element itself stops propagation in TooltipCard,
-      // so anything that bubbles up here is genuinely "outside".
+      if (target && typeof target.closest === 'function' && target.closest('[role="tooltip"]')) {
+        return;
+      }
       close();
     }
     window.addEventListener('pointerdown', onPointerDown, true);

@@ -157,17 +157,23 @@ class CardSystemImpl implements CardSystemAPI {
     applyEffects(def.effects);
 
     // ── 5. Update instance bookkeeping then remove from hand ──
-    // For uses-per-game cards we keep the instance in the deck so the
-    // play count persists; otherwise (default MVP behaviour) we consume
-    // the card outright.
-    const consumed = !(stats?.usesPerGame && stats.usesPerGame > 1);
+    // The card is "consumed" (removed from deck) when this play uses
+    // up its last allowed use. Single-play cards (no usesPerGame, or
+    // usesPerGame === 1) are consumed immediately. Multi-use cards
+    // (usesPerGame > 1) stay in the deck while there are uses left,
+    // and are consumed on the play that brings timesPlayed up to
+    // usesPerGame — which is what stops them from sticking around as
+    // permanent dead draws after their final use.
+    const nextTimesPlayed = (inst.timesPlayed ?? 0) + 1;
+    const cap = stats?.usesPerGame;
+    const consumed = !cap || cap <= 1 || nextTimesPlayed >= cap;
     useCharacterStore.setState((s) => {
       const updatedDeck = s.deck.map((c) =>
         c.instanceId === instanceId
           ? {
               ...c,
               lastPlayedWeek: game.week,
-              timesPlayed: (c.timesPlayed ?? 0) + 1,
+              timesPlayed: nextTimesPlayed,
             }
           : c,
       );

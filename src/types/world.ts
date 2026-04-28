@@ -91,7 +91,19 @@ export interface WorldState {
   passedLegislation: Bill[];
   failedLegislation: Bill[];
   unlockedAchievements: string[];
+  /**
+   * Recent news ticker. Capped to a small number of items so the
+   * always-visible top-bar never grows unbounded. UI surfaces that
+   * need full chronology (e.g. the Timeline panel) read from
+   * `newsArchive` instead.
+   */
   news: NewsItem[];
+  /**
+   * Full chronological news archive for the campaign. Every push to
+   * `news` also lands here and is never truncated, so the Timeline
+   * panel can show complete tenure history.
+   */
+  newsArchive: NewsItem[];
   flags: Record<string, boolean>;
   /** Deterministic seed for all RNG calls. */
   seed: number;

@@ -83,6 +83,15 @@ export function parseMarkdownLite(src: string): ParsedBlock[] {
       buf.push(li[1].trim());
       continue;
     }
+    // Continuation line for the current bullet: while we're in `ul`
+    // mode and the line begins with whitespace (i.e. it's indented
+    // beneath a bullet), append it to the last item rather than
+    // starting a new paragraph. Without this, wrapped bullets in the
+    // seeded changelog render as a list followed by orphan paragraphs.
+    if (mode === 'ul' && /^\s+\S/.test(raw) && buf.length > 0) {
+      buf[buf.length - 1] = `${buf[buf.length - 1]} ${line.trim()}`;
+      continue;
+    }
     if (mode === 'ul') flush();
     mode = 'p';
     buf.push(line.trim());

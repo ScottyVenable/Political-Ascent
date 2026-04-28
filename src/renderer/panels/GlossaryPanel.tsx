@@ -32,6 +32,50 @@ import { Card } from '../components/Card';
 import { Term } from '../components/tooltip';
 
 /**
+ * Strip `[term:id]label[/]` and bracketless `[term:id]` markers from
+ * a string, leaving the visible label (or the id if there is no
+ * label). Used for plain-text rendering in the glossary detail view,
+ * where we don't want to also render nested tooltips. The previous
+ * single-token regex left the id stitched onto the next word and
+ * dropped the closing `[/]` token, producing strings like
+ * "card-packpacks[/]".
+ *
+ * Mirrors the parsing rules of `parseTermMarkers` in ExtendedTooltip.
+ *
+ * @example
+ *   stripTermMarkers('See [term:card-pack]packs[/].') // → 'See packs.'
+ *   stripTermMarkers('Use [term:approval] to gauge mood.') // → 'Use approval to gauge mood.'
+ */
+export function stripTermMarkers(text: string): string {
+  if (!text || !text.includes('[term:')) return text;
+  const open = /\[term:([a-z0-9-]+)\]/gi;
+  let out = '';
+  let cursor = 0;
+  let m: RegExpExecArray | null;
+  while ((m = open.exec(text)) != null) {
+    out += text.slice(cursor, m.index);
+    const id = m[1];
+    const after = text.slice(m.index + m[0].length);
+    const closeIdx = after.indexOf('[/]');
+    const nextOpenIdx = after.search(/\[term:/i);
+    // Determine where the label ends: the closer wins if it appears
+    // before the next opener (or there is no next opener); otherwise
+    // there is no explicit label, in which case we render the id.
+    if (closeIdx >= 0 && (nextOpenIdx < 0 || closeIdx < nextOpenIdx)) {
+      out += after.slice(0, closeIdx);
+      cursor = m.index + m[0].length + closeIdx + '[/]'.length;
+    } else {
+      out += id;
+      cursor = m.index + m[0].length;
+    }
+    open.lastIndex = cursor;
+  }
+  out += text.slice(cursor);
+  return out;
+}
+
+
+/**
  * Read every registered tooltip into an array. The registry preserves
  * insertion order, but that's content-author-dependent; the panel
  * sorts alphabetically by title for predictable navigation.
@@ -231,10 +275,12 @@ function DetailView({ term }: { term: TooltipContent }): JSX.Element {
           case 'paragraph':
             return (
               <p key={idx} className="text-body text-text-primary leading-relaxed">
-                {/* `[term:id]` markers are left as plain text here; the
-                    inline tooltip widget handles them in tooltip context.
-                    Stripping them keeps the panel readable. */}
-                {section.text.replace(/\[term:([^\]]+)\]/g, '$1')}
+                {/* `[term:id]label[/]` markers (and bracketless `[term:id]`)
+                    are stripped to plain text here; tooltip context renders
+                    the rich version. We must not leave the trailing `[/]`
+                    or splice the id into the prose, which the previous
+                    single-token replace did (e.g. "card-packpacks[/]"). */}
+                {stripTermMarkers(section.text)}
               </p>
             );
           case 'list':
@@ -245,12 +291,18 @@ function DetailView({ term }: { term: TooltipContent }): JSX.Element {
                 )}
                 <ul className="list-disc list-inside text-body text-text-primary space-y-1">
                   {section.items.map((item, i) => (
-                    <li key={i}>{item.replace(/\[term:([^\]]+)\]/g, '$1')}</li>
+                    <li key={i}>{stripTermMarkers(item)}</li>
                   ))}
                 </ul>
               </div>
             );
-          case 'breakdown':
+          case 'breakdown': {
+            // Mirror the tooltip widget's breakdown layout: itemised rows
+            // followed by a Total row when `showTotal !== false`. Without
+            // this, glossary readers lose the net value (e.g. "Action
+            // Points: +3 base, +1 trait, −1 debuff = +3"), which makes
+            // the panel contradict the source tooltip semantics.
+            const total = section.rows.reduce((s, r) => s + r.value, 0);
             return (
               <div key={idx}>
                 {section.heading && (
@@ -277,10 +329,28 @@ function DetailView({ term }: { term: TooltipContent }): JSX.Element {
                         </tr>
                       );
                     })}
+                    {section.showTotal !== false && (
+                      <tr className="border-t border-rule">
+                        <td className="font-headline text-text-primary pt-1">Total</td>
+                        <td
+                          className={
+                            'text-right tabular-nums pt-1 ' +
+                            (total > 0
+                              ? 'text-status-success'
+                              : total < 0
+                                ? 'text-status-danger'
+                                : 'text-text-secondary')
+                          }
+                        >
+                          {total > 0 ? `+${total}` : total}
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
             );
+          }
           case 'tag-row':
             return (
               <div key={idx} className="flex flex-wrap gap-1.5">

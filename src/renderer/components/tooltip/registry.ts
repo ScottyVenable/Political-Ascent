@@ -180,13 +180,14 @@ function escapeRegex(s: string): string {
 function buildMatcher(): MatcherEntry[] {
   if (MATCHER) return MATCHER;
   // Collect (surface, id) pairs from titles + aliases. Surfaces are
-  // de-duplicated case-insensitively; later writes override earlier ones.
+  // de-duplicated case-insensitively; later writes win, so a mod or
+  // test re-registration with the same surface points to the new id.
   const surfaces = new Map<string, string>();
   for (const def of REGISTRY.values()) {
     const all = [def.title, ...(def.aliases ?? [])];
     for (const surface of all) {
       const key = surface.toLowerCase();
-      if (!surfaces.has(key)) surfaces.set(key, def.id);
+      surfaces.set(key, def.id);
     }
   }
   // Longest-first so multi-word surfaces win over their suffixes.

@@ -50,4 +50,28 @@ describe('parseMarkdownLite', () => {
       { kind: 'p', text: 'A line.' },
     ]);
   });
+
+  it('merges indented continuation lines into the current bullet', () => {
+    // Wrapped bullets in our changelog look like this. Without the
+    // continuation rule, the second line would split off as a new
+    // paragraph and break the list.
+    const out = parseMarkdownLite('- first item that\n  wraps onto two lines\n- second item');
+    expect(out).toEqual([
+      {
+        kind: 'ul',
+        text: '',
+        items: ['first item that wraps onto two lines', 'second item'],
+      },
+    ]);
+  });
+
+  it('starts a new paragraph after a list when no continuation indent', () => {
+    const out = parseMarkdownLite('- a\nNot a continuation.');
+    // No leading whitespace → not a continuation; the list flushes
+    // and a new paragraph begins.
+    expect(out).toEqual([
+      { kind: 'ul', text: '', items: ['a'] },
+      { kind: 'p', text: 'Not a continuation.' },
+    ]);
+  });
 });

@@ -90,7 +90,11 @@ const SEVERITY_TEXT: Record<NewsItem['severity'], string> = {
 };
 
 export function TimelinePanel(): JSX.Element {
-  const news = useWorldStore((s) => s.news);
+  // Read from the uncapped archive so the chronology is complete.
+  // Older save files (from before `newsArchive` existed) won't have
+  // the field; fall back to the live ticker so loading them doesn't
+  // crash the panel and the player still sees recent history.
+  const news = useWorldStore((s) => s.newsArchive ?? s.news);
   const grouped = useMemo(() => groupByMonth(news), [news]);
 
   return (

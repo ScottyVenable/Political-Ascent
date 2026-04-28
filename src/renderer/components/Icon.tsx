@@ -254,6 +254,13 @@ const ICONS = {
       <path d="M8 16h4" />
     </>
   ),
+  // Tabler "x" — used for failed/closed states.
+  x: (
+    <>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </>
+  ),
 } as const satisfies Record<string, IconPath>;
 
 /** Public union of every valid icon id. Generated from the registry. */

@@ -67,6 +67,7 @@ const EMPTY: WorldState = {
   failedLegislation: [],
   unlockedAchievements: [],
   news: [],
+  newsArchive: [],
   flags: {},
   seed: 1,
 };
@@ -158,8 +159,13 @@ export const useWorldStore = create<Store>()(
 
     pushNews: (news) =>
       set((s) => {
+        // The visible ticker is capped at 50 to keep the top-of-screen
+        // strip lightweight. The archive (uncapped) is what the
+        // Timeline panel reads, so older headlines remain available
+        // for chronological browsing across the whole campaign.
         s.news.unshift(news);
         if (s.news.length > 50) s.news.pop();
+        s.newsArchive.unshift(news);
       }),
 
     setFlag: (flag, value) =>

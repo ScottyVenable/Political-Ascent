@@ -37,12 +37,14 @@ import type { Effect, QuestDefinition, QuestId, QuestInstance } from '@/types';
 
 void GameEngine; // Importing GameEngine forces quest-data registration on bundle init.
 
-type FilterId = 'all' | 'active' | 'available' | 'completed';
+type FilterId = 'all' | 'active' | 'available' | 'completed' | 'failed';
 
 interface RowEntry {
   def: QuestDefinition;
   instance?: QuestInstance;
-  status: 'active' | 'available' | 'completed' | 'locked';
+  // Mirrors `QuestStatus` plus a `'available'` row state for quests
+  // that have unlocked but the player has not yet started.
+  status: 'active' | 'available' | 'completed' | 'failed' | 'locked';
 }
 
 const FILTERS: ReadonlyArray<{ id: FilterId; label: string }> = [
@@ -50,6 +52,7 @@ const FILTERS: ReadonlyArray<{ id: FilterId; label: string }> = [
   { id: 'active', label: 'Active' },
   { id: 'available', label: 'Available' },
   { id: 'completed', label: 'Completed' },
+  { id: 'failed', label: 'Failed' },
 ];
 
 const STATUS_ORDER: Record<RowEntry['status'], number> = {
@@ -57,6 +60,7 @@ const STATUS_ORDER: Record<RowEntry['status'], number> = {
   available: 1,
   locked: 2,
   completed: 3,
+  failed: 4,
 };
 
 /**
@@ -107,7 +111,18 @@ export function QuestsPanel(): JSX.Element {
     const activeIds = new Map(active.map((inst) => [inst.questId, inst]));
     const list: RowEntry[] = defs.map((def: QuestDefinition) => {
       const inst = activeIds.get(def.id);
-      if (inst) return { def, instance: inst, status: 'active' };
+      if (inst) {
+        // QuestSystem.dailyUpdate() flips inst.status to 'completed' or
+        // 'failed' but keeps the instance in `activeQuests` for one
+        // tick of UI continuity. Hard-coding 'active' here would mis-
+        // label those rows, break the Completed/Failed filters, and
+        // contradict the Completed badge on the detail pane. Derive
+        // from the instance instead.
+        if (inst.status === 'completed') return { def, instance: inst, status: 'completed' };
+        if (inst.status === 'failed') return { def, instance: inst, status: 'failed' };
+        if (inst.status === 'locked') return { def, instance: inst, status: 'locked' };
+        return { def, instance: inst, status: 'active' };
+      }
       if (flags[`quest-complete:${def.id}`]) return { def, status: 'completed' };
       const ready = def.prerequisites.every((p) => flags[`quest-complete:${p}`]);
       return { def, status: ready ? 'available' : 'locked' };
@@ -245,6 +260,8 @@ function QuestStatusIcon(props: { status: RowEntry['status'] }): JSX.Element {
       return <Icon name="circle" className="w-4 h-4 text-text-secondary" />;
     case 'completed':
       return <Icon name="check" className="w-4 h-4 text-status-success" />;
+    case 'failed':
+      return <Icon name="x" className="w-4 h-4 text-status-danger" />;
     case 'locked':
       return <Icon name="lock" className="w-4 h-4 text-text-muted" />;
     default: {

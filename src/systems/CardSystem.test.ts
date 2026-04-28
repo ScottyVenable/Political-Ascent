@@ -144,7 +144,9 @@ describe('CardSystem.play — cooldown gating', () => {
     const res = CardSystem.play(inst.instanceId);
     expect(res.ok).toBe(true);
 
-    // Multi-use cards stay in the deck; consumed cards are removed.
+    // Multi-use cards stay in the deck while uses remain; consumed
+    // cards are removed. After one play of a 2-use card, one use is
+    // still available, so the instance must persist with timesPlayed=1.
     const stored = useCharacterStore.getState().deck.find((c) => c.instanceId === inst.instanceId);
     expect(stored).toBeDefined();
     expect(stored?.lastPlayedWeek).toBe(5);
@@ -170,16 +172,24 @@ describe('CardSystem.play — cooldown gating', () => {
     expect(res.ok).toBe(true);
   });
 
-  it('blocks once usesPerGame is exhausted', () => {
+  it('consumes a multi-use card after its final allowed play (PR52 regression)', () => {
     const inst = useCharacterStore.getState().hand[0];
+    // First play: card stays in deck (one use remains).
     CardSystem.play(inst.instanceId);
     useGameStore.setState((s) => ({ ...s, week: 8 }));
     useCharacterStore.setState((s) => ({ ...s, hand: [...s.deck] }));
-    CardSystem.play(inst.instanceId);
-    useGameStore.setState((s) => ({ ...s, week: 11 })); // off CD again
-    useCharacterStore.setState((s) => ({ ...s, hand: [...s.deck] }));
+    expect(
+      useCharacterStore.getState().deck.find((c) => c.instanceId === inst.instanceId),
+    ).toBeDefined();
+
+    // Second play: this exhausts usesPerGame, so the card must be
+    // removed from deck (and hand) — the bug had it lingering forever
+    // as a permanent dead draw.
     const res = CardSystem.play(inst.instanceId);
-    expect(res.ok).toBe(false);
-    expect(res.reason).toMatch(/uses remaining/i);
+    expect(res.ok).toBe(true);
+    const remainingDeck = useCharacterStore.getState().deck;
+    const remainingHand = useCharacterStore.getState().hand;
+    expect(remainingDeck.find((c) => c.instanceId === inst.instanceId)).toBeUndefined();
+    expect(remainingHand.find((c) => c.instanceId === inst.instanceId)).toBeUndefined();
   });
 });
