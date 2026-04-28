@@ -28,6 +28,7 @@ import { Card } from '../components/Card';
 import { TermText } from '../components/tooltip';
 import { EntityLink, type EntityRefType, panelForEntity } from '../components/EntityLink';
 import { useContextMenu } from '../hooks/useContextMenu';
+import { writeClipboard } from '@/utils/clipboard';
 import type { NewsItem } from '@/types';
 
 const MONTH_NAMES = [
@@ -96,7 +97,16 @@ export function TimelinePanel(): JSX.Element {
   // Older save files (from before `newsArchive` existed) won't have
   // the field; fall back to the live ticker so loading them doesn't
   // crash the panel and the player still sees recent history.
-  const news = useWorldStore((s) => s.newsArchive ?? s.news);
+  //
+  // Codex review (PR#63 P1): `??` only catches `null`/`undefined`, but
+  // freshly migrated saves arrive with `newsArchive: []` (the store's
+  // default), which would silently win and erase the player's prior
+  // history. Treat an empty archive as "not yet populated" and fall
+  // back to the live ticker too.
+  const news = useWorldStore((s) => {
+    const archive = s.newsArchive;
+    return archive && archive.length > 0 ? archive : s.news;
+  });
   const grouped = useMemo(() => groupByMonth(news), [news]);
   const setActivePanel = useUIStore((s) => s.setActivePanel);
   const pushToast = useUIStore((s) => s.pushToast);
@@ -158,19 +168,16 @@ export function TimelinePanel(): JSX.Element {
                       label: 'Copy headline',
                       icon: 'copy' as const,
                       onSelect: () => {
-                        void navigator.clipboard?.writeText(item.headline).then(
-                          () =>
-                            pushToast({
-                              message: 'Headline copied',
-                              severity: 'info',
-                              ttl: 2000,
-                            }),
-                          () =>
-                            pushToast({
-                              message: 'Clipboard unavailable',
-                              severity: 'warning',
-                              ttl: 2500,
-                            }),
+                        // `writeClipboard` always resolves — either
+                        // path will fire one of the two toasts so the
+                        // player gets feedback even on Android WebView
+                        // where `navigator.clipboard` is undefined.
+                        void writeClipboard(item.headline).then((ok) =>
+                          pushToast({
+                            message: ok ? 'Headline copied' : 'Clipboard unavailable',
+                            severity: ok ? 'info' : 'warning',
+                            ttl: ok ? 2000 : 2500,
+                          }),
                         );
                       },
                     });

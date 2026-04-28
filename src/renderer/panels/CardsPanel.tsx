@@ -6,6 +6,7 @@ import { CardSystem } from '@/systems/CardSystem';
 import { CardFace } from '../components/CardFace';
 import { Button } from '../components/Button';
 import { useContextMenu } from '../hooks/useContextMenu';
+import { writeClipboard } from '@/utils/clipboard';
 
 /**
  * CardsPanel — view, reorder, and play cards in hand.
@@ -170,19 +171,14 @@ export function CardsPanel(): JSX.Element {
                     label: 'Copy card ID',
                     icon: 'copy',
                     onSelect: () => {
-                      void navigator.clipboard?.writeText(def.id).then(
-                        () =>
-                          pushToast({
-                            message: `Copied: ${def.id}`,
-                            severity: 'info',
-                            ttl: 2000,
-                          }),
-                        () =>
-                          pushToast({
-                            message: 'Clipboard unavailable',
-                            severity: 'warning',
-                            ttl: 2500,
-                          }),
+                      // See utils/clipboard.ts for why we don't chain
+                      // off `navigator.clipboard?.writeText` directly.
+                      void writeClipboard(def.id).then((ok) =>
+                        pushToast({
+                          message: ok ? `Copied: ${def.id}` : 'Clipboard unavailable',
+                          severity: ok ? 'info' : 'warning',
+                          ttl: ok ? 2000 : 2500,
+                        }),
                       );
                     },
                   },

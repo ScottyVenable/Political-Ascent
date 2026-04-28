@@ -1,4 +1,4 @@
-import { memo, useEffect } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { useUIStore, type PanelId } from '@/store/uiStore';
 import { useRouter } from '../router';
 import { Icon, type IconName } from './Icon';
@@ -98,6 +98,26 @@ function SidebarImpl(): JSX.Element {
   const drawerOpen = useUIStore((s) => s.mobileSidebarOpen);
   const setDrawerOpen = useUIStore((s) => s.setMobileSidebarOpen);
 
+  // Codex review (PR#66 P2): the closed drawer is moved off-screen with
+  // `-translate-x-full` and labelled `aria-hidden`, but its descendant
+  // buttons remained focusable — keyboard users could Tab into hidden
+  // nav controls and trigger panel changes invisibly. Use the HTML
+  // `inert` attribute (broadly supported in evergreen browsers and the
+  // Android WebView since Chromium 102) which both blocks focus and
+  // prevents pointer events on the entire subtree.
+  //
+  // We attach via `useEffect` + ref because React 18's typed JSX props
+  // do not yet recognise `inert` as a known attribute (React 19 does).
+  // Setting/removing the attribute imperatively avoids a `// @ts-expect`
+  // cast and keeps the JSX clean.
+  const drawerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = drawerRef.current;
+    if (!el) return;
+    if (drawerOpen) el.removeAttribute('inert');
+    else el.setAttribute('inert', '');
+  }, [drawerOpen]);
+
   // Close the drawer on Escape — keyboard parity with modals.
   useEffect(() => {
     if (!drawerOpen) return;
@@ -133,6 +153,7 @@ function SidebarImpl(): JSX.Element {
         data-testid="sidebar-scrim"
       />
       <aside
+        ref={drawerRef}
         role="dialog"
         aria-modal="true"
         aria-label="Navigation"

@@ -85,6 +85,18 @@ export function Game(): JSX.Element {
     };
   }, []);
 
+  // Codex review (PR#66 P2): the mobile drawer flag is only cleared by
+  // `setActivePanel`. If the player exits to the main menu while the
+  // drawer is open, re-entering the game would render the drawer over
+  // the freshly-mounted screen. Reset on every Game mount and unmount
+  // so each session starts (and ends) with the drawer closed.
+  useEffect(() => {
+    useUIStore.getState().setMobileSidebarOpen(false);
+    return () => {
+      useUIStore.getState().setMobileSidebarOpen(false);
+    };
+  }, []);
+
   return (
     // Three-row grid: the top and bottom rows have fixed pixel heights
     // (48px shell + 72px command strip) so the middle row inherits
