@@ -24,4 +24,26 @@ describe('CongressSystem', () => {
     const allD = [...senate, ...house].every((l) => l.party === 'D');
     expect(allD).toBe(true);
   });
+
+  // todo#55 — every legislator carries demographic fields the panel filters on.
+  it('seeds age, gender, and wealth on every legislator', () => {
+    const { senate, house } = CongressSystem.generate(2026, { D: 50, R: 50 });
+    for (const l of [...senate, ...house]) {
+      expect(typeof l.age).toBe('number');
+      expect(l.age).toBeGreaterThanOrEqual(40);
+      expect(l.age).toBeLessThanOrEqual(85);
+      expect(['F', 'M']).toContain(l.gender);
+      expect(typeof l.wealth).toBe('number');
+      expect(l.wealth).toBeGreaterThan(0);
+    }
+  });
+
+  // Senators skew older than House members on aggregate.
+  it('senators have a higher mean age than house members', () => {
+    const { senate, house } = CongressSystem.generate(7, { D: 50, R: 50 });
+    const mean = (xs: number[]): number => xs.reduce((a, b) => a + b, 0) / xs.length;
+    const senateMean = mean(senate.map((l) => l.age));
+    const houseMean = mean(house.map((l) => l.age));
+    expect(senateMean).toBeGreaterThan(houseMean);
+  });
 });

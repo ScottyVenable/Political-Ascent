@@ -35,14 +35,14 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { Hemicycle } from '../components/Hemicycle';
-import type { Legislator, Party, LegislatorPersonality } from '@/types';
+import type { Legislator, Party, LegislatorPersonality, LegislatorGender } from '@/types';
 
 type PartyFilter = 'all' | Party;
 /** Single-chamber tab — no more "both". */
 type ChamberTab = 'senate' | 'house';
 
 /** Direction to sort the member list. */
-type SortKey = 'name' | 'state' | 'relationship' | 'votes';
+type SortKey = 'name' | 'state' | 'relationship' | 'votes' | 'age' | 'wealth' | 'sponsorship';
 /** Whether filtered-out seats are hidden entirely or dimmed in the hemicycle. */
 type FilterMode = 'dim' | 'hide';
 
@@ -54,6 +54,23 @@ type IdeologyFilter = 'all' | 'left' | 'center' | 'right';
 
 /** Filter by personality archetype. */
 type PersonalityFilter = 'all' | LegislatorPersonality;
+
+/** Gender filter — see {@link LegislatorGender}. */
+type GenderFilter = 'all' | LegislatorGender;
+
+/**
+ * Age bucket filter (todo#55). Buckets chosen to match real-world
+ * Congressional age cohorts: under-50 (relative newcomers), 50-65
+ * (career mid-tier), and 65+ (senior leadership).
+ */
+type AgeFilter = 'all' | 'under50' | '50to65' | 'over65';
+
+/**
+ * Wealth bucket filter (todo#55). Three tiers separating regular
+ * earners (<$1M) from millionaires ($1M–$10M) and ultra-wealthy
+ * ($10M+) — those tiers shape what bribery/lobbying costs in-game.
+ */
+type WealthFilter = 'all' | 'under1m' | '1to10m' | 'over10m';
 
 const PARTY_LABEL: Record<Party, string> = {
   D: 'Democrat',
@@ -73,6 +90,22 @@ const PARTY_TEXT: Record<Party, string> = {
   I: 'text-accent-gold',
 };
 
+/**
+ * Compact USD wealth formatter for tooltip/list rows. Tunes to two
+ * significant digits and adds the unit suffix (k/M/B). Matches the
+ * rest of the UI by being deterministic from numeric input alone —
+ * no Intl locale variation across runs.
+ *
+ * @param v — net worth in dollars (procedural integer).
+ * @returns A short label like "$2.4M" or "$540k".
+ */
+function formatWealth(v: number): string {
+  if (v >= 1_000_000_000) return `$${(v / 1_000_000_000).toFixed(1)}B`;
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `$${Math.round(v / 1_000)}k`;
+  return `$${v}`;
+}
+
 /** Tooltip shown at cursor when hovering a hemicycle seat. */
 interface HoverTooltip {
   legislator: Legislator;
@@ -85,12 +118,21 @@ interface HoverTooltip {
 export function CongressPanel(): JSX.Element {
   const senate = useWorldStore((s) => s.congress.senate);
   const house = useWorldStore((s) => s.congress.house);
+  // Bills are needed to compute per-member sponsorship counts (todo#55).
+  // We pull from all three lists so a member's tally reflects history,
+  // not just the current pending session.
+  const pendingLegislation = useWorldStore((s) => s.pendingLegislation);
+  const passedLegislation = useWorldStore((s) => s.passedLegislation);
+  const failedLegislation = useWorldStore((s) => s.failedLegislation);
 
   const [chamber, setChamber] = useState<ChamberTab>('senate');
   const [partyFilter, setPartyFilter] = useState<PartyFilter>('all');
   const [stateFilter, setStateFilter] = useState<string>('all');
   const [ideologyFilter, setIdeologyFilter] = useState<IdeologyFilter>('all');
   const [personalityFilter, setPersonalityFilter] = useState<PersonalityFilter>('all');
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>('all');
+  const [ageFilter, setAgeFilter] = useState<AgeFilter>('all');
+  const [wealthFilter, setWealthFilter] = useState<WealthFilter>('all');
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [filterMode, setFilterMode] = useState<FilterMode>('dim');
@@ -106,8 +148,24 @@ export function CongressPanel(): JSX.Element {
   const searchLower = search.toLowerCase();
 
   /**
+   * Sponsorship count per legislator id, derived from every bill list
+   * (pending, passed, failed). Re-memoised when any list mutates.
+   * Used by both the sort key 'sponsorship' and member detail surfaces.
+   */
+  const sponsorshipById = useMemo<ReadonlyMap<string, number>>(() => {
+    const counts = new Map<string, number>();
+    const tally = (id: string): void => {
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    };
+    for (const b of pendingLegislation) tally(b.sponsor);
+    for (const b of passedLegislation) tally(b.sponsor);
+    for (const b of failedLegislation) tally(b.sponsor);
+    return counts;
+  }, [pendingLegislation, passedLegislation, failedLegislation]);
+
+  /**
    * Members that match ALL active filters (party, state, ideology bucket,
-   * personality) AND the search string.
+   * personality, gender, age, wealth) AND the search string.
    * This is the set rendered in the right-side list.
    */
   const matchedMembers = useMemo(() => {
@@ -125,6 +183,21 @@ export function CongressPanel(): JSX.Element {
       }
       // Personality
       if (personalityFilter !== 'all' && l.personality !== personalityFilter) return false;
+      // Gender (todo#55) — undefined on legacy saves is permissive.
+      if (genderFilter !== 'all' && l.gender !== undefined && l.gender !== genderFilter) return false;
+      // Age bucket (todo#55) — undefined acts as match-all so legacy
+      // saves don't disappear when the filter is non-default.
+      if (ageFilter !== 'all' && l.age !== undefined) {
+        if (ageFilter === 'under50' && l.age >= 50) return false;
+        if (ageFilter === '50to65' && (l.age < 50 || l.age > 65)) return false;
+        if (ageFilter === 'over65'  && l.age <= 65) return false;
+      }
+      // Wealth bucket (todo#55) — same legacy permissiveness.
+      if (wealthFilter !== 'all' && l.wealth !== undefined) {
+        if (wealthFilter === 'under1m' && l.wealth >= 1_000_000) return false;
+        if (wealthFilter === '1to10m' && (l.wealth < 1_000_000 || l.wealth > 10_000_000)) return false;
+        if (wealthFilter === 'over10m' && l.wealth <= 10_000_000) return false;
+      }
       // Text search — name, state, or personality.
       if (searchLower) {
         const hit =
@@ -135,7 +208,7 @@ export function CongressPanel(): JSX.Element {
       }
       return true;
     });
-  }, [chamberMembers, partyFilter, stateFilter, ideologyFilter, personalityFilter, searchLower]);
+  }, [chamberMembers, partyFilter, stateFilter, ideologyFilter, personalityFilter, genderFilter, ageFilter, wealthFilter, searchLower]);
 
   /** Sorted list for the right-side roster. */
   const sortedMembers = useMemo(() => {
@@ -150,10 +223,20 @@ export function CongressPanel(): JSX.Element {
           const bv = Object.keys(b.votingHistory).length;
           return bv - av; // descending: most-active first
         }
+        case 'age':
+          // Oldest first; legacy `undefined` sorts last.
+          return (b.age ?? -1) - (a.age ?? -1);
+        case 'wealth':
+          return (b.wealth ?? -1) - (a.wealth ?? -1);
+        case 'sponsorship': {
+          const ai = a.id as unknown as string;
+          const bi = b.id as unknown as string;
+          return (sponsorshipById.get(bi) ?? 0) - (sponsorshipById.get(ai) ?? 0);
+        }
         default: return 0;
       }
     });
-  }, [matchedMembers, sortKey]);
+  }, [matchedMembers, sortKey, sponsorshipById]);
 
   /**
    * Set of legislator ids to dim (or hide) in the hemicycle.
@@ -169,6 +252,9 @@ export function CongressPanel(): JSX.Element {
       stateFilter !== 'all' ||
       ideologyFilter !== 'all' ||
       personalityFilter !== 'all' ||
+      genderFilter !== 'all' ||
+      ageFilter !== 'all' ||
+      wealthFilter !== 'all' ||
       searchLower.length > 0;
     if (!hasFilter) return new Set();
     const matchedSet = new Set(matchedMembers.map((l) => l.id as unknown as string));
@@ -177,7 +263,7 @@ export function CongressPanel(): JSX.Element {
         .map((l) => l.id as unknown as string)
         .filter((id) => !matchedSet.has(id)),
     );
-  }, [chamberMembers, matchedMembers, partyFilter, stateFilter, ideologyFilter, personalityFilter, searchLower]);
+  }, [chamberMembers, matchedMembers, partyFilter, stateFilter, ideologyFilter, personalityFilter, genderFilter, ageFilter, wealthFilter, searchLower]);
 
   /**
    * The legislators list passed to the Hemicycle.
@@ -298,6 +384,7 @@ export function CongressPanel(): JSX.Element {
             members={sortedMembers}
             total={chamberMembers.length}
             chamberMembers={chamberMembers}
+            sponsorshipById={sponsorshipById}
             partyFilter={partyFilter}
             setPartyFilter={setPartyFilter}
             stateFilter={stateFilter}
@@ -306,6 +393,12 @@ export function CongressPanel(): JSX.Element {
             setIdeologyFilter={setIdeologyFilter}
             personalityFilter={personalityFilter}
             setPersonalityFilter={setPersonalityFilter}
+            genderFilter={genderFilter}
+            setGenderFilter={setGenderFilter}
+            ageFilter={ageFilter}
+            setAgeFilter={setAgeFilter}
+            wealthFilter={wealthFilter}
+            setWealthFilter={setWealthFilter}
             search={search}
             setSearch={setSearch}
             sortKey={sortKey}
@@ -324,6 +417,9 @@ export function CongressPanel(): JSX.Element {
           legislator={hoverTooltip.legislator}
           x={hoverTooltip.x}
           y={hoverTooltip.y}
+          sponsorshipCount={
+            sponsorshipById.get(hoverTooltip.legislator.id as unknown as string) ?? 0
+          }
         />
       )}
 
@@ -331,6 +427,7 @@ export function CongressPanel(): JSX.Element {
       {modalOpen && selected && (
         <MemberModal
           legislator={selected}
+          sponsorshipCount={sponsorshipById.get(selected.id as unknown as string) ?? 0}
           onClose={() => setModalOpen(false)}
         />
       )}
@@ -358,10 +455,12 @@ function SeatTooltip({
   legislator: l,
   x,
   y,
+  sponsorshipCount,
 }: {
   legislator: Legislator;
   x: number;
   y: number;
+  sponsorshipCount: number;
 }): JSX.Element {
   const r = l.relationship;
   const relCls =
@@ -403,6 +502,23 @@ function SeatTooltip({
           </span>
         </div>
       )}
+      {/* Demographic line — age · gender · wealth (todo#55). */}
+      {(l.age !== undefined || l.gender !== undefined || l.wealth !== undefined) && (
+        <div className="mt-0.5 flex items-baseline justify-between text-[0.75rem]">
+          <span className="text-text-muted font-mono">Bio</span>
+          <span className="font-mono tabular-nums text-text-secondary">
+            {l.age !== undefined ? `${l.age}y` : '—'}
+            {l.gender !== undefined ? ` · ${l.gender}` : ''}
+            {l.wealth !== undefined ? ` · ${formatWealth(l.wealth)}` : ''}
+          </span>
+        </div>
+      )}
+      {sponsorshipCount > 0 && (
+        <div className="mt-0.5 flex items-baseline justify-between text-[0.75rem]">
+          <span className="text-text-muted font-mono">Sponsored</span>
+          <span className="font-mono tabular-nums text-accent-gold">{sponsorshipCount}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -416,6 +532,7 @@ function MemberListPanel({
   members,
   total,
   chamberMembers,
+  sponsorshipById,
   partyFilter,
   setPartyFilter,
   stateFilter,
@@ -424,6 +541,12 @@ function MemberListPanel({
   setIdeologyFilter,
   personalityFilter,
   setPersonalityFilter,
+  genderFilter,
+  setGenderFilter,
+  ageFilter,
+  setAgeFilter,
+  wealthFilter,
+  setWealthFilter,
   search,
   setSearch,
   sortKey,
@@ -437,6 +560,8 @@ function MemberListPanel({
   total: number;
   /** Full unfiltered chamber list — used to derive available states. */
   chamberMembers: readonly Legislator[];
+  /** Sponsorship counts per legislator id, used in the row meta line. */
+  sponsorshipById: ReadonlyMap<string, number>;
   partyFilter: PartyFilter;
   setPartyFilter: (p: PartyFilter) => void;
   stateFilter: string;
@@ -445,6 +570,12 @@ function MemberListPanel({
   setIdeologyFilter: (i: IdeologyFilter) => void;
   personalityFilter: PersonalityFilter;
   setPersonalityFilter: (p: PersonalityFilter) => void;
+  genderFilter: GenderFilter;
+  setGenderFilter: (g: GenderFilter) => void;
+  ageFilter: AgeFilter;
+  setAgeFilter: (a: AgeFilter) => void;
+  wealthFilter: WealthFilter;
+  setWealthFilter: (w: WealthFilter) => void;
   search: string;
   setSearch: (s: string) => void;
   sortKey: SortKey;
@@ -471,12 +602,18 @@ function MemberListPanel({
   const advancedCount =
     (stateFilter !== 'all' ? 1 : 0) +
     (ideologyFilter !== 'all' ? 1 : 0) +
-    (personalityFilter !== 'all' ? 1 : 0);
+    (personalityFilter !== 'all' ? 1 : 0) +
+    (genderFilter !== 'all' ? 1 : 0) +
+    (ageFilter !== 'all' ? 1 : 0) +
+    (wealthFilter !== 'all' ? 1 : 0);
 
   function clearAdvanced(): void {
     setStateFilter('all');
     setIdeologyFilter('all');
     setPersonalityFilter('all');
+    setGenderFilter('all');
+    setAgeFilter('all');
+    setWealthFilter('all');
   }
 
   return (
@@ -611,6 +748,76 @@ function MemberListPanel({
               </div>
             </div>
 
+            {/* Gender (todo#55) */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-label uppercase tracking-widest text-text-muted shrink-0 w-20">
+                Gender
+              </span>
+              <div className="flex items-center gap-1 flex-wrap">
+                {(['all', 'F', 'M'] as const).map((g) => (
+                  <Button
+                    key={g}
+                    size="sm"
+                    variant={genderFilter === g ? 'primary' : 'secondary'}
+                    onClick={() => setGenderFilter(g)}
+                    data-testid={`congress-gender-${g}`}
+                  >
+                    {g === 'all' ? 'All' : g === 'F' ? 'Women' : 'Men'}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Age bucket (todo#55) */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-label uppercase tracking-widest text-text-muted shrink-0 w-20">
+                Age
+              </span>
+              <div className="flex items-center gap-1 flex-wrap">
+                {([
+                  { id: 'all', label: 'All' },
+                  { id: 'under50', label: '< 50' },
+                  { id: '50to65', label: '50 – 65' },
+                  { id: 'over65', label: '65+' },
+                ] as const).map((opt) => (
+                  <Button
+                    key={opt.id}
+                    size="sm"
+                    variant={ageFilter === opt.id ? 'primary' : 'secondary'}
+                    onClick={() => setAgeFilter(opt.id)}
+                    data-testid={`congress-age-${opt.id}`}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Wealth bracket (todo#55) */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-label uppercase tracking-widest text-text-muted shrink-0 w-20">
+                Wealth
+              </span>
+              <div className="flex items-center gap-1 flex-wrap">
+                {([
+                  { id: 'all', label: 'All' },
+                  { id: 'under1m', label: '< $1M' },
+                  { id: '1to10m', label: '$1 – 10M' },
+                  { id: 'over10m', label: '$10M+' },
+                ] as const).map((opt) => (
+                  <Button
+                    key={opt.id}
+                    size="sm"
+                    variant={wealthFilter === opt.id ? 'primary' : 'secondary'}
+                    onClick={() => setWealthFilter(opt.id)}
+                    data-testid={`congress-wealth-${opt.id}`}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
             {/* Clear all advanced filters */}
             {advancedCount > 0 && (
               <button
@@ -631,15 +838,23 @@ function MemberListPanel({
         <span className="font-mono text-label uppercase tracking-widest text-text-muted mr-1">
           Sort
         </span>
-        {(['name', 'state', 'relationship', 'votes'] as const).map((key) => (
+        {([
+          { id: 'name', label: 'Name' },
+          { id: 'state', label: 'State' },
+          { id: 'relationship', label: 'Rel.' },
+          { id: 'votes', label: 'Votes' },
+          { id: 'age', label: 'Age' },
+          { id: 'wealth', label: 'Wealth' },
+          { id: 'sponsorship', label: 'Bills' },
+        ] as const).map((opt) => (
           <Button
-            key={key}
+            key={opt.id}
             size="sm"
-            variant={sortKey === key ? 'primary' : 'secondary'}
-            onClick={() => setSortKey(key)}
-            data-testid={`congress-sort-${key}`}
+            variant={sortKey === opt.id ? 'primary' : 'secondary'}
+            onClick={() => setSortKey(opt.id)}
+            data-testid={`congress-sort-${opt.id}`}
           >
-            {key === 'relationship' ? 'Rel.' : key === 'votes' ? 'Votes' : key.charAt(0).toUpperCase() + key.slice(1)}
+            {opt.label}
           </Button>
         ))}
       </div>
@@ -800,9 +1015,12 @@ function VoteBadge({ vote }: { vote: 'yea' | 'nay' | 'abstain' }): JSX.Element {
  */
 function MemberModal({
   legislator,
+  sponsorshipCount,
   onClose,
 }: {
   legislator: Legislator;
+  /** Total bills sponsored by this member across all stages. */
+  sponsorshipCount: number;
   onClose: () => void;
 }): JSX.Element {
   // Lock body scroll while the member detail overlay is open.
@@ -867,6 +1085,21 @@ function MemberModal({
               value={`${legislator.ideology.x.toFixed(2)} · ${legislator.ideology.y.toFixed(2)}`}
             />
             <DetailRow label="Term ends" value={String(legislator.termEndsYear)} />
+            {/* Demographic detail (todo#55) — undefined-safe for legacy saves. */}
+            {legislator.age !== undefined && (
+              <DetailRow label="Age" value={`${legislator.age}`} />
+            )}
+            {legislator.gender !== undefined && (
+              <DetailRow label="Gender" value={legislator.gender === 'F' ? 'Female' : 'Male'} />
+            )}
+            {legislator.wealth !== undefined && (
+              <DetailRow label="Net worth" value={formatWealth(legislator.wealth)} />
+            )}
+            <DetailRow
+              label="Sponsored"
+              value={`${sponsorshipCount} bill${sponsorshipCount === 1 ? '' : 's'}`}
+              tone={sponsorshipCount > 0 ? 'gold' : undefined}
+            />
 
             <div>
               <div className="font-mono text-label uppercase tracking-widest text-text-muted mb-1">

@@ -12,6 +12,14 @@ export type LegislatorPersonality =
   | 'ideologue'
   | 'pragmatist';
 
+/**
+ * Coarse gender label used for filter UX and pronoun selection in
+ * surface text. Two-value enum is intentional for procedural NPCs;
+ * a richer identity model would require player-character expansion
+ * and is deferred (todo#55).
+ */
+export type LegislatorGender = 'F' | 'M';
+
 /** A seat in Congress, procedurally generated from a scenario seed. */
 export interface Legislator {
   id: NpcId;
@@ -30,4 +38,17 @@ export interface Legislator {
   /** Cumulative voting record (billId → vote). */
   votingHistory: Record<string, 'yea' | 'nay' | 'abstain'>;
   termEndsYear: number;
+  /**
+   * Years of age at scenario start. Drifts upward yearly via the
+   * congress weeklyUpdate loop (currently static at MVP).
+   */
+  age: number;
+  /** Procedural gender label; see {@link LegislatorGender}. */
+  gender: LegislatorGender;
+  /**
+   * Personal net worth in USD, log-normal distributed.
+   * Roughly $250k median, occasional outliers up to ~$50M.
+   * Used by filters/sort and surfaced in member tooltip/modal.
+   */
+  wealth: number;
 }

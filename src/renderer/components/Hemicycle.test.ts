@@ -25,6 +25,9 @@ function mkLeg(i: number, x: number): Legislator {
     leverage: 50,
     votingHistory: {},
     termEndsYear: 2030,
+    age: 55,
+    gender: i % 2 === 0 ? 'F' : 'M',
+    wealth: 250_000,
   };
 }
 
