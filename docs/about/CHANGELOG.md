@@ -6,6 +6,10 @@ All notable changes to Political Ascent are recorded here.
 
 ### Added
 
+- **Tooltip polish 3 — category-coloured term underlines** (`exp--tooltip-polish-3`, todo#51 + housekeeping). The inline `<Term>` chip now reads its registered tooltip's `subtitle` and applies a category-specific Tailwind decoration class (Resource → gold, Stat → sky, Mechanic → slate, Concept → violet, Legislation → emerald, Action → amber, Population → rose, Economy → teal, Cohort metric → pink, Event → orange). Unknown / missing subtitles fall back to the original `decoration-accent-gold/60` so legacy terms look unchanged. The mapping is exposed as `termCategoryDecorationClass(subtitle)` for tests and any future surfaces that need to colour terms outside of `<Term>`. New `termCategory.test.ts` covers fallback, case-insensitivity, whitespace tolerance, and uniqueness across the ten known categories. Branch also reconciles `docs/todo.md`: items 49, 50, 52, 57, 59, 79, 80, 83 were already shipped in earlier PRs but had not been crossed off — they are now annotated with the PR or commit they shipped in.
+
+### Added
+
 - **Mobile polish + new pre-release APK** (`exp--mobile-polish-and-apk`, todo#23 follow-up).
   - **Modal viewport sizing.** `ModalShell` now clamps to `max-h: calc(100dvh - 1.5rem)`, switches to a `flex flex-col` column with the header pinned and the body region scrolling internally (`overflow-y-auto min-h-0 game-scroll`). On portrait Pixel-class devices, long event descriptions and vote-result modals no longer overflow the viewport. Outer overlay padding now respects `env(safe-area-inset-*)` so the dialog can't tuck under the Pixel notch.
   - **Modal close glyph.** Replaced the literal `✕` Unicode character with `<Icon name="close" size={16} />` so the close affordance follows the same icon registry policy as everything else (and inherits `currentColor` for theme tinting).

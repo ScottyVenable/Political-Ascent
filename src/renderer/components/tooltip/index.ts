@@ -4,6 +4,7 @@
 export {
   ExtendedTooltip,
   Term,
+  termCategoryDecorationClass,
   registerTooltip,
   getTooltip,
   allTooltipIds,
