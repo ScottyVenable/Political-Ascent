@@ -17,6 +17,7 @@ import {
   statTierLabel,
   statTierChipClass,
 } from '@/utils/statTier';
+import { buildProfile } from '@/utils/buildProfile';
 
 /**
  * Map a CoreStats key to its glossary tooltip term id. Keeping this as a
@@ -240,14 +241,24 @@ export function CharacterCreation(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-bg-primary p-6 md:p-10">
-      <header className="max-w-5xl mx-auto flex justify-between items-center mb-6">
-        <h1 className="font-headline text-3xl font-bold text-accent-gold">Build Your Candidate</h1>
+    /* Fixed-height flex column so the pinned nav (Previous / Next /
+       Choose Scenario) is never pushed below the fold on compact Android
+       viewports (844 × 390).  The inner scroll region holds the step
+       content; header + Stepper + nav stay outside the scroll area. */
+    <div className="bg-bg-primary flex flex-col" style={{ height: '100dvh', minHeight: '100vh' }}>
+      <header className="flex-shrink-0 max-w-5xl w-full mx-auto flex justify-between items-center px-6 py-4 [@media(max-height:480px)]:py-2">
+        <h1 className="font-headline text-3xl [@media(max-height:480px)]:text-xl font-bold text-accent-gold">
+          Build Your Candidate
+        </h1>
         <Button variant="ghost" onClick={() => navigate('main-menu')}>← Back</Button>
       </header>
 
-      <div className="max-w-5xl mx-auto">
+      <div className="flex-shrink-0 max-w-5xl w-full mx-auto px-6">
         <Stepper step={step} />
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto game-scroll px-6 pb-4">
+        <div className="max-w-5xl mx-auto">
 
         {step === 0 && (
           <Card title="Identity" subtitle="Who are you, and where did you come from?">
@@ -444,6 +455,58 @@ export function CharacterCreation(): JSX.Element {
                 {validation.reason}
               </p>
             )}
+
+            {/* Build Profile (todo#27).
+                The six stats are noisy on their own — a player has
+                to translate "charisma 7, connections 4" into "what
+                kind of campaigner does that make me?" themselves.
+                This card does that translation: three derived
+                archetypes (Persuasion / Operations / Resources)
+                show the player what their distribution actually
+                shapes the character into. The numbers update live
+                with every slider tick so the player gets immediate
+                feedback on the trade they just made. */}
+            <div
+              className="mt-4 border-t border-bg-tertiary pt-4"
+              data-testid="build-profile"
+            >
+              <h4 className="font-headline text-sm uppercase tracking-wider text-text-secondary mb-2">
+                Build Profile
+              </h4>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {buildProfile(finalStats).map((entry) => (
+                  <div
+                    key={entry.archetype}
+                    className="bg-bg-tertiary rounded p-3"
+                    data-testid={`build-profile-${entry.archetype}`}
+                  >
+                    <div className="flex items-baseline justify-between mb-1">
+                      <span className="font-headline text-text-primary">
+                        {entry.label}
+                      </span>
+                      <span
+                        className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${statTierChipClass(entry.tier)}`}
+                        data-tier={entry.tier}
+                      >
+                        {statTierLabel(entry.tier)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-text-muted mb-1">
+                      <span className="capitalize">{entry.contributors[0]}</span>
+                      {' + '}
+                      <span className="capitalize">{entry.contributors[1]}</span>
+                      {' · '}
+                      <span className="font-mono tabular-nums text-text-secondary">
+                        {entry.score.toFixed(1)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-text-muted leading-snug">
+                      {entry.blurb}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </Card>
         )}
 
@@ -494,30 +557,32 @@ export function CharacterCreation(): JSX.Element {
             </div>
           </Card>
         )}
-
-        <nav className="mt-6 flex justify-between">
-          <Button
-            variant="secondary"
-            disabled={step === 0}
-            onClick={() => setStep((s) => Math.max(0, s - 1))}
-          >
-            Previous
-          </Button>
-          {step < 3 ? (
-            <Button
-              variant="primary"
-              disabled={!canAdvance()}
-              onClick={() => setStep((s) => s + 1)}
-            >
-              Next
-            </Button>
-          ) : (
-            <Button variant="gold" onClick={finish}>
-              Choose Scenario →
-            </Button>
-          )}
-        </nav>
+        </div>
       </div>
+
+      {/* Pinned navigation — always visible, never pushed below the fold */}
+      <nav className="flex-shrink-0 max-w-5xl w-full mx-auto px-6 py-4 [@media(max-height:480px)]:py-2 flex justify-between">
+        <Button
+          variant="secondary"
+          disabled={step === 0}
+          onClick={() => setStep((s) => Math.max(0, s - 1))}
+        >
+          Previous
+        </Button>
+        {step < 3 ? (
+          <Button
+            variant="primary"
+            disabled={!canAdvance()}
+            onClick={() => setStep((s) => s + 1)}
+          >
+            Next
+          </Button>
+        ) : (
+          <Button variant="gold" onClick={finish}>
+            Choose Scenario →
+          </Button>
+        )}
+      </nav>
     </div>
   );
 }
@@ -526,11 +591,11 @@ const STEP_LABELS = ['Identity', 'Stats', 'Traits', 'Ideology'];
 
 function Stepper({ step }: { step: number }): JSX.Element {
   return (
-    <ol className="flex gap-2 mb-6">
+    <ol className="flex gap-2 mb-4 [@media(max-height:480px)]:mb-2">
       {STEP_LABELS.map((label, idx) => (
         <li
           key={label}
-          className={`flex-1 text-center text-xs py-2 rounded ${
+          className={`flex-1 text-center text-xs py-2 [@media(max-height:480px)]:py-1 rounded ${
             idx === step
               ? 'bg-accent-gold text-bg-primary font-semibold'
               : idx < step
@@ -538,7 +603,10 @@ function Stepper({ step }: { step: number }): JSX.Element {
                 : 'bg-bg-secondary text-text-muted'
           }`}
         >
-          {idx + 1}. {label}
+          {/* Show full "1. Identity" label on normal heights; just "1" on
+              compact Android so the row never wraps at 844 px wide / 390 px tall. */}
+          <span className="[@media(max-height:480px)]:hidden">{idx + 1}. {label}</span>
+          <span className="hidden [@media(max-height:480px)]:inline">{idx + 1}</span>
         </li>
       ))}
     </ol>
