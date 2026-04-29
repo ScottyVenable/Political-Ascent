@@ -42,7 +42,8 @@ const PANELS: readonly PanelEntry[] = [
   { id: 'collection', label: 'Collection', icon: 'cards' },
   { id: 'skills', label: 'Skills', icon: 'skills' },
   { id: 'character', label: 'Character', icon: 'character' },
-  { id: 'glossary', label: 'Glossary', icon: 'book' },
+  { id: 'glossary', label: 'Knowledge Base', icon: 'book' },
+  { id: 'news', label: 'News', icon: 'news' },
   { id: 'timeline', label: 'Timeline', icon: 'clock' },
   { id: 'patch-notes', label: 'Patch Notes', icon: 'news' },
 ];

@@ -14,7 +14,8 @@ export type PanelId =
   | 'character'
   | 'glossary'
   | 'timeline'
-  | 'patch-notes';
+  | 'patch-notes'
+  | 'news';
 
 /** Payload attached to a 'vote-result' modal (todo#85). */
 export interface VoteResultPayload {

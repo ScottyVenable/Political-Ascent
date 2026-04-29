@@ -8,7 +8,13 @@
  * player can open from the sidebar to learn the game without having
  * to discover terms by hovering things.
  *
- * Three regions:
+ * todo#45: The panel is now a tabbed "Knowledge Base" with four tabs:
+ *   - Glossary — the original searchable term reference.
+ *   - How to Play — quick-start gameplay guide.
+ *   - History — American political history context.
+ *   - Tips & Tricks — strategic advice.
+ *
+ * Three regions in the Glossary tab:
  *   - Search field at the top (case-insensitive prefix match against
  *     title + aliases).
  *   - Category filter pills (Resource / Stat / Mechanic / Cohort metric
@@ -121,6 +127,13 @@ export function GlossaryPanel(): JSX.Element {
   const [category, setCategory] = useState<string>('All');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // todo#45: tabbed Knowledge Base. The active tab drives which content
+  // region is visible. 'glossary' is the default and matches existing
+  // player expectations.
+  const [activeTab, setActiveTab] = useState<'glossary' | 'how-to-play' | 'history' | 'tips'>(
+    'glossary',
+  );
+
   // Filtered list — recomputes on every keystroke. The registry is
   // small (dozens of entries, not thousands) so the linear scan is
   // fine without memoisation beyond the outer load.
@@ -134,70 +147,110 @@ export function GlossaryPanel(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-4 h-full" data-testid="glossary-panel">
-      {/* Header — title + search */}
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="font-headline text-panel-title text-text-primary">Glossary</h1>
-          <p className="text-body text-text-secondary">
-            Every in-game term, definition, and cross-link. Hover any term for the same
-            extended tooltip you see anywhere else.
-          </p>
-        </div>
-        <label className="relative w-72 max-w-full">
-          <span className="sr-only">Search glossary</span>
-          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted">
-            <Icon name="search" size={14} />
-          </span>
-          <input
-            type="search"
-            placeholder="Search terms…"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setSelectedId(null);
-            }}
-            data-testid="glossary-search"
-            className="w-full bg-bg-secondary border border-rule rounded-sm pl-7 pr-2 py-1.5 text-body text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-gold"
-          />
-        </label>
+      {/* Panel header */}
+      <header>
+        <h1 className="font-headline text-panel-title text-text-primary">Knowledge Base</h1>
+        <p className="text-body text-text-secondary">
+          Glossary, guides, history, and tips for Political Ascent.
+        </p>
       </header>
 
-      {/* Category filter pills */}
+      {/* Tab row (todo#45) */}
       <nav
-        className="flex flex-wrap gap-2"
-        aria-label="Glossary categories"
-        data-testid="glossary-categories"
+        role="tablist"
+        aria-label="Knowledge Base sections"
+        className="flex gap-1 border-b border-rule pb-0"
+        data-testid="knowledge-tabs"
       >
-        {categories.map((c) => (
+        {(
+          [
+            { id: 'glossary', label: 'Glossary' },
+            { id: 'how-to-play', label: 'How to Play' },
+            { id: 'history', label: 'History' },
+            { id: 'tips', label: 'Tips & Tricks' },
+          ] as const
+        ).map((tab) => (
           <button
-            key={c}
+            key={tab.id}
             type="button"
-            onClick={() => {
-              setCategory(c);
-              setSelectedId(null);
-            }}
-            aria-pressed={category === c}
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id)}
             className={
-              'px-3 py-1 text-label uppercase tracking-widest font-mono rounded-sm border transition-colors duration-instant ' +
-              (category === c
-                ? 'bg-accent-gold text-bg-primary border-accent-gold'
-                : 'bg-bg-secondary text-text-secondary border-rule hover:border-accent-gold/60')
+              'px-4 py-2 font-mono text-label uppercase tracking-widest rounded-t-sm border-b-2 transition-colors duration-instant ' +
+              (activeTab === tab.id
+                ? 'text-accent-gold border-accent-gold bg-bg-secondary'
+                : 'text-text-muted border-transparent hover:text-text-primary hover:border-rule')
             }
           >
-            {c}
+            {tab.label}
           </button>
         ))}
       </nav>
 
-      {/* Two-column body */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
-        {/* Term list — scrolls independently */}
-        <Card className="md:col-span-1 overflow-hidden flex flex-col">
-          <div className="font-mono text-label uppercase tracking-widest text-text-muted mb-2">
-            {filtered.length} {filtered.length === 1 ? 'term' : 'terms'}
+      {/* Glossary tab */}
+      {activeTab === 'glossary' && (
+        <div className="flex flex-col gap-4 flex-1 min-h-0">
+          {/* Search field */}
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-body text-text-secondary">
+              Every in-game term, definition, and cross-link.
+            </p>
+            <label className="relative w-72 max-w-full">
+              <span className="sr-only">Search glossary</span>
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted">
+                <Icon name="search" size={14} />
+              </span>
+              <input
+                type="search"
+                placeholder="Search terms…"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setSelectedId(null);
+                }}
+                data-testid="glossary-search"
+                className="w-full bg-bg-secondary border border-rule rounded-sm pl-7 pr-2 py-1.5 text-body text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-gold"
+              />
+            </label>
           </div>
-          {filtered.length === 0 ? (
-            <p className="text-body text-text-muted italic">
+
+          {/* Category filter pills */}
+          <nav
+            className="flex flex-wrap gap-2"
+            aria-label="Glossary categories"
+            data-testid="glossary-categories"
+          >
+            {categories.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => {
+                  setCategory(c);
+                  setSelectedId(null);
+                }}
+                aria-pressed={category === c}
+                className={
+                  'px-3 py-1 text-label uppercase tracking-widest font-mono rounded-sm border transition-colors duration-instant ' +
+                  (category === c
+                    ? 'bg-accent-gold text-bg-primary border-accent-gold'
+                    : 'bg-bg-secondary text-text-secondary border-rule hover:border-accent-gold/60')
+                }
+              >
+                {c}
+              </button>
+            ))}
+          </nav>
+
+          {/* Two-column body */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
+            {/* Term list — scrolls independently */}
+            <Card className="md:col-span-1 overflow-hidden flex flex-col">
+              <div className="font-mono text-label uppercase tracking-widest text-text-muted mb-2">
+                {filtered.length} {filtered.length === 1 ? 'term' : 'terms'}
+              </div>
+              {filtered.length === 0 ? (
+                <p className="text-body text-text-muted italic">
               No terms match your search.
             </p>
           ) : (
@@ -243,7 +296,205 @@ export function GlossaryPanel(): JSX.Element {
           )}
         </Card>
       </div>
+        </div>
+      )} {/* end glossary tab */}
+
+      {/* ─── HOW TO PLAY tab (todo#45) ─────────────────────────────────
+          Structured quick-start guide. Content is authored inline here;
+          it will be migrated to a JSON/Markdown source when the "no-code
+          editor" system (item 19) ships. */}
+      {activeTab === 'how-to-play' && (
+        <div className="flex-1 overflow-y-auto game-scroll space-y-6" data-testid="knowledge-how-to-play">
+          <HowToPlayContent />
+        </div>
+      )}
+
+      {/* ─── HISTORY tab (todo#45) ─────────────────────────────────────
+          American political history background for scenario context. */}
+      {activeTab === 'history' && (
+        <div className="flex-1 overflow-y-auto game-scroll space-y-6" data-testid="knowledge-history">
+          <HistoryContent />
+        </div>
+      )}
+
+      {/* ─── TIPS & TRICKS tab (todo#45) ────────────────────────────── */}
+      {activeTab === 'tips' && (
+        <div className="flex-1 overflow-y-auto game-scroll space-y-6" data-testid="knowledge-tips">
+          <TipsContent />
+        </div>
+      )}
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// KNOWLEDGE BASE CONTENT TABS (todo#45)
+// Each tab is a separate component so it can be lazy-loaded or moved
+// to a JSON/Markdown source later without changing the parent layout.
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * A reusable section block for the static content tabs.
+ */
+function KbSection({ title, children }: { title: string; children: React.ReactNode }): JSX.Element {
+  return (
+    <section>
+      <h2 className="font-headline text-text-primary text-xl mb-2 border-b border-rule pb-1">
+        {title}
+      </h2>
+      <div className="text-body text-text-secondary space-y-2 leading-relaxed">{children}</div>
+    </section>
+  );
+}
+
+/** How to Play quick-start guide. */
+function HowToPlayContent(): JSX.Element {
+  return (
+    <>
+      <KbSection title="Welcome to Political Ascent">
+        <p>
+          You are a politician climbing from local office to the nation's highest seat of power.
+          Every decision you make — from drafting legislation to managing your public image — has
+          real consequences for the people you govern and the factions you work with.
+        </p>
+      </KbSection>
+
+      <KbSection title="Resources">
+        <p>
+          <strong className="text-text-primary">Political Capital (PC)</strong> is your primary
+          currency. Spend it on actions, cards, and favours. It regenerates each week based on
+          your approval and relationships.
+        </p>
+        <p>
+          <strong className="text-text-primary">Action Points (AP)</strong> represent how much
+          you can accomplish in a single week. Most actions cost 1 AP; some powerful moves cost
+          more. AP resets at the start of each week.
+        </p>
+      </KbSection>
+
+      <KbSection title="Time">
+        <p>
+          The game advances in weeks. Use the controls at the bottom to pause, play, or speed up.
+          Events and legislative progress happen over real time — don't let bills stall in
+          committee.
+        </p>
+      </KbSection>
+
+      <KbSection title="Legislation">
+        <p>
+          Draft bills, gather co-sponsors, and navigate them through committees and floor votes.
+          The passage chance shown on each bill is a live estimate — use cards and actions to
+          improve it before a vote is called.
+        </p>
+      </KbSection>
+
+      <KbSection title="Cards">
+        <p>
+          Cards are one-time abilities that let you take actions outside the normal weekly
+          routine. Earn them through quests, achievements, and card packs. Each card has a PC
+          cost; some also cost AP.
+        </p>
+      </KbSection>
+
+      <KbSection title="Approval & Cohorts">
+        <p>
+          Your approval rating is the average happiness of all voter cohorts. Different cohorts
+          care about different issues — improving the economy helps working-class blocs, while
+          strong civil liberties legislation helps progressive ones. Open the Population panel to
+          see each cohort's mood in detail.
+        </p>
+      </KbSection>
+
+      <KbSection title="Tips">
+        <ul className="list-disc list-inside space-y-1">
+          <li>Hover any term to see its extended tooltip — including this panel.</li>
+          <li>Click a KPI tile on the Dashboard to jump to the relevant detail panel.</li>
+          <li>Right-click cards and timeline entries for quick actions.</li>
+          <li>Pin a tooltip (hold to lock or Shift-leave) to keep it open while you read.</li>
+        </ul>
+      </KbSection>
+    </>
+  );
+}
+
+/** American political history context for current scenarios. */
+function HistoryContent(): JSX.Element {
+  return (
+    <>
+      <KbSection title="The American Political System">
+        <p>
+          The United States has a bicameral legislature: the Senate (100 seats, two per state)
+          and the House of Representatives (435 seats, apportioned by population). Bills must
+          pass both chambers and be signed by the President to become law.
+        </p>
+      </KbSection>
+
+      <KbSection title="Political Capital in Real Life">
+        <p>
+          "Political capital" is a real concept in American politics — the trust, goodwill, and
+          influence a politician accumulates through electoral wins, favours, and public approval.
+          George W. Bush famously said after his 2004 re-election: "I earned capital in this
+          campaign, political capital, and now I intend to spend it."
+        </p>
+      </KbSection>
+
+      <KbSection title="The Modern Era (2000 – Present)">
+        <p>
+          The default scenario, Modern America 2024, takes place against a backdrop of deep
+          partisan polarisation, social media influence, and debates over economic inequality,
+          healthcare, immigration, and climate change. The two major parties occupy increasingly
+          narrow ideological coalitions, making cross-aisle compromise rare but high-value.
+        </p>
+      </KbSection>
+
+      <KbSection title="Planned Historical Scenarios">
+        <p>
+          Future scenarios will cover the 1776 founding era, the Civil War, the Industrial
+          Revolution, the Great Depression, World War II, the Cold War, and the post-9/11 period.
+          Each will have period-accurate factions, legislation, and events.
+        </p>
+      </KbSection>
+    </>
+  );
+}
+
+/** Strategic tips and tricks. */
+function TipsContent(): JSX.Element {
+  return (
+    <>
+      <KbSection title="Early Game">
+        <ul className="list-disc list-inside space-y-1">
+          <li>Focus your first few bills on issues that multiple cohorts care about — early wins build momentum.</li>
+          <li>Invest skill points in PC generation early; it compounds over the whole run.</li>
+          <li>Don't neglect your working-class approval — it's your largest base and hardest to win back once lost.</li>
+        </ul>
+      </KbSection>
+
+      <KbSection title="Legislation Strategy">
+        <ul className="list-disc list-inside space-y-1">
+          <li>Check the "passage chance" estimate on each bill before calling a vote.</li>
+          <li>Co-sponsoring with members who have high-influence committee seats accelerates the process.</li>
+          <li>Use cards like "Floor Whip" and "Call Favour" to swing close votes.</li>
+          <li>Bills that stall in committee cost no AP to abandon — cut losses early.</li>
+        </ul>
+      </KbSection>
+
+      <KbSection title="Managing Approval">
+        <ul className="list-disc list-inside space-y-1">
+          <li>Approval above 55 gives you a governing mandate — use it to push bold legislation.</li>
+          <li>Below 40, switch to repair mode: small popular bills, press conferences, and community outreach.</li>
+          <li>Radical cohorts are volatile — their happiness swings fast in response to events, so watch for sudden drops.</li>
+        </ul>
+      </KbSection>
+
+      <KbSection title="Cards & Packs">
+        <ul className="list-disc list-inside space-y-1">
+          <li>Common cards are reliable workhorses; keep at least two AP-cost-free cards in hand.</li>
+          <li>Legendary cards are game-changers — save PC to play them at the right moment.</li>
+          <li>Card packs are best opened before a major vote, not after.</li>
+        </ul>
+      </KbSection>
+    </>
   );
 }
 
