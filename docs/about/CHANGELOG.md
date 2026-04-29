@@ -6,6 +6,8 @@ All notable changes to Political Ascent are recorded here.
 
 ### Added
 
+- **Scenario plan document** (`exp--scenario-plan-and-archive-3`, todo#42). New `docs/SCENARIO_PLAN.md` lays out implementation order for the nine planned scenarios (Modern America 2024 → Cold War → Civil War & Reconstruction → Industrial / Gilded Age → Great Depression → WWI → WWII → 9/11 / War on Terror → 1776 / Founding Era), each with period framing, key historical events, political figures, social movements & cohorts, major issues, branching seams, and engine work required. Cross-scenario systems (regional cohorts, faction influence, constitutional amendment thresholds, executive crisis modal, war-finance loop) are called out so reusable mechanics get built once. Authoring workflow standardised against the existing `src/data/scenarios/modern-america-2024/` layout.
+
 - **Main-menu version is now a clickable patch-notes link + build provenance** (`exp--main-menu-version-link`, todo#89). The footer version pill on the main menu is rendered as a button styled as a hyperlink — clicking it opens the in-game `PatchNotesPanel` inside a modal so testers can read what changed without committing to a save. A second line below shows `build <short-commit> · <YYYY-MM-DD>`, both inlined at compile time by Vite via a new `define` block in `vite.config.ts` (`__BUILD_COMMIT__`, `__BUILD_DATE__`) declared in `src/types/build.d.ts`. `git rev-parse --short HEAD` falls back to `'unknown'` if git is unavailable.
 
 ### Documentation
