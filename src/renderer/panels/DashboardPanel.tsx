@@ -8,7 +8,8 @@ import { Bar } from '../components/Bar';
 import { Button } from '../components/Button';
 import { Icon, type IconName } from '../components/Icon';
 import { IdeologyCompass } from '../components/IdeologyCompass';
-import { TermText } from '../components/tooltip';
+import { ExtendedTooltip, TermText } from '../components/tooltip';
+import type { TooltipContent } from '../components/tooltip';
 import { formatBillionsUSD, describeIdeology } from '@/utils/format';
 import type { Bill, BillStage } from '@/types';
 
@@ -165,6 +166,13 @@ export function DashboardPanel(): JSX.Element {
           onClick={() => setActivePanel('population')}
           testId="kpi-approval"
           ariaLabel={`Approval ${avgHappiness}. Open Population panel.`}
+          tooltipContent={buildKpiTooltip({
+            id: 'approval',
+            label: 'Approval Rating',
+            currentValue: `${avgHappiness}%`,
+            description:
+              'Average happiness across all voter blocs. Below 40 risks electoral defeat. Above 55 builds a governing mandate.',
+          })}
         >
           <Bar
             value={avgHappiness}
@@ -192,6 +200,14 @@ export function DashboardPanel(): JSX.Element {
           onClick={() => setActivePanel('economy')}
           testId="kpi-gdp"
           ariaLabel={`GDP Growth ${economy.gdpGrowth.toFixed(2)} percent. Open Economy panel.`}
+          sparkValues={economy.history.slice(-12).map((h) => h.metrics.gdpGrowth)}
+          tooltipContent={buildKpiTooltip({
+            id: 'gdp',
+            label: 'GDP Growth',
+            currentValue: `${economy.gdpGrowth.toFixed(2)}%`,
+            description:
+              'Annual real GDP growth rate. Positive growth expands the tax base and improves voter confidence.',
+          })}
         />
         <Kpi
           label="Unemployment"
@@ -213,6 +229,14 @@ export function DashboardPanel(): JSX.Element {
           onClick={() => setActivePanel('economy')}
           testId="kpi-unemployment"
           ariaLabel={`Unemployment ${economy.unemployment.toFixed(1)} percent. Open Economy panel.`}
+          sparkValues={economy.history.slice(-12).map((h) => h.metrics.unemployment)}
+          tooltipContent={buildKpiTooltip({
+            id: 'unemployment',
+            label: 'Unemployment Rate',
+            currentValue: `${economy.unemployment.toFixed(1)}%`,
+            description:
+              'Share of the workforce without jobs. Below 4% is full employment. Above 6% hurts working-class support.',
+          })}
         />
         <Kpi
           label="Deficit"
@@ -222,6 +246,14 @@ export function DashboardPanel(): JSX.Element {
           onClick={() => setActivePanel('economy')}
           testId="kpi-deficit"
           ariaLabel={`Deficit ${formatBillionsUSD(economy.deficit)}. Open Economy panel.`}
+          sparkValues={economy.history.slice(-12).map((h) => h.metrics.deficit)}
+          tooltipContent={buildKpiTooltip({
+            id: 'deficit',
+            label: 'Annual Deficit',
+            currentValue: formatBillionsUSD(economy.deficit),
+            description:
+              'Difference between government spending and revenue. Positive values mean the government is spending more than it takes in.',
+          })}
         />
       </section>
 
@@ -306,6 +338,100 @@ function approvalTone(value: number): Tone {
   return 'neutral';
 }
 
+// ─────────────────────────────────────────────────────────────
+// SPARKLINE — inline SVG mini-chart for KPI tooltips (todo#46)
+// Renders a line graph of up to the last 12 historical values.
+// No axes or ticks — the tooltip header already gives context.
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Renders a thin SVG sparkline for `values`. Values are normalised to
+ * the visible height so any range reads as a proportional line.
+ *
+ * @param values - Up to 12 recent data points, oldest first.
+ * @param tone   - Drives the line colour using our palette tokens.
+ */
+function Sparkline({
+  values,
+  tone,
+}: {
+  values: number[];
+  tone: Tone;
+}): JSX.Element {
+  const w = 160;
+  const h = 40;
+  const pad = 4;
+
+  // Normalise to the drawable area.
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1; // prevent divide-by-zero when all equal
+
+  const pts = values.map((v, i) => {
+    const x = pad + (i / Math.max(values.length - 1, 1)) * (w - pad * 2);
+    // Invert y: SVG origin is top-left, but higher values should appear
+    // higher on the chart.
+    const y = pad + (1 - (v - min) / range) * (h - pad * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+
+  const lineColor =
+    tone === 'positive' ? '#4caf6e' : tone === 'negative' ? '#e05252' : '#8b9ab0';
+
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      aria-hidden="true"
+      className="overflow-visible"
+    >
+      <polyline
+        points={pts.join(' ')}
+        fill="none"
+        stroke={lineColor}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      {/* Latest value dot */}
+      {pts.length > 0 && (
+        <circle
+          cx={pts[pts.length - 1]!.split(',')[0]}
+          cy={pts[pts.length - 1]!.split(',')[1]}
+          r={3}
+          fill={lineColor}
+        />
+      )}
+    </svg>
+  );
+}
+
+/**
+ * Build a simple sparkline-enriched tooltip content object for a KPI metric.
+ * The tooltip shows the metric's full name, current value, a sparkline of
+ * the last N weeks, and a short description of what this metric measures.
+ */
+function buildKpiTooltip({
+  id,
+  label,
+  currentValue,
+  description,
+}: {
+  id: string;
+  label: string;
+  currentValue: string;
+  description: string;
+}): TooltipContent {
+  return {
+    id: `kpi-${id}`,
+    title: label,
+    subtitle: `Current: ${currentValue}`,
+    summary: description,
+    sections: [],
+  };
+}
+
 function Kpi({
   label,
   value,
@@ -315,6 +441,8 @@ function Kpi({
   testId,
   ariaLabel,
   children,
+  sparkValues,
+  tooltipContent,
 }: {
   label: string;
   value: string;
@@ -324,6 +452,10 @@ function Kpi({
   testId?: string;
   ariaLabel?: string;
   children?: React.ReactNode;
+  /** todo#46: historical values for the sparkline in the Extended Tooltip. */
+  sparkValues?: number[];
+  /** todo#46: tooltip content for this KPI tile. */
+  tooltipContent?: TooltipContent;
 }): JSX.Element {
   // The whole tile is interactive when an onClick is provided. We render
   // a real <button> rather than slap onClick on a <div> so keyboard
@@ -354,8 +486,25 @@ function Kpi({
     'bg-bg-secondary border border-rule rounded-sm p-3 text-left ' +
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-gold';
 
+  // Build the sparkline footer for the tooltip (todo#46). Only rendered
+  // when `sparkValues` has at least 2 data points — otherwise a single
+  // dot doesn't convey useful trend information.
+  const sparkFooter =
+    tooltipContent && sparkValues && sparkValues.length >= 2 ? (
+      <div>
+        <p className="font-mono text-[0.625rem] uppercase tracking-wider text-text-muted mb-1">
+          Last {sparkValues.length} weeks
+        </p>
+        <Sparkline values={sparkValues} tone={tone ?? 'neutral'} />
+        <div className="flex justify-between font-mono text-[0.625rem] text-text-muted mt-0.5">
+          <span>{sparkValues[0]?.toFixed?.(1) ?? '—'}</span>
+          <span>{sparkValues[sparkValues.length - 1]?.toFixed?.(1) ?? '—'}</span>
+        </div>
+      </div>
+    ) : undefined;
+
   if (onClick) {
-    return (
+    const btn = (
       <button
         type="button"
         onClick={onClick}
@@ -369,13 +518,29 @@ function Kpi({
         {inner}
       </button>
     );
+    if (tooltipContent) {
+      return (
+        <ExtendedTooltip content={tooltipContent} openDelay={300} footerContent={sparkFooter}>
+          {btn}
+        </ExtendedTooltip>
+      );
+    }
+    return btn;
   }
 
-  return (
+  const div = (
     <div data-testid={testId} className={baseCls}>
       {inner}
     </div>
   );
+  if (tooltipContent) {
+    return (
+      <ExtendedTooltip content={tooltipContent} openDelay={300} footerContent={sparkFooter}>
+        {div}
+      </ExtendedTooltip>
+    );
+  }
+  return div;
 }
 
 // ─────────────────────────────────────────────────────────────

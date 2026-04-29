@@ -141,6 +141,11 @@ export interface ExtendedTooltipProps {
    */
   lockHoldMs?: number;
   /**
+   * Optional footer content rendered below the tooltip body.
+   * Used for todo#46 sparkline injection in KPI tiles.
+   */
+  footerContent?: React.ReactNode;
+  /**
    * Children must accept `onMouseEnter`, `onMouseLeave`, `onFocus`,
    * `onBlur`. The component clones the child to attach handlers — most
    * built-in elements work. Pass a single React element.
@@ -157,7 +162,7 @@ export interface ExtendedTooltipProps {
  *   </ExtendedTooltip>
  */
 export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
-  const { term, content, openDelay = 350, lockHoldMs: lockHoldMsProp, children } = props;
+  const { term, content, openDelay = 350, lockHoldMs: lockHoldMsProp, children, footerContent } = props;
 
   // Honour the player's tooltip-pin-duration setting (todo#49).
   // If the caller explicitly passes `lockHoldMs`, that value wins;
@@ -491,6 +496,7 @@ export function ExtendedTooltip(props: ExtendedTooltipProps): JSX.Element {
                 if (!pinned) close();
               }}
               zIndex={tooltipZ}
+              footerContent={footerContent}
             />,
             document.body,
           )}
@@ -523,10 +529,16 @@ interface TooltipCardProps {
    * card-description popup that contained the term in the first place.
    */
   zIndex: number;
+  /**
+   * Optional footer content to render below the main tooltip body.
+   * Used for todo#46 to inject sparkline SVGs into KPI tile tooltips
+   * without requiring a new `TooltipSection` kind.
+   */
+  footerContent?: React.ReactNode;
 }
 
 function TooltipCard(props: TooltipCardProps): JSX.Element {
-  const { id, content, coords, pinned, holdProgress, onClose, onLeave, zIndex } = props;
+  const { id, content, coords, pinned, holdProgress, onClose, onLeave, zIndex, footerContent } = props;
   const ref = useRef<HTMLDivElement | null>(null);
   const [adjusted, setAdjusted] = useState<CSSProperties | null>(null);
 
@@ -620,6 +632,10 @@ function TooltipCard(props: TooltipCardProps): JSX.Element {
               ))}
             </div>
           </div>
+        )}
+
+        {footerContent && (
+          <div className="pt-2 border-t border-rule">{footerContent}</div>
         )}
 
         {!pinned && (
