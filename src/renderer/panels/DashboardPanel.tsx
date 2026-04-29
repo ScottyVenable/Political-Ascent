@@ -10,7 +10,12 @@ import { Icon, type IconName } from '../components/Icon';
 import { IdeologyCompass } from '../components/IdeologyCompass';
 import { ExtendedTooltip, TermText } from '../components/tooltip';
 import type { TooltipContent } from '../components/tooltip';
-import { formatBillionsUSD, describeIdeology } from '@/utils/format';
+import {
+  formatBillionsUSDForDisplay,
+  formatBillionsUSDFull,
+  describeIdeology,
+} from '@/utils/format';
+import { useSettingsStore } from '@/store/settingsStore';
 import type { Bill, BillStage } from '@/types';
 
 /**
@@ -120,6 +125,15 @@ export function DashboardPanel(): JSX.Element {
   }));
 
   const setActivePanel = useUIStore((s) => s.setActivePanel);
+
+  // Money formatting (todo#58):
+  //   - `numberPrecision` from settings drives the compact display.
+  //   - The hover tooltip always shows the full comma-grouped figure so
+  //     the player can read the exact deficit even when the headline is
+  //     compacted to "$1.7T".
+  const numberPrecision = useSettingsStore((s) => s.display.numberPrecision);
+  const deficitDisplay = formatBillionsUSDForDisplay(economy.deficit, numberPrecision);
+  const deficitFull = formatBillionsUSDFull(economy.deficit);
 
   const avgHappiness = useMemo(
     () =>
@@ -240,17 +254,20 @@ export function DashboardPanel(): JSX.Element {
         />
         <Kpi
           label="Deficit"
-          value={formatBillionsUSD(economy.deficit)}
+          value={deficitDisplay}
           trend={economy.deficit > 0 ? 'down' : 'up'}
           tone={economy.deficit > 0 ? 'negative' : 'positive'}
           onClick={() => setActivePanel('economy')}
           testId="kpi-deficit"
-          ariaLabel={`Deficit ${formatBillionsUSD(economy.deficit)}. Open Economy panel.`}
+          ariaLabel={`Deficit ${deficitDisplay}. Open Economy panel.`}
           sparkValues={economy.history.slice(-12).map((h) => h.metrics.deficit)}
           tooltipContent={buildKpiTooltip({
             id: 'deficit',
             label: 'Annual Deficit',
-            currentValue: formatBillionsUSD(economy.deficit),
+            // Show compact + exact: e.g. "$1.7T  ($1,734,000,000,000)".
+            // The exact form lives in parentheses so it doesn't fight the
+            // headline value but is one glance away when the player needs it.
+            currentValue: `${deficitDisplay}  (${deficitFull})`,
             description:
               'Difference between government spending and revenue. Positive values mean the government is spending more than it takes in.',
           })}
