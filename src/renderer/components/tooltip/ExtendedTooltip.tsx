@@ -830,17 +830,87 @@ export interface TermProps {
 }
 
 /**
+ * Map a tooltip's `subtitle` (treated as its category label) to a
+ * Tailwind underline-decoration colour so terms read as visually
+ * grouped at a glance — Stats look different from Resources, which
+ * look different from Legislation, etc. (todo#51)
+ *
+ * The function falls back to the original gold-on-60% decoration when
+ * we don't recognise the subtitle, which preserves the look of every
+ * existing term without a dedicated category mapping.
+ *
+ * Categories are matched case-insensitively. Keys are deliberately
+ * kept narrow — adding a new colour should be a deliberate design
+ * decision, not a side-effect of authoring a new tooltip subtitle.
+ *
+ * @param subtitle Raw `TooltipContent.subtitle` string (or undefined).
+ * @returns A Tailwind class string applied to the Term's underline span.
+ */
+export function termCategoryDecorationClass(subtitle: string | undefined): string {
+  // Default — original behaviour for any term without a known category.
+  const fallback = 'decoration-accent-gold/60';
+  if (!subtitle) return fallback;
+  const key = subtitle.trim().toLowerCase();
+  switch (key) {
+    case 'resource':
+      // Resources (Political Capital, Action Points) — gold, the
+      // currency colour used elsewhere in the HUD.
+      return 'decoration-accent-gold/70';
+    case 'stat':
+      // Player stats (Charisma, Wisdom) — sky blue, mirrors the
+      // character-sheet stat block.
+      return 'decoration-sky-400/70';
+    case 'mechanic':
+      // System mechanics (committees, sponsorship) — neutral steel
+      // so they don't compete with Stats or Resources.
+      return 'decoration-slate-400/70';
+    case 'concept':
+      // Abstract concepts (ideology, factions) — violet, distinct
+      // from any in-game numeric resource.
+      return 'decoration-violet-400/70';
+    case 'legislation':
+      // Bills, laws, voting — emerald, matches the bill-passed badge.
+      return 'decoration-emerald-400/70';
+    case 'action':
+      // One-shot player actions — amber, the "do something" colour.
+      return 'decoration-amber-400/70';
+    case 'population':
+      // Cohort-level demographics — rose, matches the cohort tiles.
+      return 'decoration-rose-400/70';
+    case 'economy':
+      // Macro indicators (GDP, deficit, unemployment) — teal.
+      return 'decoration-teal-400/70';
+    case 'cohort metric':
+      // Per-cohort happiness/loyalty/radicalism — pink, sits in the
+      // population family but visibly distinct.
+      return 'decoration-pink-400/70';
+    case 'event':
+      // World events — orange, matches the news/timeline accents.
+      return 'decoration-orange-400/70';
+    default:
+      return fallback;
+  }
+}
+
+/**
  * Render an inline glossary term as a dotted-underline link that opens
  * the term's tooltip on hover or keyboard focus.
+ *
+ * The decoration colour is derived from the term's registered subtitle
+ * (its category) so players can pattern-match on category at a glance.
+ * (todo#51)
  */
 export function Term({ term, children }: TermProps): JSX.Element {
+  const def = getTooltip(term);
+  const decorationCls = termCategoryDecorationClass(def?.subtitle);
   return (
     <ExtendedTooltip term={term}>
       <span
         tabIndex={0}
         role="button"
         data-term={term}
-        className="underline decoration-dotted decoration-accent-gold/60 underline-offset-2 cursor-help text-text-primary"
+        data-term-category={def?.subtitle ?? ''}
+        className={`underline decoration-dotted ${decorationCls} underline-offset-2 cursor-help text-text-primary`}
       >
         {children}
       </span>
