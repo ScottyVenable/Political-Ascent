@@ -53,6 +53,13 @@ export interface ToastMessage {
   createdAt: number;
   /** Auto-dismiss after this many ms. 0 = manual dismiss. */
   ttl: number;
+  /**
+   * Optional route to navigate to when the toast is clicked (todo#54).
+   * If set, clicking the toast navigates there and dismisses the toast.
+   * AchievementEngine sets this to `'achievements'` so unlocked-achievement
+   * toasts act as a shortcut to the Achievements screen.
+   */
+  actionRoute?: string;
 }
 
 interface UIState {
