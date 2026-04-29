@@ -1,50 +1,91 @@
 > **Progress log** — items below are addressed in branches off `experimental`. PR3 (`exp--cards-ux-hardening`) shipped portions of #2 (animation reliability for cards including The Statesman). PR4 (`exp--polish-pack`) shipped #4 (no-select), #8 (stat slider ticks + tooltips + budget meter), and #12 (treasury indicator + PC tooltip already in place). PR5 (`exp--tooltips-everywhere`) shipped #1 (Term tooltips on Economy/Population/Skills panels + nested z-index stacking fix). PR6 (`exp--events-bugfix`) shipped #7 (event re-firing after resolve: persisted `firedEventIds`, per-event cooldown, idempotent `resolveOption`). PR7 (`exp--dashboard-interactivity`) shipped #11 (clickable KPI tiles + colour-coded values). PR8 (`exp--glossary-panel`) shipped #16 (browsable in-game glossary panel with search + category filters). PR9 (`exp--timeline-panel`) shipped #15 (chronological log of every news headline grouped by month). PR10 (`exp--entity-clickability`) shipped the foundation of #14 (`<EntityLink>` component + Timeline headlines clickable). PR11 (`exp--quests-detail`) shipped #13 (two-pane filter + detail Quests UI with rewards, prerequisites, and humanised effects). PR12 (`exp--sync-with-drive`) shipped #18 (Sync-with-Drive launcher task + standalone helper script). PR13 (`exp--patch-notes-viewer`) shipped #17 (in-game patch-notes viewer with stable/development/experimental tabs) and the foundation of #19 (changelogs folder structure). PR14 (`exp--review-fixes`) bundled inline-review fixes from Codex across PR50–PR62. PR15 (`exp--right-click-menus`) shipped #5 (right-click context menus on cards and timeline entries via `<ContextMenu />` portal + `useContextMenu` hook). PR16 (`exp--character-panel`) shipped #6, #9, and #10 (avatar preset registry + medallion/picker components, reworked Character panel hero header with full-size ideology compass + reference figures, dashboard mini-compass cleared of reference figures). PR-mobile (`exp--mobile-portrait-fixes`) fixed Pixel-class portrait regressions (drawer sidebar, safe-area, compact bars). PR17 (`exp--card-physics`) shipped #3 (drag-to-reorder hand via `reorderHand()` action, standardised card heights, hover lift physics). Remaining items continue in subsequent PRs.
 
 1. Have the Extended Tooltips be in all screens and locations, not just on the cards. Fix a bug where the description tooltip of a card displays over the Extended Tooltip, making it impossible to read the latter.
+
 2. Take control of the program directly and navigate areas and analyse. Find bugs and inconsistencies in the design and implementation. Fix the rotating colorful animation background on "The Statesman" card, and implement a more reliable animation system for cards in general that work.
+
 3. Add physics to the cards to give the feel of weight and tangibility. Implement a system where cards can be dragged and reorganized. Make all cards the same size and shape.
+
 4. Disable being able to highlight text in the game and tooltips, as it can lead to a jarring user experience.
+
 5. Create a system for right click support on cards and other interactive elements to bring up context menus with relevant actions (e.g. "View details", "Add to favorites", "Share", etc.).
+
 6. Optimize the UI and UX of the Character Panel to make it more intuitive and visually appealing. Allow the player to upload a custom avatar for their character, and implement a more dynamic and informative ideology compass that shows the character's position in relation to various political ideologies. If not wanting to upload, the user can select from a set of pre-made avatars that fit the game's aesthetic.
+
 7. Fix a bug where events fire multiple times even after being resolved.
+
 8. Remove the tick lines on the bars for the stat point allocations, as they do not line up with the actual point values and position of the bars, which can be confusing for players. Additionally, add Extended Tooltips to the stat names text to explain what each stat does and how it affects gameplay. Make the point allocation budget UI more clear and visually distinct, perhaps by adding a progress bar or numerical display of remaining points.
+
 9. Ensure that the historical names on the Ideology Compass are accurate. Based on research and their position on the compass.
+
 10. Remove the historical names on the small Ideology Compass that shows on the Dashboard and add a bigger Ideology Compass to the Character Panel that includes the historical names and more detailed information about the character's ideology. This will allow players to better understand their character's political stance and how it relates to real-world ideologies.
+
 11. Allow clicking on boxes in the dashboard to bring up the relevant panel (e.g. clicking on the "Approval" box brings up a detailed breakdown of approval ratings by cohort, clicking on the "GDP Growth" box brings up a detailed view of economic indicators in a sub menu). This will make it easier for players to access important information and navigate the game's UI more efficiently. Add color coding to the numbers. For example, green for positive growth and red for negative growth in the GDP box, and a gradient from red to green in the Approval box to visually represent approval ratings.
+
 12. Next to the PC number in the dashboard, add a small icon that indicates the current treasury level (e.g. a coin icon with a number representing the amount of money in the treasury). This will give players a quick visual reference for their financial resources without having to navigate to a separate screen. Additionally, consider adding a tooltip to the PC number that explains what Political Capital is and how it can be used in the game, as this is a core mechanic that players will need to understand to effectively play the game.
+
 13. Expand the UI of the Quests panel to include more detailed information about each quest, such as the objectives, rewards, and any relevant lore or context. This will make it easier for players to understand what they need to do to complete quests and what they can expect to gain from them. Additionally, consider adding a filter or sorting system to help players manage their quests more effectively, especially as they accumulate more quests over time. Maybe clicking on a quest could bring up a more detailed view with information about the quest giver, the location of the quest, and any relevant NPCs or factions involved.
+
 14. Clicking on names mentioned or bills mentioned for example should bring up a detailed view of that character or bill, with information about their background, ideology, current status, and any relevant relationships or connections to other characters or bills. This will allow players to better understand the political landscape of the game and make more informed decisions based on the information available to them. Additionally, consider adding a search function that allows players to quickly find specific characters or bills by name, which can be especially helpful as the game world expands and becomes more complex. Hovering over names or bills could also bring up a quick extended tooltip with basic information, and clicking on them would bring up the more detailed view.
+
 15. Implement a calendar system or timeline menu that allows players to review past events, actions, and decisions they have made throughout the game. This could include a chronological list of significant events, a visual timeline with key milestones, and the ability to click on specific entries to see more details about what happened and how it affected the game world. This would not only help players keep track of their progress and the consequences of their actions but also enhance the narrative experience by allowing them to reflect on their journey through the political landscape of the game.
+
 16. Create a Glossary or in-game encyclopedia that provides detailed explanations of key terms, concepts, and mechanics in the game. This could be accessed from the main menu or from within the game itself, and would serve as a valuable resource for players to deepen their understanding of the game's systems and lore. The glossary could include entries for things like "Political Capital", "Radicalism", "Cohorts", "Bills", "Committees", "Whips", "Factions", "Scenarios", "Actions", "Cards", "Rarity", and "Card Packs". Each entry could include a definition, examples, and cross-references to related terms and concepts. This would help players navigate the complexity of the game and make more informed decisions based on a clearer understanding of the mechanics at play. This should include Tips, Guides, and a breakdown of all the mechanics in the game, as well as a detailed explanation of the UI and how to navigate it effectively. This would be especially helpful for new players who may be overwhelmed by the depth of the game's systems and mechanics. Additionally, consider adding a search function to the glossary to allow players to quickly find specific terms or concepts they are curious about. These should be tied to imbeded markdown files that can be easily updated and expanded as the game evolves, allowing for a dynamic and comprehensive resource that grows alongside the game itself. This would not only enhance the player's understanding of the game but also foster a deeper engagement with the game's world and mechanics.
+
 17. Implement a system to pull the latest release from Github and display the patch notes in-game. This could be a section in the main menu or a pop-up notification when a new update is available. The patch notes should be formatted in a clear and visually appealing way, with sections for new features, bug fixes, and any other relevant information about the update that have their own dedicated MD file. This would help keep players informed about the latest changes to the game and encourage them to stay engaged with the ongoing development process. Allow the player to choose the branch they want to pull patch notes from (e.g. stable, beta (dev), experimental).
+
 18. Create a command in the launcher to "Sync with Drive" that copies the entire codebase (minus temp files or unnessisary ones) to `G:\My Drive\Entertainment\Game Development\Political Ascent`. This would serve as a backup and allow for easy access to the code from any device with access to the Google Drive account. Additionally, consider implementing a version control system within the Drive folder to keep track of changes and allow for easy rollback if needed. This would provide an extra layer of security for the codebase and ensure that progress is not lost due to hardware failure or other unforeseen issues. It would also facilitate collaboration if there are multiple developers working on the project, as they could all access the latest version of the code from the shared Drive folder. We would have the local folder as the main development folder, and a sync with the Google Drive folder as a backup and for remote access. This would allow us to work on the code locally while ensuring that we have a secure backup in the cloud that can be accessed from anywhere. The "Sync with Drive" command could be set up to run automatically at regular intervals or could be triggered manually by the developer whenever they want to create a backup of their current progress. This would help ensure that we always have a recent backup of the codebase in case of any issues with the local development environment. I just don't want to develop out of that folder directly.
+
 19. Create a "changelogs" folder in the docs folder to create markdown documents for changes. have sub folders for stable, development, and experimental builds. When showing the changelog in game, use these files to populate the content. This would allow us to keep a well-organized record of changes and updates to the game, making it easier for players to understand what has been added, changed, or fixed in each update. It would also help us maintain a clear history of the game's development and provide transparency to our player base about the ongoing improvements and adjustments being made to the game. By categorizing the changelogs into stable, development, and experimental builds, we can also give players insight into the different stages of development and what they can expect from each type of update. This would enhance player engagement and foster a sense of community as players can discuss and provide feedback on the changes being made in each update. We might need to create a "Markdown to In-Game Renderer" system to ensure that the markdown files are displayed correctly in the game's UI, with proper formatting, links, and any embedded media. This would allow us to maintain the changelogs in a simple and widely-used format while ensuring that they are presented in an appealing and readable way within the game itself. This would make it easier for me, other developers, and modders to create content for the game without needing to worry about the specifics of how it will be displayed in-game, as the renderer would handle that aspect automatically. It would also allow us to easily update and expand the changelogs as needed, without having to make changes to the game's codebase for each new entry. Overall, this system would help us maintain a clear and accessible record of the game's development while providing players with valuable information about the ongoing improvements and changes being made to the game. We need to add markdown coding or formatting in the code to specify how the text is rendered and if it's rendered as a button, popup, or just plain text inside a menu. This would allow us to create interactive elements within the changelogs, such as buttons that link to specific sections of the game or popups that provide additional information about certain changes. By using markdown formatting, we can easily create these interactive elements without needing to write custom code for each one, making it more efficient for us to update and maintain the changelogs as the game evolves. This would enhance the player's experience when reading the changelogs and provide them with a more engaging way to learn about the latest updates and changes to the game. It would also allow us to highlight important information or new features in a visually distinct way, making it easier for players to quickly identify key points in the changelogs. Perhaps the user/modder creates a json file that specifies the content of the addition to the game so the game parser knows how to render. The ID of the new addition can then be linked to a modder/users core file to add the code. This will add the foundation to making the in-game "no code" editor in the future.
+
 23. (intentionally blank)
+
 26. (archived)
+
 27. Expand the Build Your Candidate UI and UX, specifically the Core Stats UI so that the points/scores are better represented visually and the player can understand how their choices affect their character and gameplay. This could include adding more detailed descriptions of each stat, visual indicators of how point allocation affects the character's abilities, and perhaps even a preview of how the character will perform in different scenarios based on their stat distribution. Additionally, consider implementing a system that allows players to save and compare different character builds, encouraging experimentation and replayability. This would enhance the player's experience during character creation and help them make more informed decisions about how to allocate their points for the best possible outcome in the game.
+
 33. Improve the rendering and UX of the cards even more and fix the system for playing cards. Optimize the clicking and dragging of cards as well. Make the cards more styled and "card like".
+
 39. Add more tooltips nested inside of tooltips, making sure to tag words that have tooltips to automatically link them when creating a new UI element if possible.
-42. Create a document with a list of planned scenerios including 1776 era, Civil war/slavery, industrial revolution, great depression, WWI, WWII, Cold War, 9/11 and the war on terror, modern day. For each scenario, outline the key historical events, political figures, social movements, and major issues that would be relevant to the gameplay. This document would serve as a reference for developing the content and mechanics of each scenario, ensuring that they are historically accurate and engaging for players. Additionally, consider how the different scenarios could be interconnected or have branching paths based on player choices, allowing for a more dynamic and replayable experience as players navigate through different eras of American politics.
+
 43. Create a plan to implement a US state map view that is interactable (maybe using TopoJSON or a similar library) where players can see the political landscape of the country at a glance, with each state colored based on its current political leaning (e.g. red for Republican, blue for Democrat, purple for swing states). Players could click on each state to get more detailed information about its demographics, recent voting history, key issues, and how it fits into the overall political strategy. This would add a visual and strategic layer to the game, allowing players to make more informed decisions about where to focus their efforts and resources in order to sway public opinion and win elections. Additionally, this map view could be integrated with the Timeline and Events systems, showing how different events and actions have influenced the political landscape of each state over time. This would enhance the player's understanding of the game's world and provide a more immersive and engaging experience as they navigate the complexities of American politics.
-45. Turn the glossary tab into "Knowledge Base" which will include the glossary in its own tabbed view, historical education and history, how to play, tips and tricks, and other relevant information that players can refer to. This would create a centralized hub for players to access a wide range of information about the game, from basic definitions of terms to in-depth guides on gameplay mechanics and historical context. By organizing this information into different tabs, we can make it easier for players to find what they are looking for and encourage them to explore the various resources available to them. This would enhance the player's experience by providing them with valuable information and insights that can help them navigate the game's systems more effectively and deepen their engagement with the game's world and mechanics.
-47. Add a "News" tab to the dashboard that aggregates all recent news headlines and events in a chronological feed. This would allow players to stay informed about the latest developments in their political career and the world around them, providing context for their decisions and actions. The news feed could include headlines from the Timeline, updates on legislation, and any significant events that have occurred, giving players a comprehensive overview of their political landscape at a glance. Additionally, consider implementing filters or categories within the news feed to help players quickly find specific types of news or events that they are interested in, further enhancing the usability and engagement of this feature. When news headlines come up, a modal could pop up with more details about the news, and the headline could be clickable to jump to the relevant panel or section of the game that is related to that news item, providing players with a seamless way to explore the context and implications of the news they are receiving. This would create a more immersive and dynamic experience as players navigate through the ever-changing political landscape of the game. This popup can be turned on and off in the settings as well as other notification settings to allow players to customize their experience and avoid overwhelming them with information if they prefer a more streamlined interface.
+
 48. Add a "Communications" tab to the dashboard where players can manage their interactions with the media, public, and other political figures. This could include options for scheduling press conferences, managing social media presence, and responding to news events as well as privately initiating dialogue with members and key figures with a dialogue tree system, choice based dialogue, and detailed information. By providing a dedicated space for communication management, we can enhance the player's ability to shape their public image and navigate the complex world of political communication, adding another layer of strategy and immersion to the game.
-53. Improve the UI and animations of opening cards to show the full card and maybe cycle through them in a horizontal carousel if there are multiple cards to view. This would allow players to easily browse through the cards they have in their hand or in play, providing a more engaging and visually appealing way to interact with their cards. By implementing a carousel system, we can make it easier for players to see all of their cards without having to click through them one by one, enhancing the overall user experience and making the card interactions feel more dynamic and satisfying. Additionally, consider adding animations or visual effects when opening cards to make the experience more immersive and enjoyable for players as they explore their options and strategize their next moves in the game.
+
 55. MOre detailed view in the Congress to search by state and by other filters as well (age, gender, ideology, bill count, sponsership count, wealth, etc.)
+
 63. When a bill enters committee, an option is given to watch the bill in committee and see the progress of it as it goes through the committee process with dialogue, notifications, and real-time updates - or if the player is in that committee, partake in it. This would allow players to stay informed about the status of their legislation and make strategic decisions based on how their bills are progressing through the legislative process. This would work by being it's own menu with UI showing members, progress bar for time, opinion, etc. If the player is in the committee, they can choose to take certain actions to try to influence the bill's progress with dialogue trees if they are partaking in the committee.
+
 64. When a vote happens, the player has the option to view the roll, showing the map of the chamber and a progression of votes being counted. A hero showing the member and how they voted is at the top with a map of the chamber below to see dots populate as time goes on (green yay, red nay, gray present). Time is stopped for this to not take up days and can be skipped or rushed at any time. An event log menu shows stylized updates on vote counts and a decent sized stylized counter at the bottom shows the roll as it is called.
+
 65. Have bills randomly come up from various members based on their ideology, the country sentiment, and the member's ambitions. Bills may be randomly generated for this.
+
 66. Implement a better graph renderer for the bar graphs and implement where possible other types of graphs.
+
 68. Allow to filter the cohort views based on national level, state level, or local level to see more details based on where the player chooses to have their character come from and their role. Implement this into the game in the character creator to choose their state and their district.
+
 69. Eliminate the both chambers view and only have the one at a time. Also make the member detail show up as a tooltip at the mouse when hovering over a seat. Then on the right side there should be a panel list of all the members with search functions, filter options, sort options and when typing or selecting filters, the chamber view adjusts in real time lowering the opacity of members not applicable and leaving the ones who are. Allow a toggle switch to either hide the members on filter selection or dim them.
+
 70. Implement a system for tracking and displaying the player's interactions with members of Congress, including meetings, conversations, and votes. This would provide players with a clear sense of their relationships and help them plan their next moves strategically.
+
 72. Implement a system for tracking and displaying the player's/NPCs relationships with various political factions and interest groups, including their level of support and influence. This would allow players to make informed decisions about which factions to align with and how to navigate the complex web of political alliances in the game.
+
 73. Have a breakdown on the bill creation showing where the opposition from the bill is coming from on certain provisions. Expand on this system more by making the Draft New menu have the player creaete the name of the bill (or generate one), choose the category, and various other adjustments before going in the adding of provisions and drafting the bill. More provisions and features will be added based on upgrades, cards, traits, ideology, feedback from constituants, and research gathered from the players team (which would be a new menu to manage staff and direct them based on role).
-82. (no entry — original numbering jumped from 81 to 83 in source)
+
+74. In the Character screen, track the player characters personal funds and implement ways to get more.
+
+
 87. Shift Hardcoded Game Content to JSON Data Registry to preserve the project's "Mod-friendly" pillar and ensure the engine functions as a generic simulation runner, execute a comprehensive refactor to move all remaining hardcoded game content (cards, quests, and events) from TypeScript logic into the /src/data/ directory. This transition requires auditing the SkillSystem and EventEngine to replace static "if-statements" and internal arrays with dynamic loaders that fetch *.json definitions at boot time. By enforcing this strict separation, the core simulation logic ($src/engine$ and $src/systems$) will remain content-agnostic, allowing modders to add or override game "matter"—such as card effects, quest objectives, and narrative dialogue—without modifying the underlying "physics" of the game code. This effort must include implementing boot-time schema validation to ensure all externalized JSON is acyclic and matches the project's TypeScript type definitions. Or determine if we do a hybrid approach.
+
 88. Improve the UI and UX of the launcher.ps1 and make it more in-depth
 
+89. Put the changelog as a small hypertext of the version number on the main menu. Have the build version match the commit ID and the date.
+
 ---
+
+90. Create JSON object for NPCs
+
+91. Adjust the ideology of members of Congress to be their text equivalant (not the coordinates)
 
 ## Completed (archived)
 
@@ -127,5 +168,489 @@ Items below were on this list and are now shipped on `experimental`. Kept here a
 - **#85** — Vote-finished modal. **Shipped earlier.** `VoteResultModal` in `Game.tsx` reads `'vote-result'` modal type; opened by `LegislationSystem.resolveVote` with full roll-call breakdown.
 - **#4** — Disable text highlighting. **Shipped earlier.** Global `user-select: none` in `src/renderer/styles.css` with opt-in `.text-selectable` for content fields.
 - **#24 / #25** — Process notes (limit PR count, limit branch count). **Adopted as binding rules.** Codified in `.github/agents/political-ascent-director.agent.md` (PR Consolidation + Branch Model sections); enforced from session 2 onward.
-- **#74** — Track personal funds in Character screen. **Shipped earlier.** `personalFunds` lives on the character store (initialised in CharacterCreation, displayed in CharacterPanel via `formatCurrency`), with an `adjustPersonalFunds(delta)` action. Ways-to-earn-more are still scenario-driven and will expand as the cards/quests catalogue grows.
-- **#89** — Patch-notes hyperlink on main menu + build provenance. **Shipped in `exp--main-menu-version-link`.** Footer version pill is a button styled as a hyperlink that opens `PatchNotesPanel` in a modal; a second line shows `build <short-commit> · <date>`, inlined by Vite via `__BUILD_COMMIT__` / `__BUILD_DATE__` defines.
+
+<!-- TODO_VIEWER_METADATA_START -->
+{
+  "version": 1,
+  "itemMeta": {
+    "1": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "2": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "3": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "4": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "5": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "6": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "7": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "8": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "9": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "10": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "11": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "12": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "13": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "14": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "15": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "16": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "17": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "18": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "19": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "23": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "26": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "27": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "33": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "39": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "42": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "43": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "45": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "47": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "48": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "53": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "55": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "63": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "64": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "65": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "66": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "68": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "69": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "70": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "72": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "73": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "74": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "82": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "87": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "88": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "89": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T16:54:29.079Z",
+      "updatedAt": "2026-04-29T16:54:29.079Z"
+    },
+    "90": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [
+        "data",
+        "gameplay"
+      ],
+      "issues": [],
+      "comments": [],
+      "notes": "Create a json object in the data folder/scenerios folder for the NPCs in that scenerio. Include all their data per NPC and if they have specific dialogue at all/quests/events, link them there. This should be a place to store all the NPC data for any members, president, story characters, etc.",
+      "createdAt": "2026-04-29T17:01:47.382Z",
+      "updatedAt": "2026-04-29T17:01:47.382Z"
+    },
+    "91": {
+      "status": "open",
+      "priority": "medium",
+      "tags": [],
+      "issues": [],
+      "comments": [],
+      "notes": "",
+      "createdAt": "2026-04-29T17:06:01.554Z",
+      "updatedAt": "2026-04-29T17:06:01.554Z"
+    }
+  }
+}
+<!-- TODO_VIEWER_METADATA_END -->
+- **#42** — Scenario plan document. **Shipped in `exp--scenario-plan-and-archive-3`.** New `docs/SCENARIO_PLAN.md` with implementation order (Modern → Cold War → Civil War → Industrial → Depression → WWI → WWII → 9/11 → 1776), per-scenario sections covering period, key events, figures, cohorts, issues, branching seams, and engine work needed, plus cross-scenario systems (regional cohorts, faction influence, amendment thresholds, executive crisis, war finance) and an authoring workflow.
+- **#21** — Developer mode tab. **Shipped earlier.** `src/store/devStore.ts` (godMode, infiniteResources, instantActions, revealHidden, spawnEvents flags + `devCheatActive(flag)` helper); `Settings.tsx` exposes the toggles; `SaveSystem.ts` tags dev saves with `isDeveloperMode` so the load list can warn the player.
+- **#45** — Knowledge Base tab. **Shipped earlier.** `GlossaryPanel.tsx` is now a tabbed Knowledge Base (Glossary / How To Play / Tips / History) with search; sidebar label is "Knowledge Base".
+- **#47** — News tab on dashboard. **Shipped earlier.** `NewsPanel.tsx` with severity filters, free-text search, click-to-detail.
+- **#53** — Card pack opening carousel. **Shipped earlier.** `CardPackOpening.tsx` walks shake → burst → carousel (one card at a time with CSS 3-D flip-in) → grid → settled, with reduced-motion fallback.
