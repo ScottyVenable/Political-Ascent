@@ -51,14 +51,78 @@ export function formatCurrency(n: number): string {
  *
  * Previously the dashboard rendered raw `$34000B` which is technically
  * correct but reads as noise; compacting to `$34.0T` restores scannability.
+ *
+ * @param n - Value in billions of dollars.
+ * @param decimals - Optional override for fractional precision in the
+ *   compact form. When omitted, picks a sensible default per magnitude
+ *   (1 fractional digit at T-scale, none at B-scale, none at M-scale).
+ *   Honours the user's `display.numberPrecision` setting via
+ *   {@link formatBillionsUSDForDisplay} — call that wherever the user
+ *   setting should drive precision (todo#58).
  */
-export function formatBillionsUSD(n: number): string {
+export function formatBillionsUSD(n: number, decimals?: number): string {
   const abs = Math.abs(n);
   const sign = n < 0 ? '-' : '';
-  if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(1)}T`;
-  if (abs >= 1) return `${sign}$${Math.round(abs)}B`;
-  if (abs > 0) return `${sign}$${Math.round(abs * 1000)}M`;
+  if (abs >= 1000) {
+    // Trillions track. Default to 1 decimal so $1.7T reads cleanly; allow
+    // 0 (`$2T`) or 2 (`$1.73T`) when the caller asks for more precision.
+    const d = decimals ?? 1;
+    return `${sign}$${(abs / 1000).toFixed(d)}T`;
+  }
+  if (abs >= 1) {
+    // Billions track. Default integer; respect override if provided.
+    const d = decimals ?? 0;
+    return `${sign}$${(abs).toFixed(d)}B`;
+  }
+  if (abs > 0) {
+    // Sub-billion → render as millions.
+    const d = decimals ?? 0;
+    return `${sign}$${(abs * 1000).toFixed(d)}M`;
+  }
   return '$0';
+}
+
+/**
+ * Render a billions-of-dollars value as a fully-expanded number with
+ * thousands separators and a `$` prefix. Used inside hover tooltips so
+ * the player can see the exact figure when the compact form is ambiguous.
+ *
+ * @example
+ * formatBillionsUSDFull(1734)    // "$1,734,000,000,000"
+ * formatBillionsUSDFull(-900)    // "-$900,000,000,000"
+ * formatBillionsUSDFull(0.42)    // "$420,000,000"
+ */
+export function formatBillionsUSDFull(n: number): string {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  // Convert from "billions" to raw dollars, round to whole dollars, then
+  // group with the locale's thousands separator. We use 'en-US' explicitly
+  // because comma-grouping is part of the desired display and locale
+  // negotiation could otherwise return e.g. spaces or apostrophes.
+  const dollars = Math.round(abs * 1_000_000_000);
+  return `${sign}$${dollars.toLocaleString('en-US')}`;
+}
+
+/**
+ * Settings-driven wrapper around {@link formatBillionsUSD}.
+ *
+ * The user can pin a specific decimal precision in Settings → Display
+ * (todo#58). When `precision` is `'auto'` (the default), we delegate to
+ * the magnitude-aware formatter. Otherwise we force the requested digits.
+ *
+ * Renderers that want to honour the setting should read it from
+ * `useSettingsStore` and pass it here. Tooltips (`formatBillionsUSDFull`)
+ * always show the un-truncated value regardless of the setting.
+ *
+ * @param n - Value in billions of dollars.
+ * @param precision - 'auto' or 0..3 fractional digits.
+ */
+export function formatBillionsUSDForDisplay(
+  n: number,
+  precision: 'auto' | 0 | 1 | 2 | 3 = 'auto',
+): string {
+  if (precision === 'auto') return formatBillionsUSD(n);
+  return formatBillionsUSD(n, precision);
 }
 
 /**

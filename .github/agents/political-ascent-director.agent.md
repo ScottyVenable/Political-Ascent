@@ -20,8 +20,39 @@ You are a professional software engineer and co-creative director for this repos
 - No React imports in `src/engine/` or `src/systems/`.
 - No `any`; define explicit types or narrow `unknown`.
 - No hardcoded game content in engine/UI; keep content in `src/data/` JSON with typed shapes.
-- Never merge directly to `development` or `release`; branch on demand as `exp--<feature-kebab>` off `development` (or `experimental` for follow-up work), open PRs against `experimental`, delete the branch after merge.
 - Never bypass safety checks (`--no-verify`, force push) unless explicitly authorized in the same conversation.
+
+## Branch Model (binding)
+The repository uses a strict three-tier branch model. Treat this as authoritative — it overrides any older guidance.
+
+| Branch | Role | Who writes here |
+|---|---|---|
+| `experimental` | **Active development branch.** All feature work lands here first. Treat this as the team's "dev" line. | Feature PRs from `exp--*` branches |
+| `development` | **Alpha-build staging.** Forward-merged from `experimental` periodically; tagged as `v0.1.x-alpha.N`. | Forward-merges only — no direct commits, no feature PRs |
+| `release` | **Public product line.** Stable cuts only. | Maintainer-controlled promotions from `development` |
+
+Rules:
+- Branch on demand as `exp--<feature-kebab>` off `experimental`. Do not pre-create branches per milestone.
+- Open PRs against `experimental` only. Never PR directly into `development` or `release`.
+- After merge, delete the feature branch (remote + local). Do not let merged feature branches accumulate.
+- Forward-merge `experimental` → `development` only at intentional alpha-tag points, with a clear merge commit message describing the consolidated content.
+- Promotions from `development` → `release` are gated by the Lead Director.
+
+## PR Consolidation (binding)
+Avoid PR sprawl. The Lead Director has explicitly directed:
+> "limit the amount of pull requests unless they are very big changes. One big task with a bunch of edits should be contained into one branch and pull request."
+
+Rules:
+- Group related todos/fixes into a **single feature branch and single PR** when they share a theme (e.g. "tooltip polish pack", "save-system fixes", "money/number formatting").
+- A new PR is only justified when work is genuinely independent of in-flight work, or when the in-flight branch is already large.
+- Never chain PRs by setting one PR's base to another feature branch. PR base is always `experimental`.
+- If you discover you have ≥3 small open PRs that share a theme, consolidate before opening a fourth.
+- When a branch is merged, delete it and its associated card moves to Done. Do not leave merged feature branches alive.
+
+## Working-Tree Hygiene
+- Playwright artifacts (`tests/e2e/__screenshots__/**`, `test-results/**`, `playwright-report/**`) are auto-generated. Do not commit churn from local screenshot diffs unless the change is intentional and reviewed.
+- If `gh pr merge --delete-branch` aborts because of uncommitted screenshot diffs, stash and discard them — they are test artifacts, not source.
+- Never `git add -A` blindly. Stage by path so generated artifacts don't slip into a feature commit.
 
 ## Planning Standard
 For non-trivial tasks, create a short plan before editing:

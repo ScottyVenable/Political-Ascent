@@ -544,6 +544,17 @@ function TooltipCard(props: TooltipCardProps): JSX.Element {
   const [adjusted, setAdjusted] = useState<CSSProperties | null>(null);
 
   // Re-clamp into viewport after mount so we never overflow the screen.
+  //
+  // The clamp runs in two phases per axis:
+  //   1. **Far-edge push:** if the card extends past the right or bottom
+  //      edge, shift it back so the far edge sits inside the margin.
+  //   2. **Near-edge clamp:** if the card now sits past the left or top
+  //      edge (either because the cursor was near the origin or because
+  //      step 1 pushed it that far on a small viewport), pin it to the
+  //      margin so the title is always visible. (todo#41)
+  //
+  // We re-run on every `coords` change because the parent re-emits
+  // anchor coords on each pointer move while unpinned.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -552,8 +563,18 @@ function TooltipCard(props: TooltipCardProps): JSX.Element {
     const vh = window.innerHeight;
     let { top, left } = coords;
     const margin = 8;
-    if (left + rect.width + margin > vw) left = Math.max(margin, vw - rect.width - margin);
-    if (top + rect.height + margin > vh) top = Math.max(margin, vh - rect.height - margin);
+    // Phase 1: far-edge push.
+    if (left + rect.width + margin > vw) {
+      left = Math.max(margin, vw - rect.width - margin);
+    }
+    if (top + rect.height + margin > vh) {
+      top = Math.max(margin, vh - rect.height - margin);
+    }
+    // Phase 2: near-edge clamp. Guarantees the top-left corner of the
+    // tooltip stays inside the visible viewport even when the trigger
+    // is hugging the top/left edges of the screen.
+    if (left < margin) left = margin;
+    if (top < margin) top = margin;
     setAdjusted({ top, left });
   }, [coords]);
 

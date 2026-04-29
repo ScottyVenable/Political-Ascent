@@ -70,6 +70,39 @@ export function Settings(): JSX.Element {
             onChange={(v) => updateDisplay({ fontScale: v / 100 })}
           />
           <Toggle label="Reduce motion" value={settings.display.reduceMotion} onChange={(v) => updateDisplay({ reduceMotion: v })} />
+          {/* Number-precision selector (todo#58). Drives compact money
+              formatters across the dashboard / economy panel. `auto` lets
+              the formatter pick a sensible default per magnitude
+              ("$1.7T" / "$42B"); a fixed digit count forces e.g. "$1.73T". */}
+          <div className="flex flex-col gap-1.5 py-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-text-secondary">
+                Number precision
+              </span>
+              <select
+                aria-label="Number precision"
+                className="rounded border border-border-subtle bg-surface-1 px-2 py-1 text-xs text-text-primary"
+                value={String(settings.display.numberPrecision)}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  // The select emits strings; map back to the union shape.
+                  const next: 'auto' | 0 | 1 | 2 | 3 =
+                    raw === 'auto' ? 'auto' : (Number(raw) as 0 | 1 | 2 | 3);
+                  updateDisplay({ numberPrecision: next });
+                }}
+              >
+                <option value="auto">Auto</option>
+                <option value="0">0 digits ($2T)</option>
+                <option value="1">1 digit ($1.7T)</option>
+                <option value="2">2 digits ($1.73T)</option>
+                <option value="3">3 digits ($1.734T)</option>
+              </select>
+            </div>
+            <p className="font-mono text-[0.625rem] text-text-muted">
+              Controls fractional digits in compact money displays. Hover any
+              KPI for the exact comma-grouped value.
+            </p>
+          </div>
           {/* Fullscreen toggle: delegates to Electron BrowserWindow so
               the preference is persisted and restored on next launch.
               No-ops in the browser / mobile builds. (#80) */}

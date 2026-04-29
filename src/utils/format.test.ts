@@ -10,7 +10,13 @@
  * to the broader utility suite; this file is scoped to the additions.
  */
 import { describe, it, expect } from 'vitest';
-import { formatBillionsUSD, describeIdeology, formatTag } from './format';
+import {
+  formatBillionsUSD,
+  formatBillionsUSDFull,
+  formatBillionsUSDForDisplay,
+  describeIdeology,
+  formatTag,
+} from './format';
 
 describe('formatBillionsUSD', () => {
   it('compacts values of 1000B or more into trillions with one decimal', () => {
@@ -92,5 +98,60 @@ describe('formatTag', () => {
 
   it('handles multi-segment snake_case', () => {
     expect(formatTag('foreign_policy_aid')).toBe('Foreign Policy Aid');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Precision-aware money helpers (todo#58)
+// ─────────────────────────────────────────────────────────────
+
+describe('formatBillionsUSD with explicit precision', () => {
+  it('honours an explicit decimals override at trillions scale', () => {
+    expect(formatBillionsUSD(1734, 0)).toBe('$2T');
+    expect(formatBillionsUSD(1734, 1)).toBe('$1.7T');
+    expect(formatBillionsUSD(1734, 2)).toBe('$1.73T');
+    expect(formatBillionsUSD(1734, 3)).toBe('$1.734T');
+  });
+
+  it('honours an explicit decimals override at billions scale', () => {
+    // 42B with two fractional digits should expand to "$42.00B".
+    expect(formatBillionsUSD(42, 2)).toBe('$42.00B');
+  });
+
+  it('preserves negative-sign placement with explicit precision', () => {
+    expect(formatBillionsUSD(-1734, 2)).toBe('-$1.73T');
+  });
+});
+
+describe('formatBillionsUSDFull', () => {
+  it('expands billions input to comma-grouped raw dollars', () => {
+    expect(formatBillionsUSDFull(1)).toBe('$1,000,000,000');
+    expect(formatBillionsUSDFull(42)).toBe('$42,000,000,000');
+    expect(formatBillionsUSDFull(1734)).toBe('$1,734,000,000,000');
+  });
+
+  it('handles negative values with the sign outside the dollar', () => {
+    expect(formatBillionsUSDFull(-900)).toBe('-$900,000,000,000');
+  });
+
+  it('handles fractional billions by rounding to the nearest dollar', () => {
+    // 0.42B === $420,000,000.
+    expect(formatBillionsUSDFull(0.42)).toBe('$420,000,000');
+  });
+});
+
+describe('formatBillionsUSDForDisplay', () => {
+  it('delegates to magnitude defaults when precision is "auto"', () => {
+    expect(formatBillionsUSDForDisplay(1734, 'auto')).toBe('$1.7T');
+    expect(formatBillionsUSDForDisplay(42, 'auto')).toBe('$42B');
+  });
+
+  it('forces a specific digit count when given a numeric precision', () => {
+    expect(formatBillionsUSDForDisplay(1734, 0)).toBe('$2T');
+    expect(formatBillionsUSDForDisplay(1734, 2)).toBe('$1.73T');
+  });
+
+  it('defaults to "auto" when the argument is omitted', () => {
+    expect(formatBillionsUSDForDisplay(1734)).toBe('$1.7T');
   });
 });

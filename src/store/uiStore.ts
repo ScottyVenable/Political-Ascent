@@ -1,6 +1,20 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 
+/**
+ * Monotonic counter for transient UI ids (toasts, ephemeral notifications).
+ *
+ * We deliberately avoid `Math.random()` here so the determinism guard
+ * (`src/test/determinism.test.ts`) stays clean for the entire `src/store/`
+ * tree. Toast ids are session-scoped and never persisted, so a per-session
+ * counter combined with `Date.now()` is more than unique enough.
+ */
+let toastSeq = 0;
+function nextToastId(): string {
+  toastSeq = (toastSeq + 1) | 0;
+  return `toast-${Date.now()}-${toastSeq}`;
+}
+
 export type PanelId =
   | 'dashboard'
   | 'legislation'
@@ -130,7 +144,7 @@ export const useUIStore = create<Store>()(
       set((s) => {
         s.toasts.push({
           ...toast,
-          id: `toast-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          id: nextToastId(),
           createdAt: Date.now(),
         });
         if (s.toasts.length > 5) s.toasts.shift();

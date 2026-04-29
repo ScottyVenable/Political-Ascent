@@ -4,6 +4,14 @@ All notable changes to Political Ascent are recorded here.
 
 ## [Unreleased]
 
+### Added
+
+- **Polish pack 2** (`exp--polish-pack-2`, todo#41 / todo#54 / todo#58 / todo#86).
+  - **Determinism guard test** (todo#86). New `src/test/determinism.test.ts` walks `src/engine/`, `src/systems/`, and `src/store/` and fails the suite if any non-test, non-comment line contains `Math.random(`. Honours `// eslint-disable-line determinism/seeded-rng` for explicit, justified opt-outs. The guard caught one real violation: `uiStore.pushToast` was assigning `Math.floor(Math.random() * 1000)` to toast IDs. Replaced with a session-monotonic `toastSeq` counter so toast IDs remain unique without the prohibited primitive.
+  - **Money formatting precision** (todo#58). New `formatBillionsUSDFull(n)` helper returns the full comma-grouped USD value (e.g. `$1,734,000,000,000`); new `formatBillionsUSDForDisplay(n, precision)` consumes the new `display.numberPrecision` setting (`'auto' | 0 | 1 | 2 | 3`). Settings panel grows a "Number precision" `<select>` between Reduce-motion and Fullscreen toggles. The Dashboard's Annual Deficit KPI now renders with the player's chosen precision and exposes the full comma-grouped value inside its hover tooltip. Nine new tests added to `format.test.ts`.
+  - **Tooltip viewport clamp — left/top edges** (todo#41). `TooltipCard`'s post-mount clamp now runs in two phases: (1) far-edge push for right/bottom overflow (existing behaviour, comment-explained), then (2) a near-edge clamp that pins `top`/`left` to the 8px margin. Without phase 2 a tooltip anchored at `coords {top:0, left:0}` could render with the title flush against the viewport edge or partially clipped on small screens.
+  - **Achievement toast → panel navigation** (todo#54, verified). `AchievementEngine` already emits toasts with `actionRoute: 'achievements'` and `ToastRoot` already binds a click handler that calls `navigate(t.actionRoute)`; verified end-to-end.
+
 ### Fixed
 
 - **Save/load no longer wipes Zustand actions** (`exp--todo-tidy`, todo#81). `applySavePayload` was calling `useGameStore.setState(snapshot, true)` which Zustand interprets as full-replace and silently dropped the bound action methods (`setSpeed`, `setPaused`, etc.). On the very next render `GameEngine.startClock` would crash with `game.setSpeed is not a function`. Switched to merge-mode (`setState(snapshot)` without the second arg) so action methods survive the load while every persisted data field is still overwritten by the snapshot. Test coverage held at 7/7 because the tests only check data round-trip; the bug was action-binding which production code exercises but the tests didn't.
