@@ -52,8 +52,6 @@
 
 48. Add a "Communications" tab to the dashboard where players can manage their interactions with the media, public, and other political figures. This could include options for scheduling press conferences, managing social media presence, and responding to news events as well as privately initiating dialogue with members and key figures with a dialogue tree system, choice based dialogue, and detailed information. By providing a dedicated space for communication management, we can enhance the player's ability to shape their public image and navigate the complex world of political communication, adding another layer of strategy and immersion to the game.
 
-55. MOre detailed view in the Congress to search by state and by other filters as well (age, gender, ideology, bill count, sponsership count, wealth, etc.)
-
 63. When a bill enters committee, an option is given to watch the bill in committee and see the progress of it as it goes through the committee process with dialogue, notifications, and real-time updates - or if the player is in that committee, partake in it. This would allow players to stay informed about the status of their legislation and make strategic decisions based on how their bills are progressing through the legislative process. This would work by being it's own menu with UI showing members, progress bar for time, opinion, etc. If the player is in the committee, they can choose to take certain actions to try to influence the bill's progress with dialogue trees if they are partaking in the committee.
 
 64. When a vote happens, the player has the option to view the roll, showing the map of the chamber and a progression of votes being counted. A hero showing the member and how they voted is at the top with a map of the chamber below to see dots populate as time goes on (green yay, red nay, gray present). Time is stopped for this to not take up days and can be skipped or rushed at any time. An event log menu shows stylized updates on vote counts and a decent sized stylized counter at the bottom shows the roll as it is called.
@@ -63,8 +61,6 @@
 66. Implement a better graph renderer for the bar graphs and implement where possible other types of graphs.
 
 68. Allow to filter the cohort views based on national level, state level, or local level to see more details based on where the player chooses to have their character come from and their role. Implement this into the game in the character creator to choose their state and their district.
-
-69. Eliminate the both chambers view and only have the one at a time. Also make the member detail show up as a tooltip at the mouse when hovering over a seat. Then on the right side there should be a panel list of all the members with search functions, filter options, sort options and when typing or selecting filters, the chamber view adjusts in real time lowering the opacity of members not applicable and leaving the ones who are. Allow a toggle switch to either hide the members on filter selection or dim them.
 
 70. Implement a system for tracking and displaying the player's interactions with members of Congress, including meetings, conversations, and votes. This would provide players with a clear sense of their relationships and help them plan their next moves strategically.
 
@@ -654,3 +650,6 @@ Items below were on this list and are now shipped on `experimental`. Kept here a
 - **#45** — Knowledge Base tab. **Shipped earlier.** `GlossaryPanel.tsx` is now a tabbed Knowledge Base (Glossary / How To Play / Tips / History) with search; sidebar label is "Knowledge Base".
 - **#47** — News tab on dashboard. **Shipped earlier.** `NewsPanel.tsx` with severity filters, free-text search, click-to-detail.
 - **#53** — Card pack opening carousel. **Shipped earlier.** `CardPackOpening.tsx` walks shake → burst → carousel (one card at a time with CSS 3-D flip-in) → grid → settled, with reduced-motion fallback.
+
+- **#55** — Congress detailed filtering. **Shipped in `exp--congress-bio-filters`.** Added `age`, `gender` (F/M), and `wealth` (USD) fields to `Legislator`; seeded by `CongressSystem` with senators skewing older and a log-normal wealth curve. `CongressPanel.tsx` advanced accordion gained Gender / Age (<50 / 50–65 / 65+) / Wealth (<\ / \–10M / \+) filter rows; sort buttons gained Age / Wealth / Bills (sponsorship count derived live from `pendingLegislation`+`passedLegislation`+`failedLegislation`). Seat tooltip + member modal show the new fields. Vitest + Playwright cover the new UI.
+- **#69** — Single-chamber Congress + dim/hide filter toggle. **Already shipped.** `CongressPanel.tsx` has the chamber tab strip, cursor-anchored `SeatTooltip`, right-side `MemberListPanel` with real-time search/filter/sort, and the `Dim`/`Hide` toggle that fades non-matched seats to ~18% opacity or removes them.

@@ -1,4 +1,4 @@
-import type { Legislator, Party, LegislatorPersonality, PolicyTag, NpcId } from '@/types';
+import type { Legislator, LegislatorGender, Party, LegislatorPersonality, PolicyTag, NpcId } from '@/types';
 import { useWorldStore } from '@/store/worldStore';
 import { SeededRNG } from '@/utils/random';
 import { clamp } from '@/utils/math';
@@ -27,14 +27,21 @@ const US_STATES = [
   'VA','WA','WV','WI','WY',
 ];
 
-const FIRST_NAMES = [
-  'James','Mary','John','Patricia','Robert','Jennifer','Michael','Linda',
-  'William','Elizabeth','David','Barbara','Richard','Susan','Joseph','Jessica',
-  'Thomas','Sarah','Charles','Karen','Chris','Nancy','Daniel','Lisa',
-  'Matthew','Betty','Anthony','Helen','Donald','Sandra','Mark','Donna',
-  'Paul','Carol','Steven','Ruth','Andrew','Sharon','Kenneth','Michelle',
-  'George','Laura','Joshua','Sarah','Kevin','Kimberly','Brian','Deborah',
+const FIRST_NAMES_M = [
+  'James','John','Robert','Michael','William','David','Richard','Joseph',
+  'Thomas','Charles','Chris','Daniel','Matthew','Anthony','Donald','Mark',
+  'Steven','Andrew','Kenneth','George','Joshua','Kevin','Brian','Paul',
 ];
+
+const FIRST_NAMES_F = [
+  'Mary','Patricia','Jennifer','Linda','Elizabeth','Barbara','Susan',
+  'Jessica','Sarah','Karen','Nancy','Lisa','Betty','Helen','Sandra',
+  'Donna','Carol','Ruth','Sharon','Michelle','Laura','Kimberly','Deborah',
+];
+
+const FIRST_NAMES = [...FIRST_NAMES_M, ...FIRST_NAMES_F];
+// Suppress unused-export warning until other modules reference it.
+void FIRST_NAMES;
 
 const LAST_NAMES = [
   'Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis',
@@ -63,7 +70,10 @@ function makeLegislator(
   startYear: number,
 ): Legislator {
   const id = makeId(`${chamber}-${state}-${district ?? 's'}`, rng) as unknown as NpcId;
-  const firstName = rng.pick(FIRST_NAMES);
+  // Gender first, then pick a matching first name so display name and
+  // gender filter agree without an extra pronoun map.
+  const gender: LegislatorGender = rng.next() < 0.5 ? 'F' : 'M';
+  const firstName = rng.pick(gender === 'F' ? FIRST_NAMES_F : FIRST_NAMES_M);
   const lastName = rng.pick(LAST_NAMES);
   // Party-biased ideology with noise.
   const partyX = party === 'D' ? -0.5 : party === 'R' ? 0.5 : 0;
@@ -76,6 +86,18 @@ function makeLegislator(
   const priorities = new Set<PolicyTag>();
   while (priorities.size < priorityCount) priorities.add(rng.pick(POLICY_TAGS));
   const termLength = chamber === 'senate' ? 6 : 2;
+  // Age distribution: senators skew older. Triangular-ish via two
+  // rolls averaged so the modal age sits in the late 50s — matches
+  // real-world Congressional age curves without being uniform.
+  const ageBase = chamber === 'senate' ? 50 : 42;
+  const ageSpread = chamber === 'senate' ? 30 : 32;
+  const age =
+    ageBase + Math.floor(((rng.next() + rng.next()) / 2) * ageSpread);
+  // Wealth: log-normal-ish via exp of a normal-ish sum. Median around
+  // $250k, fat tail to ~$50M. House and Senate use the same curve so
+  // wealthy outliers exist in both. Numbers below are dollars.
+  const wealthRoll = (rng.next() + rng.next() + rng.next()) / 3; // ~normal in [0,1]
+  const wealth = Math.round(Math.pow(10, 4.5 + wealthRoll * 3.2));
   return {
     id,
     name: `${firstName} ${lastName}`,
@@ -90,6 +112,9 @@ function makeLegislator(
     leverage: rng.int(0, 30),
     votingHistory: {},
     termEndsYear: startYear + rng.int(1, termLength),
+    age,
+    gender,
+    wealth,
   };
 }
 
