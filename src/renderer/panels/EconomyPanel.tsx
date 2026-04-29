@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useWorldStore } from '@/store/worldStore';
 import { Card } from '../components/Card';
 import { Term } from '../components/tooltip';
+import { Sparkline } from '../components/charts';
 
 /**
  * Map a Row label to its glossary term id. Keeps the label-to-term wiring
@@ -138,9 +139,9 @@ export function EconomyPanel(): JSX.Element {
             </p>
           ) : (
             <div className="space-y-4">
-              <Sparkline label="GDP Growth (%)" color="#3B6FE8" data={series.gdp} />
-              <Sparkline label="Unemployment (%)" color="#E74C3C" data={series.unemp} />
-              <Sparkline label="Inflation (%)" color="#C9A84C" data={series.infl} />
+              <TrendRow label="GDP Growth (%)" tone="blue" data={series.gdp} />
+              <TrendRow label="Unemployment (%)" tone="red" data={series.unemp} />
+              <TrendRow label="Inflation (%)" tone="gold" data={series.infl} />
             </div>
           )}
         </Card>
@@ -278,19 +279,27 @@ function Row({
   );
 }
 
-function Sparkline({ label, color, data }: { label: string; color: string; data: number[] }): JSX.Element {
+/**
+ * TrendRow — label + min/max range + canonical {@link Sparkline}.
+ *
+ * Wraps the shared chart primitive in the panel-specific layout the
+ * Economy card has always used (label on the left, range readout on
+ * the right, sparkline beneath). Switching to the shared Sparkline
+ * lights up the area-fill gradient and the latest-value dot, both of
+ * which were previously absent from the Economy variant.
+ */
+function TrendRow({
+  label,
+  tone,
+  data,
+}: {
+  label: string;
+  tone: 'blue' | 'red' | 'gold';
+  data: number[];
+}): JSX.Element {
   if (data.length === 0) return <div className="text-xs text-text-muted">{label}: no data</div>;
   const min = Math.min(...data);
   const max = Math.max(...data);
-  const range = max - min || 1;
-  const points = data
-    .map((v, i) => {
-      const x = (i / Math.max(1, data.length - 1)) * 100;
-      const y = 100 - ((v - min) / range) * 100;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
-
   return (
     <div>
       <div className="flex justify-between text-xs mb-1">
@@ -299,9 +308,16 @@ function Sparkline({ label, color, data }: { label: string; color: string; data:
           min {min.toFixed(2)} · max {max.toFixed(2)}
         </span>
       </div>
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-16 bg-bg-tertiary rounded">
-        <polyline points={points} fill="none" stroke={color} strokeWidth="1.2" />
-      </svg>
+      <Sparkline
+        values={data}
+        tone={tone}
+        width={400}
+        height={56}
+        responsive
+        preserveAspectRatio="none"
+        ariaLabel={`${label} sparkline`}
+        className="w-full h-14 bg-bg-tertiary rounded"
+      />
     </div>
   );
 }
