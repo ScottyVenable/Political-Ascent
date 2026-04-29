@@ -4,6 +4,10 @@ All notable changes to Political Ascent are recorded here.
 
 ## [Unreleased]
 
+### Added
+
+- **Main-menu version is now a clickable patch-notes link + build provenance** (`exp--main-menu-version-link`, todo#89). The footer version pill on the main menu is rendered as a button styled as a hyperlink — clicking it opens the in-game `PatchNotesPanel` inside a modal so testers can read what changed without committing to a save. A second line below shows `build <short-commit> · <YYYY-MM-DD>`, both inlined at compile time by Vite via a new `define` block in `vite.config.ts` (`__BUILD_COMMIT__`, `__BUILD_DATE__`) declared in `src/types/build.d.ts`. `git rev-parse --short HEAD` falls back to `'unknown'` if git is unavailable.
+
 ### Documentation
 
 - **Todo archive sweep 2** (`exp--todo-archive-sweep-2`). Reconciled `docs/todo.md` against the codebase: items #4, #20, #22, #46, #61/#71 (duplicate), #62, #67, #78, #84, #85 were already shipped earlier but still listed as active. Moved them to the archived section with the file/line evidence (ErrorBoundary, `src/utils/logger.ts`, Sparkline in DashboardPanel, Political Goals banner in QuestsPanel, Legislative Session Dashboard, PopulationPanel quotes, GameEngine autosave, CardEffectsModal, VoteResultModal, global `user-select: none`). Process notes #24/#25 marked as adopted (codified in the Director agent rules from session 2 onward).
