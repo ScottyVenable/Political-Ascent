@@ -4,12 +4,17 @@
  * Deliberately tiny and memoizable: the hot path (populations panel) renders
  * many bars on every weekly update.
  */
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 
 export interface BarProps {
   value: number;
   max?: number;
-  label?: string;
+  /**
+   * Bar label — accepts a plain string or a React node so callers can
+   * pass an `<ExtendedTooltip>`-wrapped element when the label is a
+   * glossary term (Happiness, Radicalism, …).
+   */
+  label?: ReactNode;
   valueLabel?: string;
   tone?: 'neutral' | 'success' | 'warning' | 'danger' | 'gold';
   className?: string;

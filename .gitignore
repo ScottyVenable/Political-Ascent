@@ -25,3 +25,8 @@ android/app/src/main/assets/public/
 
 coverage/
 coverage-final.json
+
+# Playwright
+test-results/
+playwright-report/
+

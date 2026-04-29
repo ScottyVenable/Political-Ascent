@@ -7,6 +7,7 @@
  */
 import { useEffect, type PropsWithChildren } from 'react';
 import { useUIStore } from '@/store/uiStore';
+import { useScrollLock } from '@/utils/useScrollLock';
 import { Button } from './Button';
 
 export interface ModalShellProps {
@@ -26,6 +27,9 @@ const SIZE_CLS: Record<NonNullable<ModalShellProps['size']>, string> = {
 export function ModalShell(props: PropsWithChildren<ModalShellProps>): JSX.Element {
   const { id, title, onClose, size = 'md', hideClose, children } = props;
   const closeModal = useUIStore((s) => s.closeModal);
+
+  // Prevent the underlying page from scrolling while this modal is open.
+  useScrollLock();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {

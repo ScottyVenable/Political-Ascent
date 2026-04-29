@@ -52,6 +52,12 @@ export interface GameState {
   isPaused: boolean;
   actionPoints: Bounded;
   politicalCapital: number;
+  /**
+   * Liquid campaign cash, distinct from political capital. Funds ads,
+   * staff, and any card whose flavour text talks about money rather
+   * than influence. Defaults to 0 in scenarios that haven't opted in.
+   */
+  treasury: number;
   week: number;
   month: number;
   year: number;
@@ -68,12 +74,36 @@ export interface WorldState {
   relationships: Record<string, number>;
   leverage: Record<string, number>;
   activeEvents: ActiveEvent[];
+  /**
+   * Event ids that have fired and are non-repeatable. Persisted with the world
+   * so a save/load round-trip does not re-trigger one-shot events.
+   * @see EventEngine
+   */
+  firedEventIds: string[];
+  /**
+   * Map of event id → week index (game week) at which the event most recently
+   * fired. Used to enforce per-event cooldowns for repeatable events so the
+   * same crisis cannot trigger every single day while its conditions hold.
+   */
+  eventCooldowns: Record<string, number>;
   activeQuests: QuestInstance[];
   pendingLegislation: Bill[];
   passedLegislation: Bill[];
   failedLegislation: Bill[];
   unlockedAchievements: string[];
+  /**
+   * Recent news ticker. Capped to a small number of items so the
+   * always-visible top-bar never grows unbounded. UI surfaces that
+   * need full chronology (e.g. the Timeline panel) read from
+   * `newsArchive` instead.
+   */
   news: NewsItem[];
+  /**
+   * Full chronological news archive for the campaign. Every push to
+   * `news` also lands here and is never truncated, so the Timeline
+   * panel can show complete tenure history.
+   */
+  newsArchive: NewsItem[];
   flags: Record<string, boolean>;
   /** Deterministic seed for all RNG calls. */
   seed: number;

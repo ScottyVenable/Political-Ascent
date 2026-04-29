@@ -15,6 +15,12 @@ export interface SettingsState {
     autoPauseOnYearEnd: boolean;
     autoPauseOnLowAP: boolean;
     autoPauseOnNegativePoll: boolean;
+    /**
+     * How long (in milliseconds) the player must hover over a term before
+     * the Extended Tooltip auto-pins (hold-to-lock). Range: 500–5000ms.
+     * Surfaced in Settings → Tooltips. (todo#49)
+     */
+    tooltipPinMs: number;
   };
   display: {
     theme: 'dark' | 'light';
@@ -47,6 +53,8 @@ const DEFAULTS: SettingsState = {
     autoPauseOnYearEnd: true,
     autoPauseOnLowAP: true,
     autoPauseOnNegativePoll: false,
+    // 2 seconds — matches the todo#49 requirement.
+    tooltipPinMs: 2000,
   },
   display: { theme: 'dark', fontScale: 1.0, reduceMotion: false },
   accessibility: { highContrast: false, colorblindMode: 'off', dyslexicFont: false },

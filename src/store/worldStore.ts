@@ -20,6 +20,15 @@ interface WorldStoreActions {
   updateLegislator: (id: string, patch: Partial<Legislator>) => void;
   queueEvent: (event: ActiveEvent) => void;
   dismissEvent: (instanceId: string) => void;
+  /**
+   * Mark a non-repeatable event id as having fired. Idempotent. Persisted via
+   * worldStore so save/load preserves the firing record.
+   */
+  markEventFired: (eventId: string) => void;
+  /**
+   * Stamp an event’s last-fired week. Used for repeatable-event cooldowns.
+   */
+  stampEventCooldown: (eventId: string, week: number) => void;
   addBill: (bill: Bill) => void;
   updateBill: (id: string, patch: Partial<Bill>) => void;
   movePending: (id: string, destination: 'passed' | 'failed') => void;
@@ -50,12 +59,15 @@ const EMPTY: WorldState = {
   relationships: {},
   leverage: {},
   activeEvents: [],
+  firedEventIds: [],
+  eventCooldowns: {},
   activeQuests: [],
   pendingLegislation: [],
   passedLegislation: [],
   failedLegislation: [],
   unlockedAchievements: [],
   news: [],
+  newsArchive: [],
   flags: {},
   seed: 1,
 };
@@ -104,6 +116,16 @@ export const useWorldStore = create<Store>()(
         s.activeEvents = s.activeEvents.filter((e) => e.instanceId !== instanceId);
       }),
 
+    markEventFired: (eventId) =>
+      set((s) => {
+        if (!s.firedEventIds.includes(eventId)) s.firedEventIds.push(eventId);
+      }),
+
+    stampEventCooldown: (eventId, week) =>
+      set((s) => {
+        s.eventCooldowns[eventId] = week;
+      }),
+
     addBill: (bill) =>
       set((s) => {
         s.pendingLegislation.push(bill);
@@ -137,8 +159,13 @@ export const useWorldStore = create<Store>()(
 
     pushNews: (news) =>
       set((s) => {
+        // The visible ticker is capped at 50 to keep the top-of-screen
+        // strip lightweight. The archive (uncapped) is what the
+        // Timeline panel reads, so older headlines remain available
+        // for chronological browsing across the whole campaign.
         s.news.unshift(news);
         if (s.news.length > 50) s.news.pop();
+        s.newsArchive.unshift(news);
       }),
 
     setFlag: (flag, value) =>

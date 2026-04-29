@@ -9,9 +9,12 @@ import { useWorldStore } from '@/store/worldStore';
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
 import { toEpochDays } from '@/utils/date';
+import { formatTag } from '@/utils/format';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Bar } from '../components/Bar';
+import { TermText } from '../components/tooltip';
+import { DraftLegislationScreen } from '../components/DraftLegislationScreen';
 import type { Bill, BillId, BillStage, BillTemplate } from '@/types';
 
 /**
@@ -45,8 +48,12 @@ export function LegislationPanel(): JSX.Element {
   const today = toEpochDays(currentDate);
 
   const [tab, setTab] = useState<'draft' | 'pending' | 'archive'>('pending');
+  // When non-null, the deep-customization modal is open with this
+  // template pre-loaded. Closing the modal clears it back to null.
+  const [draftTarget, setDraftTarget] = useState<BillTemplate | null>(null);
 
-  function draft(template: BillTemplate): void {
+  function quickDraft(template: BillTemplate): void {
+    // Power-user shortcut: skip the customization screen entirely.
     LegislationSystem.draftBill(template);
     pushToast({ message: `Drafted: ${template.title}`, severity: 'info', ttl: 3000 });
     setTab('pending');
@@ -81,6 +88,83 @@ export function LegislationPanel(): JSX.Element {
 
   return (
     <div>
+      {/* ──────────────────────────────────────────────────────────
+          LEGISLATIVE SESSION DASHBOARD (todo#62)
+          Shows a top-line summary of the current term so the player
+          can gauge their overall legislative health at a glance before
+          diving into specific bills.
+          ────────────────────────────────────────────────────────── */}
+      <div
+        className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 p-3 rounded-lg bg-bg-secondary border border-rule text-sm"
+        data-testid="legislation-session-dashboard"
+      >
+        {/* Current legislative session name, derived from the game year */}
+        <div>
+          <div className="text-xs uppercase tracking-wider text-text-muted mb-1">Session</div>
+          <div className="font-semibold text-accent-gold truncate">
+            {currentDate.year}th Congress
+          </div>
+        </div>
+        {/* Total bills introduced this term */}
+        <div>
+          <div className="text-xs uppercase tracking-wider text-text-muted mb-1">In Flight</div>
+          <div className="font-mono text-lg">{pending.length}</div>
+        </div>
+        {/* Passed tally (green) */}
+        <div>
+          <div className="text-xs uppercase tracking-wider text-text-muted mb-1">Passed</div>
+          <div className="font-mono text-lg text-status-success">{passed.length}</div>
+        </div>
+        {/* Failed tally (red) */}
+        <div>
+          <div className="text-xs uppercase tracking-wider text-text-muted mb-1">Failed</div>
+          <div className="font-mono text-lg text-status-danger">{failed.length}</div>
+        </div>
+      </div>
+
+      {/* Featured bill: the first pending bill (most recently drafted),
+          shown as a compact hero strip with stage + passage forecast.
+          If no bills are in flight, this strip is hidden. */}
+      {pending.length > 0 && (
+        <div
+          className="mb-4 p-3 rounded-lg border border-accent-gold/30 bg-bg-secondary flex flex-col sm:flex-row sm:items-center gap-2"
+          data-testid="legislation-featured-bill"
+        >
+          <div className="flex-1 min-w-0">
+            <div className="text-xs uppercase tracking-wider text-text-muted mb-0.5">
+              Active Bill
+            </div>
+            <div className="font-semibold truncate text-accent-gold">{pending[0].title}</div>
+            <div className="text-xs text-text-secondary mt-0.5">
+              Stage: <span className="capitalize">{pending[0].stage.replace('_', ' ')}</span>
+              {pending[0].sponsor === 'player' && (
+                <span className="ml-2 text-accent-gold">&#x2605; Sponsored by you</span>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-3 flex-shrink-0 text-xs">
+            <div className="text-center">
+              <div className="text-text-muted mb-0.5">Support</div>
+              <div className={`font-mono ${(pending[0].supportVotes ?? 0) >= 50 ? 'text-status-success' : 'text-status-danger'}`}>
+                {pending[0].supportVotes}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-text-muted mb-0.5">Oppose</div>
+              <div className="font-mono text-status-danger">{pending[0].opposeVotes}</div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTab('pending')}
+              className="self-center"
+            >
+              View all
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2 mb-4">
         <TabButton active={tab === 'pending'} onClick={() => setTab('pending')}>
           In Flight ({pending.length})
@@ -103,11 +187,11 @@ export function LegislationPanel(): JSX.Element {
               (t.stageDurations?.vote ?? STAGE_DURATION_DAYS.vote);
             return (
               <Card key={t.id} title={t.title} accent="gold">
-                <p className="text-sm text-text-secondary mb-2">{t.description}</p>
+                <p className="text-sm text-text-secondary mb-2"><TermText text={t.description} /></p>
                 <div className="text-xs text-text-muted flex flex-wrap gap-2 mb-3">
                   {t.tags.map((tag) => (
                     <span key={tag} className="bg-bg-tertiary rounded px-2 py-0.5">
-                      {tag}
+                      {formatTag(tag)}
                     </span>
                   ))}
                   <span className="ml-auto">Opposition {t.opposition}</span>
@@ -121,8 +205,17 @@ export function LegislationPanel(): JSX.Element {
                   </span>
                   <span className="text-text-muted">~{totalDays} days to vote</span>
                 </div>
-                <Button variant="primary" size="sm" onClick={() => draft(t)}>
-                  Draft
+                <Button variant="primary" size="sm" onClick={() => setDraftTarget(t)} data-testid={`draft-customize-${t.id}`}>
+                  Customize &amp; Draft
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => quickDraft(t)}
+                  className="ml-2"
+                  data-testid={`draft-quick-${t.id}`}
+                >
+                  Quick draft
                 </Button>
               </Card>
             );
@@ -171,6 +264,17 @@ export function LegislationPanel(): JSX.Element {
           )}
         </div>
       )}
+
+      {draftTarget && (
+        <DraftLegislationScreen
+          baseTemplate={draftTarget}
+          onSubmitted={() => {
+            setDraftTarget(null);
+            setTab('pending');
+          }}
+          onClose={() => setDraftTarget(null)}
+        />
+      )}
     </div>
   );
 }
@@ -215,7 +319,7 @@ function PendingBillCard({
 
   return (
     <Card title={bill.title} subtitle={stageLabel(bill.stage)} accent="gold">
-      <p className="text-sm text-text-secondary mb-3">{bill.description}</p>
+      <p className="text-sm text-text-secondary mb-3"><TermText text={bill.description} /></p>
 
       {clocked && totalDays > 0 && (
         <div className="mb-3">

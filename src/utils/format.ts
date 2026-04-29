@@ -98,3 +98,36 @@ export function thresholdLabel(n: number): string {
   if (n < 75) return 'High';
   return 'Critical';
 }
+
+/**
+ * Convert a raw tag identifier (snake_case or camelCase) to a human-readable
+ * title-case label suitable for display in card tags, bill tags, cohort badges,
+ * and tooltip tag-rows.
+ *
+ * Strategy:
+ *   1. Check a known-overrides table for tags that need a specific label
+ *      beyond mechanical title-casing (e.g. "pork" → "Pork Barrel").
+ *   2. For all other tags, split on underscores, title-case each word, and
+ *      rejoin with spaces. Example: `civil_rights` → "Civil Rights".
+ *
+ * @example
+ * formatTag('civil_rights')   // "Civil Rights"
+ * formatTag('economy')        // "Economy"
+ * formatTag('fundraising')    // "Fundraising"
+ * formatTag('pork')           // "Pork Barrel"
+ */
+const TAG_OVERRIDES: Record<string, string> = {
+  pork: 'Pork Barrel',
+  dark: 'Dark Money',
+};
+
+export function formatTag(tag: string): string {
+  if (Object.prototype.hasOwnProperty.call(TAG_OVERRIDES, tag)) {
+    return TAG_OVERRIDES[tag];
+  }
+  // Split on underscores, title-case each word, rejoin with spaces.
+  return tag
+    .split('_')
+    .map((word) => (word.length > 0 ? word[0].toUpperCase() + word.slice(1) : word))
+    .join(' ');
+}

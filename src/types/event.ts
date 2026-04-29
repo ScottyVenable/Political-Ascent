@@ -46,6 +46,13 @@ export interface GameEventDefinition {
   /** Probability weight used by the random trigger resolver. */
   weight: number;
   isRepeatable: boolean;
+  /**
+   * Minimum number of in-game weeks that must elapse after a fire before this
+   * event may fire again. Only meaningful for `isRepeatable: true` events;
+   * non-repeatable events are gated by `firedEventIds`. Defaults to 4 weeks
+   * when omitted.
+   */
+  cooldownWeeks?: number;
   options: EventOption[];
 }
 

@@ -42,7 +42,8 @@ param(
     [ValidateSet(
         'install', 'dev', 'typecheck', 'test', 'test:watch', 'test:coverage',
         'build:web', 'build:electron', 'build:win', 'build:android',
-        'build:android-release', 'electron:dev', 'clean', 'docs', 'preflight'
+        'build:android-release', 'electron:dev', 'clean', 'docs', 'preflight',
+        'sync:drive'
     )]
     [string]$Task
 )
@@ -264,12 +265,30 @@ function Invoke-Docs {
 # ---------------------------------------------------------------------------
 # Non-interactive dispatcher
 # ---------------------------------------------------------------------------
+function Invoke-SyncDrive {
+    # Delegates to the standalone scripts/sync-drive.ps1 so the logic
+    # can be invoked outside the launcher (CI, scheduled tasks, etc.).
+    $script = Join-Path $Script:RepoRoot 'scripts/sync-drive.ps1'
+    if (-not (Test-Path $script)) {
+        Write-Panel -Title 'Sync with Drive' -Tone 'danger' -Body "Missing helper: $script"
+        return 1
+    }
+    Write-Panel -Title 'Sync with Drive' -Tone 'info' -Body 'Mirroring repo to Google Drive backup folder...'
+    # Run in the current host (Windows PowerShell 5.1 or PowerShell 7+).
+    # Hard-coding `pwsh` made the task unusable on stock Windows where
+    # only Windows PowerShell ships, even though that host is fully
+    # capable of executing the script.
+    & $script
+    return $LASTEXITCODE
+}
+
 function Invoke-Task {
     param([Parameter(Mandatory)][string]$Name)
     switch ($Name) {
-        'preflight' { if (Test-Preflight) { return 0 } else { return 1 } }
-        'clean'     { Invoke-Clean; return 0 }
-        'docs'      { Invoke-Docs; return 0 }
+        'preflight'  { if (Test-Preflight) { return 0 } else { return 1 } }
+        'clean'      { Invoke-Clean; return 0 }
+        'docs'       { Invoke-Docs; return 0 }
+        'sync:drive' { return (Invoke-SyncDrive) }
         default {
             if ($Script:Tasks.Contains($Name)) {
                 $t = $Script:Tasks[$Name]
@@ -299,7 +318,8 @@ $Script:Menu = @(
     @{ Key = 'build:android-release'; Label = '11. Build Android release APK' }
     @{ Key = 'clean';                 Label = '12. Clean build artefacts' }
     @{ Key = 'docs';                  Label = '13. Open docs folder' }
-    @{ Key = '__exit';                Label = '14. Exit' }
+    @{ Key = 'sync:drive';            Label = '14. Sync with Drive (backup to Google Drive)' }
+    @{ Key = '__exit';                Label = '15. Exit' }
 )
 
 $Script:TestMenu = @(
