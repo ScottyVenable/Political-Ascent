@@ -14,21 +14,66 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useWorldStore } from '@/store/worldStore';
+import { useCharacterStore } from '@/store/characterStore';
 import { Card } from '../components/Card';
 import { Bar } from '../components/Bar';
 import { Button } from '../components/Button';
 import { Term } from '../components/tooltip';
 import type { PopulationGroup } from '@/types';
 
+/** The three view levels available in the population panel (todo#68). */
+type PopLevelFilter = 'national' | 'state' | 'local';
+
 export function PopulationPanel(): JSX.Element {
   const population = useWorldStore((s) => s.population);
+  const homeState = useCharacterStore((s) => s.homeState);
   const [focusId, setFocusId] = useState<string | null>(null);
+  const [levelFilter, setLevelFilter] = useState<PopLevelFilter>('national');
   const focused = population.find((g) => g.id === focusId) ?? null;
+
+  // For now, all three levels show the same cohort data (cohorts are
+  // national archetypes; per-state breakdowns are a future content pass).
+  // The filter still shows meaningful context labels to telegraph the
+  // design intent and let the character's homeState be visible.
+  // When per-state data lands, filter `population` here by state.
+  const displayedGroups = useMemo(() => {
+    // Future: filter by state/district when cohorts gain `state` field.
+    return population;
+  }, [population]);
 
   return (
     <div>
+      {/* Level filter row (todo#68): National / State / Local toggle.
+          State and Local views display a context badge showing the
+          character's home state so the player knows which constituency
+          the data (or future per-state data) relates to. */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap" data-testid="population-level-filter">
+        {(['national', 'state', 'local'] as const).map((lvl) => (
+          <button
+            key={lvl}
+            type="button"
+            onClick={() => setLevelFilter(lvl)}
+            className={`text-xs px-3 py-1.5 rounded capitalize transition-colors ${
+              levelFilter === lvl
+                ? 'bg-accent-gold text-bg-primary font-semibold'
+                : 'bg-bg-secondary border border-rule text-text-secondary hover:bg-bg-tertiary'
+            }`}
+            aria-pressed={levelFilter === lvl}
+          >
+            {lvl}
+          </button>
+        ))}
+        {(levelFilter === 'state' || levelFilter === 'local') && (
+          <span className="text-xs text-text-muted ml-2">
+            {homeState
+              ? `Showing cohorts for ${homeState}`
+              : 'No home state set — go to Character to update'}
+          </span>
+        )}
+      </div>
+
       <div className="grid md:grid-cols-2 gap-3" data-testid="population-grid">
-        {population.map((g) => (
+        {displayedGroups.map((g) => (
           <button
             key={g.id}
             type="button"

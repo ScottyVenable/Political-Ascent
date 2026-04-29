@@ -87,6 +87,83 @@ export function LegislationPanel(): JSX.Element {
 
   return (
     <div>
+      {/* ──────────────────────────────────────────────────────────
+          LEGISLATIVE SESSION DASHBOARD (todo#62)
+          Shows a top-line summary of the current term so the player
+          can gauge their overall legislative health at a glance before
+          diving into specific bills.
+          ────────────────────────────────────────────────────────── */}
+      <div
+        className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 p-3 rounded-lg bg-bg-secondary border border-rule text-sm"
+        data-testid="legislation-session-dashboard"
+      >
+        {/* Current legislative session name, derived from the game year */}
+        <div>
+          <div className="text-xs uppercase tracking-wider text-text-muted mb-1">Session</div>
+          <div className="font-semibold text-accent-gold truncate">
+            {currentDate.year}th Congress
+          </div>
+        </div>
+        {/* Total bills introduced this term */}
+        <div>
+          <div className="text-xs uppercase tracking-wider text-text-muted mb-1">In Flight</div>
+          <div className="font-mono text-lg">{pending.length}</div>
+        </div>
+        {/* Passed tally (green) */}
+        <div>
+          <div className="text-xs uppercase tracking-wider text-text-muted mb-1">Passed</div>
+          <div className="font-mono text-lg text-status-success">{passed.length}</div>
+        </div>
+        {/* Failed tally (red) */}
+        <div>
+          <div className="text-xs uppercase tracking-wider text-text-muted mb-1">Failed</div>
+          <div className="font-mono text-lg text-status-danger">{failed.length}</div>
+        </div>
+      </div>
+
+      {/* Featured bill: the first pending bill (most recently drafted),
+          shown as a compact hero strip with stage + passage forecast.
+          If no bills are in flight, this strip is hidden. */}
+      {pending.length > 0 && (
+        <div
+          className="mb-4 p-3 rounded-lg border border-accent-gold/30 bg-bg-secondary flex flex-col sm:flex-row sm:items-center gap-2"
+          data-testid="legislation-featured-bill"
+        >
+          <div className="flex-1 min-w-0">
+            <div className="text-xs uppercase tracking-wider text-text-muted mb-0.5">
+              Active Bill
+            </div>
+            <div className="font-semibold truncate text-accent-gold">{pending[0].title}</div>
+            <div className="text-xs text-text-secondary mt-0.5">
+              Stage: <span className="capitalize">{pending[0].stage.replace('_', ' ')}</span>
+              {pending[0].sponsor === 'player' && (
+                <span className="ml-2 text-accent-gold">&#x2605; Sponsored by you</span>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-3 flex-shrink-0 text-xs">
+            <div className="text-center">
+              <div className="text-text-muted mb-0.5">Support</div>
+              <div className={`font-mono ${(pending[0].supportVotes ?? 0) >= 50 ? 'text-status-success' : 'text-status-danger'}`}>
+                {pending[0].supportVotes}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-text-muted mb-0.5">Oppose</div>
+              <div className="font-mono text-status-danger">{pending[0].opposeVotes}</div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTab('pending')}
+              className="self-center"
+            >
+              View all
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2 mb-4">
         <TabButton active={tab === 'pending'} onClick={() => setTab('pending')}>
           In Flight ({pending.length})

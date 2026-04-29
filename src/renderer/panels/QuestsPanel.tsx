@@ -29,6 +29,7 @@ import { GameEngine } from '@/engine/GameEngine';
 import { QuestSystem } from '@/systems/QuestSystem';
 import { useWorldStore } from '@/store/worldStore';
 import { useUIStore } from '@/store/uiStore';
+import { useGameStore } from '@/store/gameStore';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
@@ -128,7 +129,17 @@ export function QuestsPanel(): JSX.Element {
   const defs = useMemo(() => QuestSystem.allDefinitions(), []);
   const active = useWorldStore((s) => s.activeQuests);
   const flags = useWorldStore((s) => s.flags);
+  const population = useWorldStore((s) => s.population);
+  const passedLegislation = useWorldStore((s) => s.passedLegislation);
   const pushToast = useUIStore((s) => s.pushToast);
+  const pc = useGameStore((s) => s.politicalCapital);
+
+  // Approval = mean happiness across all cohorts (mirrors DashboardPanel logic)
+  const avgHappiness = useMemo(() => {
+    if (!population || population.length === 0) return 0;
+    const sum = population.reduce((acc, c) => acc + c.happiness, 0);
+    return Math.round(sum / population.length);
+  }, [population]);
 
   const [filter, setFilter] = useState<FilterId>('all');
 
@@ -183,6 +194,46 @@ export function QuestsPanel(): JSX.Element {
 
   return (
     <div className="space-y-3" data-testid="quests-panel">
+      {/* ── Political Goals progress banner (todo#61) ──────────────
+          Summarises the player's three core success metrics at a glance
+          so they can see whether their quest activity is translating into
+          macro-level progress before diving into the quest list below.  */}
+      <div
+        className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 rounded-lg bg-bg-secondary border border-rule text-sm"
+        data-testid="political-goals-banner"
+      >
+        <div>
+          <div className="text-xs uppercase tracking-wider text-text-muted mb-1">Approval</div>
+          <div
+            className={`font-mono text-lg ${
+              avgHappiness >= 55
+                ? 'text-status-success'
+                : avgHappiness < 40
+                  ? 'text-status-danger'
+                  : ''
+            }`}
+          >
+            {avgHappiness}%
+          </div>
+        </div>
+        <div>
+          <div className="text-xs uppercase tracking-wider text-text-muted mb-1">Bills Passed</div>
+          <div className="font-mono text-lg text-status-success">{passedLegislation.length}</div>
+        </div>
+        <div>
+          <div className="text-xs uppercase tracking-wider text-text-muted mb-1">Quests Done</div>
+          <div className="font-mono text-lg text-accent-gold">
+            {rows.filter((r) => r.status === 'completed').length}/{defs.length}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs uppercase tracking-wider text-text-muted mb-1">
+            Political Capital
+          </div>
+          <div className="font-mono text-lg text-accent-gold">{pc}</div>
+        </div>
+      </div>
+
       <header>
         <h1 className="font-headline text-panel-title text-text-primary">Quests</h1>
         <p className="text-body text-text-secondary">

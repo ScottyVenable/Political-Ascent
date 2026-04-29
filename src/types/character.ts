@@ -55,6 +55,22 @@ export interface CharacterState {
    */
   personalFunds: number;
 
+  /**
+   * The US state the character represents or comes from (e.g. "CA", "TX").
+   * Used by the Population panel to filter cohort views to state-level
+   * data, and by Congress to highlight the player's own senators/reps.
+   * Optional for backwards-compat with saves that predate this field.
+   */
+  homeState?: string;
+
+  /**
+   * The congressional district number within `homeState` (1-based).
+   * Relevant when the player's role is a House representative.
+   * Optional; undefined if the character is a senator or the field
+   * predates this schema version.
+   */
+  homeDistrict?: number;
+
   /** Cards currently in hand. */
   hand: CardInstance[];
   /** Entire player-owned collection (source for the hand). */

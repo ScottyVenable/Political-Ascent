@@ -108,6 +108,39 @@ const RESET_STATS: CoreStats = {
 };
 
 /**
+ * US state abbreviation → full name list. Used in the home-state picker.
+ * Sourced from ISO 3166-2:US; abbreviated to the 50 states + DC.
+ */
+const US_STATES: { abbr: string; name: string }[] = [
+  { abbr: 'AL', name: 'Alabama' }, { abbr: 'AK', name: 'Alaska' },
+  { abbr: 'AZ', name: 'Arizona' }, { abbr: 'AR', name: 'Arkansas' },
+  { abbr: 'CA', name: 'California' }, { abbr: 'CO', name: 'Colorado' },
+  { abbr: 'CT', name: 'Connecticut' }, { abbr: 'DE', name: 'Delaware' },
+  { abbr: 'DC', name: 'District of Columbia' }, { abbr: 'FL', name: 'Florida' },
+  { abbr: 'GA', name: 'Georgia' }, { abbr: 'HI', name: 'Hawaii' },
+  { abbr: 'ID', name: 'Idaho' }, { abbr: 'IL', name: 'Illinois' },
+  { abbr: 'IN', name: 'Indiana' }, { abbr: 'IA', name: 'Iowa' },
+  { abbr: 'KS', name: 'Kansas' }, { abbr: 'KY', name: 'Kentucky' },
+  { abbr: 'LA', name: 'Louisiana' }, { abbr: 'ME', name: 'Maine' },
+  { abbr: 'MD', name: 'Maryland' }, { abbr: 'MA', name: 'Massachusetts' },
+  { abbr: 'MI', name: 'Michigan' }, { abbr: 'MN', name: 'Minnesota' },
+  { abbr: 'MS', name: 'Mississippi' }, { abbr: 'MO', name: 'Missouri' },
+  { abbr: 'MT', name: 'Montana' }, { abbr: 'NE', name: 'Nebraska' },
+  { abbr: 'NV', name: 'Nevada' }, { abbr: 'NH', name: 'New Hampshire' },
+  { abbr: 'NJ', name: 'New Jersey' }, { abbr: 'NM', name: 'New Mexico' },
+  { abbr: 'NY', name: 'New York' }, { abbr: 'NC', name: 'North Carolina' },
+  { abbr: 'ND', name: 'North Dakota' }, { abbr: 'OH', name: 'Ohio' },
+  { abbr: 'OK', name: 'Oklahoma' }, { abbr: 'OR', name: 'Oregon' },
+  { abbr: 'PA', name: 'Pennsylvania' }, { abbr: 'RI', name: 'Rhode Island' },
+  { abbr: 'SC', name: 'South Carolina' }, { abbr: 'SD', name: 'South Dakota' },
+  { abbr: 'TN', name: 'Tennessee' }, { abbr: 'TX', name: 'Texas' },
+  { abbr: 'UT', name: 'Utah' }, { abbr: 'VT', name: 'Vermont' },
+  { abbr: 'VA', name: 'Virginia' }, { abbr: 'WA', name: 'Washington' },
+  { abbr: 'WV', name: 'West Virginia' }, { abbr: 'WI', name: 'Wisconsin' },
+  { abbr: 'WY', name: 'Wyoming' },
+];
+
+/**
  * Character creation — background → stats → traits → ideology → name.
  *
  * Stat distribution enforces CharacterSystem's 24–36-point budget so players
@@ -120,6 +153,8 @@ export function CharacterCreation(): JSX.Element {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [background, setBackground] = useState<Background>('citizen');
+  const [homeState, setHomeState] = useState<string>('');
+  const [homeDistrict, setHomeDistrict] = useState<number | undefined>(undefined);
   const [baseStats, setBaseStats] = useState<CoreStats>({
     charisma: 5,
     strategy: 5,
@@ -196,6 +231,8 @@ export function CharacterCreation(): JSX.Element {
       hand: [],
       deck: [],
       personalFunds: startingFunds,
+      homeState: homeState || undefined,
+      homeDistrict,
     });
     navigate('scenario-select');
     // Scenario select screen will finalize into GameEngine.startNewGame.
@@ -255,6 +292,51 @@ export function CharacterCreation(): JSX.Element {
                 can change this later from the Character panel.
               </p>
               <AvatarPicker value={avatarId} onChange={setAvatarId} />
+            </div>
+
+            {/* State & District (todo#68) ─────────────────────────────
+                Sets the player's home state, which filters Population
+                cohort views and highlights their delegation in Congress.
+                Optional — the player may skip for a fully national focus. */}
+            <div className="mt-5 grid sm:grid-cols-2 gap-4">
+              <label className="block">
+                <span className="text-sm text-text-secondary">Home State (optional)</span>
+                <select
+                  className="mt-1 w-full bg-bg-tertiary rounded px-3 py-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-gold"
+                  value={homeState}
+                  onChange={(e) => setHomeState(e.target.value)}
+                  data-testid="creator-home-state"
+                >
+                  <option value="">— National focus (no state) —</option>
+                  {US_STATES.map((s) => (
+                    <option key={s.abbr} value={s.abbr}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {homeState && (
+                <label className="block">
+                  <span className="text-sm text-text-secondary">Congressional District (optional)</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={53}
+                    className="mt-1 w-full bg-bg-tertiary rounded px-3 py-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-gold"
+                    value={homeDistrict ?? ''}
+                    onChange={(e) =>
+                      setHomeDistrict(
+                        e.target.value ? Math.max(1, parseInt(e.target.value, 10)) : undefined,
+                      )
+                    }
+                    placeholder="e.g. 12"
+                    data-testid="creator-home-district"
+                  />
+                  <p className="text-xs text-text-muted mt-1">
+                    Leave blank if you represent the whole state (Senate).
+                  </p>
+                </label>
+              )}
             </div>
           </Card>
         )}
