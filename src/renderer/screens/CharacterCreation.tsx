@@ -168,6 +168,18 @@ export function CharacterCreation(): JSX.Element {
   }
 
   function finish(): void {
+    // Compute starting personal funds from background × wealth tier.
+    // These multipliers reflect real-world archetypes:
+    //   citizen  → middle class, savings of ~50k × wealth (1–10)
+    //   veteran  → modest career military pay + discipline, ~60k × wealth
+    //   executive → corporate wealth, ~200k × wealth (can exceed $1M easily)
+    const FUNDS_BY_BACKGROUND: Record<typeof background, number> = {
+      citizen: 50_000,
+      veteran: 60_000,
+      executive: 200_000,
+    };
+    const startingFunds = FUNDS_BY_BACKGROUND[background] * (finalStats.wealth ?? 5);
+
     useCharacterStore.getState().reset();
     useCharacterStore.getState().setCharacter({
       id: `pc-${Date.now()}`,
@@ -183,6 +195,7 @@ export function CharacterCreation(): JSX.Element {
       unlockedSkills: [],
       hand: [],
       deck: [],
+      personalFunds: startingFunds,
     });
     navigate('scenario-select');
     // Scenario select screen will finalize into GameEngine.startNewGame.

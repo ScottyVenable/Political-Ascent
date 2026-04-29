@@ -13,6 +13,14 @@ interface CharacterStoreActions {
   /** Pick an avatar preset id. See `src/data/avatars`. */
   setAvatar: (avatarId: string) => void;
   /**
+   * Adjust the character's personal funds by `delta` dollars.
+   * Positive delta = income (salary, speaking fees, investments).
+   * Negative delta = expenditure (campaign spend, fines, bribes).
+   * Clamped at 0 — the character cannot go into personal debt
+   * (that mechanic is deferred to a later update).
+   */
+  adjustFunds: (delta: number) => void;
+  /**
    * Reorder the cards in `hand` to match `orderedInstanceIds`.
    *
    * Used by the cards-panel drag-and-drop reordering (see todo#3).
@@ -39,6 +47,9 @@ const BLANK: CharacterState = {
   level: 1,
   skillPoints: 0,
   unlockedSkills: [],
+  // Default personal funds for a citizen background with wealth = 5.
+  // Real start value is set by CharacterCreator based on background.
+  personalFunds: 250000,
   hand: [],
   deck: [],
 };
@@ -102,6 +113,11 @@ export const useCharacterStore = create<Store>()(
     setAvatar: (avatarId) =>
       set((s) => {
         s.avatarId = avatarId;
+      }),
+
+    adjustFunds: (delta) =>
+      set((s) => {
+        s.personalFunds = Math.max(0, (s.personalFunds ?? 0) + delta);
       }),
 
     reorderHand: (orderedInstanceIds) =>

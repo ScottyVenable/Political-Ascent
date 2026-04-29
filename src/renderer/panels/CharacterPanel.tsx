@@ -20,6 +20,7 @@ import { StatBlock } from '../components/StatBlock';
 import { IdeologyCompass } from '../components/IdeologyCompass';
 import { AvatarMedallion } from '../components/AvatarMedallion';
 import { AvatarPicker } from '../components/AvatarPicker';
+import { formatCurrency } from '@/utils/format';
 import { Button } from '../components/Button';
 import { getAvatarPreset, DEFAULT_AVATAR_ID } from '@/data/avatars';
 
@@ -132,6 +133,42 @@ export function CharacterPanel(): JSX.Element {
               <div className="font-mono text-lg">{char.unlockedSkills.length}</div>
             </div>
           </div>
+        </Card>
+
+        {/* Personal Finances (todo#74): tracks the character's actual net
+            worth in dollars, separate from Political Capital (which is an
+            abstract influence resource). Starts high for executives, lower
+            for citizens. Increases through salary, speaking fees, and card
+            effects. Can decrease through fines and campaign spending. */}
+        <Card title="Personal Finances" accent="gold" className="md:col-span-2" data-testid="character-finances">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-text-muted">Net Worth</div>
+              <div
+                className="font-mono text-lg text-accent-gold"
+                data-testid="character-personal-funds"
+                title={`$${(char.personalFunds ?? 0).toLocaleString()}`}
+              >
+                {formatCurrency(char.personalFunds ?? 0)}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs uppercase tracking-wider text-text-muted">Wealth tier</div>
+              {/* The `wealth` core stat (1–10) describes the character's
+                  long-term financial standing archetype, not the current
+                  balance. A high-wealth character recovers funds faster. */}
+              <div className="font-mono text-lg">{char.stats.wealth}/10</div>
+            </div>
+            <div>
+              <div className="text-xs uppercase tracking-wider text-text-muted">Background</div>
+              <div className="font-mono text-lg capitalize">{char.background}</div>
+            </div>
+          </div>
+          <p className="text-body text-text-muted mt-2">
+            Personal funds are distinct from Political Capital. They represent your literal bank
+            balance — salary income, investments, and asset sales flow in; campaign expenditures
+            and fines flow out.
+          </p>
         </Card>
       </div>
 

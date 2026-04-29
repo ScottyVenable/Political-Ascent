@@ -39,6 +39,22 @@ export interface CharacterState {
   skillPoints: number;
   unlockedSkills: string[];
 
+  /**
+   * The character's current personal net worth in US dollars.
+   * Distinct from Political Capital — this is actual money the
+   * character has available to fund their campaign, bribe officials
+   * (via card effects), or deploy as a 'wealth' resource.
+   *
+   * Starts based on the character's background and `wealth` stat:
+   *   citizen  — $50k × wealth
+   *   veteran  — $60k × wealth
+   *   executive — $200k × wealth
+   *
+   * Increases through salary (office pay), investments, speaking fees,
+   * and card effects. Can decrease through campaign spending and fines.
+   */
+  personalFunds: number;
+
   /** Cards currently in hand. */
   hand: CardInstance[];
   /** Entire player-owned collection (source for the hand). */
