@@ -618,6 +618,17 @@ function StatBudget({
           className={`absolute inset-y-0 left-0 ${fillClass} transition-[width] duration-200`}
           style={{ width: `${clampedPct}%` }}
         />
+        {/*
+          Minimum-threshold tick (todo#28). A subtle vertical hairline
+          at `min/max` along the bar shows the player where the lower
+          bound sits — anything to its left counts as `under`. Sits
+          above the fill so it stays visible at every tone.
+        */}
+        <div
+          className="absolute inset-y-0 w-px bg-rule/80"
+          style={{ left: `${(min / max) * 100}%` }}
+          aria-hidden
+        />
         {/* When over-allocated, paint a danger-striped overlay sized to
             how far past the cap the player went. Caps at 100% so the
             UI does not visibly explode at extreme values. */}
@@ -632,6 +643,22 @@ function StatBudget({
           />
         )}
       </div>
+      {/*
+        Status line (todo#28). Translates the numeric total into a
+        single, action-oriented sentence so the player does not have
+        to do the arithmetic themselves: "Spend N more points to
+        continue" / "Ready" / "Over budget by N".
+      */}
+      <p
+        className={`mt-1.5 font-mono text-[0.6875rem] uppercase tracking-wide ${labelClass}`}
+        data-testid="stat-budget-status"
+      >
+        {tone === 'under'
+          ? `Spend ${min - total} more point${min - total === 1 ? '' : 's'} to continue`
+          : tone === 'over'
+          ? `Over budget by ${total - max} point${total - max === 1 ? '' : 's'}`
+          : `Ready · ${max - total} point${max - total === 1 ? '' : 's'} unspent`}
+      </p>
     </div>
   );
 }

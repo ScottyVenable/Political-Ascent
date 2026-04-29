@@ -198,7 +198,13 @@ function HemicycleImpl({
   return (
     <svg
       viewBox={`0 0 ${width} ${viewHeight}`}
-      className={`w-full h-auto ${className}`}
+      // todo#56: the hemicycle must fit inside the parent's `max-h`
+      // without horizontal or vertical scrollbars. `h-auto` alone
+      // honoured width but allowed height to overflow the cap; with
+      // explicit `max-w-full max-h-full` and `preserveAspectRatio`
+      // (default xMidYMid meet) the SVG always shrinks to whichever
+      // axis is more constrained while keeping its aspect ratio.
+      className={`w-full h-auto max-w-full max-h-full ${className}`}
       role="img"
       aria-label={`${legislators.length}-seat chamber hemicycle`}
     >
