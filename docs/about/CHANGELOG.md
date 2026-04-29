@@ -4,6 +4,10 @@ All notable changes to Political Ascent are recorded here.
 
 ## [Unreleased]
 
+### Documentation
+
+- **Todo archive sweep 2** (`exp--todo-archive-sweep-2`). Reconciled `docs/todo.md` against the codebase: items #4, #20, #22, #46, #61/#71 (duplicate), #62, #67, #78, #84, #85 were already shipped earlier but still listed as active. Moved them to the archived section with the file/line evidence (ErrorBoundary, `src/utils/logger.ts`, Sparkline in DashboardPanel, Political Goals banner in QuestsPanel, Legislative Session Dashboard, PopulationPanel quotes, GameEngine autosave, CardEffectsModal, VoteResultModal, global `user-select: none`). Process notes #24/#25 marked as adopted (codified in the Director agent rules from session 2 onward).
+
 ### Changed
 
 - **Congress hemicycle fits viewport + Character creator point-budget polish** (`exp--congress-fit-and-budget`, todo#56 + todo#28).
