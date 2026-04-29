@@ -81,7 +81,7 @@
 
 90. Create JSON object for NPCs
 
-91. Adjust the ideology of members of Congress to be their text equivalant (not the coordinates)
+91. Adjust the ideology of members of Congress to be their text equivalent (not the coordinates). — **Shipped (`exp--congress-ideology-labels`).** Congress seat tooltips and member modals now call the shared `ideologyLabel()` helper, so players see labels such as `Right-Libertarian`, `Moderate Left-Authoritarian`, and `Centrist` instead of raw `x · y` coordinate pairs. New Playwright coverage opens a member modal, asserts the coordinate pattern is gone, and captures `tests/e2e/__screenshots__/congress-ideology-labels/member-modal.png`.
 
 ## Completed (archived)
 

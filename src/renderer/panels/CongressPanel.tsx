@@ -35,6 +35,7 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { Hemicycle } from '../components/Hemicycle';
+import { ideologyLabel } from '../components/ideologyLabel';
 import type { Legislator, Party, LegislatorPersonality, LegislatorGender } from '@/types';
 
 type PartyFilter = 'all' | Party;
@@ -384,7 +385,6 @@ export function CongressPanel(): JSX.Element {
             members={sortedMembers}
             total={chamberMembers.length}
             chamberMembers={chamberMembers}
-            sponsorshipById={sponsorshipById}
             partyFilter={partyFilter}
             setPartyFilter={setPartyFilter}
             stateFilter={stateFilter}
@@ -471,6 +471,7 @@ function SeatTooltip({
   const votes = Object.entries(l.votingHistory);
   const yeas = votes.filter(([, v]) => v === 'yea').length;
   const nays = votes.filter(([, v]) => v === 'nay').length;
+  const ideology = ideologyLabel(l.ideology);
 
   return (
     <div
@@ -491,6 +492,10 @@ function SeatTooltip({
         <span className={`font-mono font-bold tabular-nums ${relCls}`}>
           {r > 0 ? '+' : ''}{r}
         </span>
+      </div>
+      <div className="mt-0.5 flex items-baseline justify-between gap-3 text-[0.75rem]">
+        <span className="text-text-muted font-mono">Ideology</span>
+        <span className="font-mono text-right text-text-secondary">{ideology}</span>
       </div>
       {votes.length > 0 && (
         <div className="mt-0.5 flex items-baseline justify-between text-[0.75rem]">
@@ -532,7 +537,6 @@ function MemberListPanel({
   members,
   total,
   chamberMembers,
-  sponsorshipById,
   partyFilter,
   setPartyFilter,
   stateFilter,
@@ -560,8 +564,6 @@ function MemberListPanel({
   total: number;
   /** Full unfiltered chamber list — used to derive available states. */
   chamberMembers: readonly Legislator[];
-  /** Sponsorship counts per legislator id, used in the row meta line. */
-  sponsorshipById: ReadonlyMap<string, number>;
   partyFilter: PartyFilter;
   setPartyFilter: (p: PartyFilter) => void;
   stateFilter: string;
@@ -1041,6 +1043,7 @@ function MemberModal({
   const yeas = votes.filter(([, v]) => v === 'yea').length;
   const nays = votes.filter(([, v]) => v === 'nay').length;
   const abst = votes.filter(([, v]) => v === 'abstain').length;
+  const ideology = ideologyLabel(legislator.ideology);
 
   return (
     <div
@@ -1082,7 +1085,7 @@ function MemberModal({
             <DetailRow label="Personality" value={legislator.personality} />
             <DetailRow
               label="Ideology"
-              value={`${legislator.ideology.x.toFixed(2)} · ${legislator.ideology.y.toFixed(2)}`}
+              value={ideology}
             />
             <DetailRow label="Term ends" value={String(legislator.termEndsYear)} />
             {/* Demographic detail (todo#55) — undefined-safe for legacy saves. */}
