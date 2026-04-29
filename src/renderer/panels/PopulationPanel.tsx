@@ -14,6 +14,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useScrollLock } from '@/utils/useScrollLock';
+import { formatTag } from '@/utils/format';
 import { useWorldStore } from '@/store/worldStore';
 import { useCharacterStore } from '@/store/characterStore';
 import { Card } from '../components/Card';
@@ -110,7 +111,7 @@ export function PopulationPanel(): JSX.Element {
                 <div className="flex flex-wrap gap-1 pt-1">
                   {g.tags.map((t) => (
                     <span key={t} className="text-xs bg-bg-tertiary rounded px-2 py-0.5 text-text-muted">
-                      {t}
+                      {formatTag(t)}
                     </span>
                   ))}
                 </div>
@@ -397,7 +398,7 @@ function GroupFocusModal({
                       key={t}
                       className="font-mono text-[0.6875rem] uppercase tracking-wider px-1.5 py-0.5 bg-bg-tertiary text-text-secondary rounded-sm"
                     >
-                      {t}
+                      {formatTag(t)}
                     </span>
                   ))
                 )}

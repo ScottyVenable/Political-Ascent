@@ -36,6 +36,7 @@ import { allTooltipIds, getTooltip, type TooltipContent } from '../components/to
 import { Icon } from '../components/Icon';
 import { Card } from '../components/Card';
 import { Term } from '../components/tooltip';
+import { formatTag } from '@/utils/format';
 
 /**
  * Strip `[term:id]label[/]` and bracketless `[term:id]` markers from
@@ -144,6 +145,17 @@ export function GlossaryPanel(): JSX.Element {
   }, [all, query, category]);
 
   const selected = selectedId ? getTooltip(selectedId) : filtered[0];
+
+  /**
+   * Navigate the glossary to a specific term by id (todo#44).
+   * Clears the search query and category filter so the term becomes
+   * visible in the left pane list, then selects it.
+   */
+  function navigateTo(id: string): void {
+    setQuery('');
+    setCategory('All');
+    setSelectedId(id);
+  }
 
   return (
     <div className="flex flex-col gap-4 h-full" data-testid="glossary-panel">
@@ -291,7 +303,7 @@ export function GlossaryPanel(): JSX.Element {
 
         {/* Detail pane — renders the same shape as the tooltip body */}
         <Card className="md:col-span-2 overflow-y-auto game-scroll" data-testid="glossary-detail">
-          {selected ? <DetailView term={selected} onNavigate={setSelectedId} /> : (
+          {selected ? <DetailView term={selected} onNavigate={navigateTo} /> : (
             <p className="text-body text-text-muted italic">Select a term on the left.</p>
           )}
         </Card>
@@ -616,7 +628,7 @@ function DetailView({ term, onNavigate }: { term: TooltipContent; onNavigate: (i
                     key={tag}
                     className="font-mono text-label uppercase tracking-widest px-2 py-0.5 bg-bg-tertiary text-text-secondary rounded-sm"
                   >
-                    {tag}
+                    {formatTag(tag)}
                   </span>
                 ))}
               </div>

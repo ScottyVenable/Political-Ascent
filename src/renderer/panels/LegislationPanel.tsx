@@ -9,6 +9,7 @@ import { useWorldStore } from '@/store/worldStore';
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
 import { toEpochDays } from '@/utils/date';
+import { formatTag } from '@/utils/format';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Bar } from '../components/Bar';
@@ -190,7 +191,7 @@ export function LegislationPanel(): JSX.Element {
                 <div className="text-xs text-text-muted flex flex-wrap gap-2 mb-3">
                   {t.tags.map((tag) => (
                     <span key={tag} className="bg-bg-tertiary rounded px-2 py-0.5">
-                      {tag}
+                      {formatTag(tag)}
                     </span>
                   ))}
                   <span className="ml-auto">Opposition {t.opposition}</span>

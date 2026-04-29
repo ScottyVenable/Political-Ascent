@@ -15,6 +15,7 @@
  */
 import { memo } from 'react';
 import type { CardDefinition, CardRarity, CardType } from '@/types';
+import { formatTag } from '@/utils/format';
 import { Icon, type IconName } from './Icon';
 import { ExtendedTooltip, TermText, type TooltipContent } from './tooltip';
 
@@ -261,7 +262,7 @@ function CardFaceImpl({
                   key={t}
                   className="bg-bg-tertiary text-text-muted rounded-sm px-1 py-0.5 text-[0.6rem] font-mono uppercase tracking-wider"
                 >
-                  {t}
+                  {formatTag(t)}
                 </span>
               ))}
             </div>

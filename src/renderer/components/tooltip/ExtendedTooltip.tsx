@@ -39,6 +39,7 @@ import { getTooltip, type ModifierRow, type TooltipContent, type TooltipSection 
 import { findTermMatches } from './registry';
 import { Icon, type IconName } from '../Icon';
 import { useSettingsStore } from '@/store/settingsStore';
+import { formatTag } from '@/utils/format';
 
 // ────────────────────────────────────────────────────────────────
 // PIN COORDINATOR (todo#29, todo#77)
@@ -766,7 +767,7 @@ function SectionRenderer({ section }: { section: TooltipSection }): JSX.Element 
               key={t}
               className="bg-bg-tertiary text-text-muted rounded-sm px-1.5 py-0.5 text-[0.625rem] font-mono uppercase tracking-wider"
             >
-              {t}
+              {formatTag(t)}
             </span>
           ))}
         </div>
