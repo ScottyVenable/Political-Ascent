@@ -30,6 +30,7 @@ import { LegislationSystem } from '@/systems/LegislationSystem';
 
 import { hashString, SeededRNG } from '@/utils/random';
 import { createLogger } from '@/utils/logger';
+import { writeSave } from './SaveSystem';
 
 const log = createLogger('GameEngine');
 
@@ -82,6 +83,18 @@ class GameEngineImpl implements GameEngineAPI {
   };
 
   private unsubs: Array<() => void> = [];
+
+  /**
+   * Counts game weeks elapsed since the last autosave. When this reaches
+   * AUTOSAVE_INTERVAL (4 weeks ≈ 1 in-game month) a silent save is written
+   * to the reserved 'autosave' slot. The counter resets after each save.
+   *
+   * 4 weeks was chosen as a balance between "save frequently enough that
+   * a crash is not catastrophic" and "don't hammer the disk or interrupt
+   * the player with autosave lag on slow machines". (#78)
+   */
+  private autosaveWeekCounter = 0;
+  private static readonly AUTOSAVE_INTERVAL = 4;
 
   registerData(bundle: DataBundle): void {
     this.bundle = bundle;
@@ -203,6 +216,22 @@ class GameEngineImpl implements GameEngineAPI {
         ActionEngine.weeklyRegenerate();
         AchievementEngine.check();
         CardSystem.drawToHandSize(5);
+
+        // ── AUTOSAVE (#78) ──────────────────────────────────────────
+        // Increment the counter and trigger a silent save every
+        // AUTOSAVE_INTERVAL weeks. writeSave is async (IPC round-trip
+        // in Electron, localStorage in browser); we fire-and-forget
+        // so the tick never blocks on I/O. The reserved slot name
+        // 'autosave' is never presented to the player as a named slot —
+        // it is overwritten on every interval.
+        this.autosaveWeekCounter += 1;
+        if (this.autosaveWeekCounter >= GameEngineImpl.AUTOSAVE_INTERVAL) {
+          this.autosaveWeekCounter = 0;
+          void writeSave('autosave', 'Autosave').then((ok) => {
+            if (ok) log.info('autosave written');
+            else log.warn('autosave failed');
+          });
+        }
       }),
       TimeEngine.onMonthly(() => {
         EconomySystem.monthlyReport();
@@ -234,6 +263,8 @@ class GameEngineImpl implements GameEngineAPI {
     TimeEngine.stop();
     for (const unsub of this.unsubs) unsub();
     this.unsubs = [];
+    // Reset autosave counter so a new game starts fresh. (#78)
+    this.autosaveWeekCounter = 0;
   }
 }
 

@@ -26,6 +26,18 @@ export interface PoliticalAscentBridge {
     get: () => Promise<Record<string, unknown>>;
     set: (settings: Record<string, unknown>) => Promise<boolean>;
   };
+  window: {
+    /**
+     * Set the window fullscreen state and persist it so it is
+     * restored on the next launch. (#80)
+     */
+    setFullscreen: (value: boolean) => Promise<boolean>;
+    /**
+     * Returns the current fullscreen state of the BrowserWindow.
+     * Used by Settings to initialise its toggle. (#80)
+     */
+    isFullscreen: () => Promise<boolean>;
+  };
 }
 
 const api: PoliticalAscentBridge = {
@@ -40,6 +52,10 @@ const api: PoliticalAscentBridge = {
   settings: {
     get: () => ipcRenderer.invoke('pa:settings:get'),
     set: (settings) => ipcRenderer.invoke('pa:settings:set', settings),
+  },
+  window: {
+    setFullscreen: (value) => ipcRenderer.invoke('pa:window:setFullscreen', value),
+    isFullscreen: () => ipcRenderer.invoke('pa:window:isFullscreen'),
   },
 };
 

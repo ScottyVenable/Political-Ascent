@@ -89,3 +89,29 @@ export interface Bill {
    */
   stageEndsOnDay?: number;
 }
+
+/**
+ * Policy module — a reusable rider that the player can attach to a bill
+ * during deep-draft. Modules contribute additive deltas to opposition
+ * and budget impact, and append their own effects to the bill's effect
+ * list. Designed so a designer can introduce a new module by editing
+ * JSON only — no code change required.
+ */
+export interface PolicyModule {
+  id: string;
+  name: string;
+  category: 'fiscal' | 'climate' | 'labor' | 'procedural' | 'regional' | 'regulatory';
+  /** Short rationale shown to the player above the toggle. */
+  summary: string;
+  /**
+   * Human-readable phrase inserted into the synthesized bill text
+   * preview. Sentence-cased so multiple modules concatenate nicely.
+   */
+  previewText: string;
+  /** Adds to the base opposition score. May be negative. */
+  oppositionDelta: number;
+  /** Adds to the per-year budget impact in $B. */
+  budgetImpactDelta: number;
+  /** Effects appended to the bill on enactment. */
+  effects: Effect[];
+}

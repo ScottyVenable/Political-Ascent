@@ -1,4 +1,4 @@
-import type { CardDefinition, CardInstance, CardId } from '@/types';
+import type { CardDefinition, CardInstance, CardId, Effect } from '@/types';
 import { useCharacterStore } from '@/store/characterStore';
 import { useGameStore } from '@/store/gameStore';
 import { useWorldStore } from '@/store/worldStore';
@@ -6,6 +6,17 @@ import { applyEffects } from '@/engine/applyEffect';
 import { SeededRNG } from '@/utils/random';
 import { makeId } from '@/utils/id';
 import { createLogger } from '@/utils/logger';
+
+/**
+ * Result of attempting to play a card.
+ *
+ * When `ok` is `true`, `cardName` and `effects` are present and the caller
+ * is expected to show an effects summary to the player (todo#84).
+ * When `ok` is `false`, `reason` explains the rejection.
+ */
+export type PlayResult =
+  | { ok: true; cardName: string; effects: readonly Effect[] }
+  | { ok: false; reason: string };
 
 const log = createLogger('CardSystem');
 
@@ -20,6 +31,12 @@ const log = createLogger('CardSystem');
  */
 export interface CardSystemAPI {
   register(defs: readonly CardDefinition[]): void;
+  /**
+   * Drop every registered definition. Used by tests to keep the
+   * registry hermetic between cases. Production code should never
+   * need this.
+   */
+  clear(): void;
   /** Get a registered definition by id. */
   getDefinition(cardId: CardId): CardDefinition | undefined;
   allDefinitions(): CardDefinition[];
@@ -27,8 +44,14 @@ export interface CardSystemAPI {
   instantiate(cardId: CardId, rng?: SeededRNG): CardInstance;
   /** Deal up to `max - currentHandSize` cards from deck into hand. */
   drawToHandSize(max: number): number;
-  /** Play a card from hand. Returns true on success. */
-  play(instanceId: string): { ok: boolean; reason?: string };
+  /**
+   * Play a card from hand.
+   *
+   * On success, `ok` is `true` and `cardName` + `effects` are populated
+   * so the UI can show an effects summary modal (todo#84). On failure,
+   * `ok` is `false` and `reason` explains why.
+   */
+  play(instanceId: string): PlayResult;
   /** Discard a card from hand back into the deck. */
   discard(instanceId: string): void;
 }
@@ -39,6 +62,10 @@ class CardSystemImpl implements CardSystemAPI {
   register(defs: readonly CardDefinition[]): void {
     for (const d of defs) this.registry.set(d.id, d);
     log.info('registered', { count: defs.length });
+  }
+
+  clear(): void {
+    this.registry.clear();
   }
 
   getDefinition(cardId: CardId): CardDefinition | undefined {
@@ -86,7 +113,8 @@ class CardSystemImpl implements CardSystemAPI {
     return drawn.length;
   }
 
-  play(instanceId: string): { ok: boolean; reason?: string } {
+  play(instanceId: string): PlayResult {
+    // ── 1. Locate card and definition ──────────────────────────
     const char = useCharacterStore.getState();
     const inst = char.hand.find((c) => c.instanceId === instanceId);
     if (!inst) return { ok: false, reason: 'Card not in hand' };
@@ -94,19 +122,86 @@ class CardSystemImpl implements CardSystemAPI {
     if (!def) return { ok: false, reason: 'Unknown card definition' };
 
     const game = useGameStore.getState();
+
+    // ── 2. Resource gates ─────────────────────────────────────
+    // Political capital — checked first because it's the most common
+    // reason a play is denied.
     if (game.politicalCapital < def.cost) {
       return { ok: false, reason: 'Insufficient political capital' };
     }
+    // Action points — defaults to 0 so legacy cards (no apCost) keep
+    // working unchanged.
+    const apCost = def.apCost ?? 0;
+    if (apCost > 0 && game.actionPoints.current < apCost) {
+      return { ok: false, reason: 'Insufficient action points' };
+    }
 
+    // ── 3. Cooldown & uses-per-game gates ─────────────────────
+    // These were declared in CardStats but never enforced. We track per
+    // *instance* so two copies of the same card can be on different
+    // cooldowns (relevant when cards are duplicated by future effects).
+    const stats = def.stats;
+    if (stats?.cooldownWeeks && stats.cooldownWeeks > 0 && inst.lastPlayedWeek != null) {
+      const weeksSince = game.week - inst.lastPlayedWeek;
+      if (weeksSince < stats.cooldownWeeks) {
+        const wait = stats.cooldownWeeks - weeksSince;
+        return {
+          ok: false,
+          reason: `On cooldown (${wait} week${wait === 1 ? '' : 's'} left)`,
+        };
+      }
+    }
+    if (
+      stats?.usesPerGame != null &&
+      stats.usesPerGame > 0 &&
+      (inst.timesPlayed ?? 0) >= stats.usesPerGame
+    ) {
+      return { ok: false, reason: 'No uses remaining this game' };
+    }
+
+    // ── 4. Spend resources & apply effects ────────────────────
     game.addPoliticalCapital(-def.cost);
+    if (apCost > 0) {
+      // spendAP returns false only when balance < amount, which we just
+      // verified. The defensive branch keeps the type honest.
+      const spent = game.spendAP(apCost);
+      if (!spent) {
+        // Refund PC and bail — should not happen, but a hard invariant.
+        game.addPoliticalCapital(def.cost);
+        return { ok: false, reason: 'Action point spend failed' };
+      }
+    }
     applyEffects(def.effects);
 
-    // Remove from hand (played cards are consumed in MVP).
-    useCharacterStore.setState((s) => ({
-      ...s,
-      hand: s.hand.filter((c) => c.instanceId !== instanceId),
-      deck: s.deck.filter((c) => c.instanceId !== instanceId),
-    }));
+    // ── 5. Update instance bookkeeping then remove from hand ──
+    // The card is "consumed" (removed from deck) when this play uses
+    // up its last allowed use. Single-play cards (no usesPerGame, or
+    // usesPerGame === 1) are consumed immediately. Multi-use cards
+    // (usesPerGame > 1) stay in the deck while there are uses left,
+    // and are consumed on the play that brings timesPlayed up to
+    // usesPerGame — which is what stops them from sticking around as
+    // permanent dead draws after their final use.
+    const nextTimesPlayed = (inst.timesPlayed ?? 0) + 1;
+    const cap = stats?.usesPerGame;
+    const consumed = !cap || cap <= 1 || nextTimesPlayed >= cap;
+    useCharacterStore.setState((s) => {
+      const updatedDeck = s.deck.map((c) =>
+        c.instanceId === instanceId
+          ? {
+              ...c,
+              lastPlayedWeek: game.week,
+              timesPlayed: nextTimesPlayed,
+            }
+          : c,
+      );
+      return {
+        ...s,
+        hand: s.hand.filter((c) => c.instanceId !== instanceId),
+        deck: consumed
+          ? updatedDeck.filter((c) => c.instanceId !== instanceId)
+          : updatedDeck,
+      };
+    });
 
     useWorldStore.getState().pushNews({
       id: makeId('news'),
@@ -115,7 +210,7 @@ class CardSystemImpl implements CardSystemAPI {
       severity: 'info',
     });
 
-    return { ok: true };
+    return { ok: true, cardName: def.name, effects: def.effects };
   }
 
   discard(instanceId: string): void {

@@ -20,3 +20,13 @@ Terms used in-game and in the docs.
 - **Action** — a discrete player move that ticks the clock and spends
   resources.
 - **Card** — a playable action drawn from a deck (see [[Cards]]).
+- **Rarity** — every card carries one of six tiers (common, uncommon,
+  rare, epic, legendary, prismatic) driving pack drop weights and
+  visual treatment. See [[Cards]].
+- **Card pack** — a sealed bundle of five cards purchasable in the
+  Collection screen. Pack contents are deterministic per seed.
+- **Action Points (AP)** — a weekly budget of discrete moves. Refills
+  every Monday tick; some cards spend AP in addition to PC.
+- **Extended Tooltip** — the Paradox-style hover panel that surfaces
+  full term definitions, cross-links, and "see also" relations. Hold
+  `Shift` while hovering to pin.

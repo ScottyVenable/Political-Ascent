@@ -153,5 +153,78 @@
       { "type": "resource", "resource": "xp", "value": 150 }
     ],
     "tags": ["legacy"]
+  },
+  {
+    "id": "card-coalition-builder",
+    "name": "Coalition Builder",
+    "$schemaVersion": 2,
+    "type": "relationship",
+    "rarity": "epic",
+    "description": "Forge an unlikely alliance. Two factions warm to you at once.",
+    "flavorText": "The deal nobody thought you could make.",
+    "cost": 22,
+    "apCost": 2,
+    "effects": [
+      { "type": "resource", "resource": "politicalCapital", "value": 18 },
+      { "type": "resource", "resource": "xp", "value": 80 }
+    ],
+    "tags": ["diplomacy", "coalition"],
+    "stats": { "power": 7, "cooldownWeeks": 4, "level": 2 },
+    "factionAffinity": "problem-solvers",
+    "icon": "congress"
+  },
+  {
+    "id": "card-shadow-broker",
+    "name": "Shadow Broker",
+    "$schemaVersion": 2,
+    "type": "sabotage",
+    "rarity": "epic",
+    "description": "An anonymous source moves the narrative. Plausible deniability.",
+    "flavorText": "You will never know who placed the call.",
+    "cost": 25,
+    "effects": [
+      { "type": "flag", "flag": "scandal-in-play", "value": true },
+      { "type": "resource", "resource": "politicalCapital", "value": 15 },
+      { "type": "stat", "target": "integrity", "value": -2 }
+    ],
+    "tags": ["dark", "media"],
+    "stats": { "power": 8, "cooldownWeeks": 6, "usesPerGame": 2 },
+    "icon": "alert"
+  },
+  {
+    "id": "card-floor-takeover",
+    "name": "Floor Takeover",
+    "$schemaVersion": 2,
+    "type": "legislation",
+    "rarity": "epic",
+    "description": "Command the floor for a full session. Force the agenda.",
+    "cost": 28,
+    "apCost": 3,
+    "effects": [
+      { "type": "resource", "resource": "politicalCapital", "value": 30 },
+      { "type": "resource", "resource": "xp", "value": 100 }
+    ],
+    "tags": ["legacy", "oratory"],
+    "stats": { "power": 9, "cooldownWeeks": 8, "level": 3 },
+    "icon": "legislation"
+  },
+  {
+    "id": "card-statesman",
+    "name": "The Statesman",
+    "$schemaVersion": 2,
+    "type": "wild",
+    "rarity": "prismatic",
+    "description": "Once-in-a-career moment. Choose any single resource or relationship benefit; the country listens.",
+    "flavorText": "History will remember this week.",
+    "cost": 50,
+    "apCost": 4,
+    "effects": [
+      { "type": "resource", "resource": "politicalCapital", "value": 60 },
+      { "type": "resource", "resource": "xp", "value": 300 },
+      { "type": "stat", "target": "integrity", "value": 2 }
+    ],
+    "tags": ["legacy", "iconic"],
+    "stats": { "power": 10, "usesPerGame": 1, "level": 3, "factionBonusMultiplier": 1.25 },
+    "icon": "flag"
   }
 ]

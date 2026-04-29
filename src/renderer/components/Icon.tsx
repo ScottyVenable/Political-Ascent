@@ -206,6 +206,101 @@ const ICONS = {
       <path d="M12 5v14M5 12h14" />
     </>
   ),
+  // Tabler "book-2" — open book with a centre rule. Used by the
+  // Glossary panel nav entry.
+  book: (
+    <>
+      <path d="M19 4v16H7a2 2 0 0 1 -2 -2V6a2 2 0 0 1 2 -2z" />
+      <path d="M19 16H7a2 2 0 0 0 -2 2" />
+      <path d="M9 8h6" />
+    </>
+  ),
+  // Tabler "search" — magnifier. Used by the glossary search field.
+  search: (
+    <>
+      <circle cx="10" cy="10" r="6" />
+      <path d="M21 21l-6 -6" />
+    </>
+  ),
+  // Tabler "circle" — empty ring. Used to mark incomplete objectives.
+  circle: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+    </>
+  ),
+  // Tabler "trophy" — used to indicate quest rewards.
+  trophy: (
+    <>
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+      <path d="M7 4h10v6a5 5 0 0 1 -10 0z" />
+      <path d="M17 4h3v3a3 3 0 0 1 -3 3" />
+      <path d="M7 4h-3v3a3 3 0 0 0 3 3" />
+    </>
+  ),
+  // Tabler "lock" — prerequisites not met.
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </>
+  ),
+  // Tabler "news" — folded newspaper. Used by the Patch Notes panel.
+  news: (
+    <>
+      <path d="M16 6h3a1 1 0 0 1 1 1v11a2 2 0 0 1 -4 0V5a1 1 0 0 0 -1 -1H5a1 1 0 0 0 -1 1v13a2 2 0 0 0 2 2h11" />
+      <path d="M8 8h4" />
+      <path d="M8 12h4" />
+      <path d="M8 16h4" />
+    </>
+  ),
+  // Tabler "x" — used for failed/closed states.
+  x: (
+    <>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </>
+  ),
+  // Tabler "external-link" — used in context menus for "Open detail".
+  'external-link': (
+    <>
+      <path d="M12 6H6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
+      <path d="M11 13l9 -9" />
+      <path d="M15 4h5v5" />
+    </>
+  ),
+  // Tabler "copy" — used in context menus for "Copy …" actions.
+  copy: (
+    <>
+      <rect x="8" y="8" width="12" height="12" rx="2" />
+      <path d="M16 8V6a2 2 0 0 0 -2 -2H6a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2" />
+    </>
+  ),
+  // Tabler "eye" — show / visibility. Used by the Congress member-list
+  // dim/hide toggle (todo#69).
+  eye: (
+    <>
+      <circle cx="12" cy="12" r="2" />
+      <path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7" />
+    </>
+  ),
+  // Tabler "eye-off" — hide / visibility disabled. Congress dim→hide toggle.
+  'eye-off': (
+    <>
+      <path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" />
+      <path d="M16.681 16.673A8.717 8.717 0 0 1 12 18c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674M19.5 14.3c.222 -.457 .432 -.94 .629 -1.45a2 2 0 0 0 .371 -3.85" />
+      <path d="M3 3l18 18" />
+    </>
+  ),
+  // Tabler "menu-2" — three horizontal bars. Mobile drawer toggle in
+  // the TopBar (`md:hidden`).
+  menu: (
+    <>
+      <path d="M4 6h16" />
+      <path d="M4 12h16" />
+      <path d="M4 18h16" />
+    </>
+  ),
 } as const satisfies Record<string, IconPath>;
 
 /** Public union of every valid icon id. Generated from the registry. */

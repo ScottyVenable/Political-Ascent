@@ -13,6 +13,10 @@ import { Game } from './screens/Game';
 import { Settings } from './screens/Settings';
 import { Achievements } from './screens/Achievements';
 import { ToastRoot } from './components/ToastRoot';
+// Side-effect import: registers all glossary tooltips. Imported here so
+// every screen that uses <Term> / <ExtendedTooltip term="…"> sees the
+// definitions without each panel having to remember to import them.
+import './components/tooltip/glossary';
 
 export function App(): JSX.Element {
   const route = useRouter((s) => s.route);

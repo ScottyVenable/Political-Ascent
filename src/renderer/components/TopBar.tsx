@@ -1,7 +1,10 @@
 import { memo } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useCharacterStore } from '@/store/characterStore';
+import { useUIStore } from '@/store/uiStore';
 import { ResourcePips } from './ResourcePips';
+import { ExtendedTooltip } from './tooltip';
+import { Icon } from './Icon';
 
 /**
  * TopBar — slim, fixed header showing identity, date, and political resources.
@@ -41,6 +44,7 @@ function TopBarImpl(): JSX.Element {
   // invalidate the character-name span).
   const date = useGameStore((s) => s.currentDate);
   const pc = useGameStore((s) => s.politicalCapital);
+  const treasury = useGameStore((s) => s.treasury);
   const ap = useGameStore((s) => s.actionPoints.current);
   const apMax = useGameStore((s) => s.actionPoints.max);
 
@@ -48,23 +52,48 @@ function TopBarImpl(): JSX.Element {
   const level = useCharacterStore((s) => s.level);
   const xp = useCharacterStore((s) => s.xp);
 
+  const toggleSidebar = useUIStore((s) => s.toggleMobileSidebar);
+  const sidebarOpen = useUIStore((s) => s.mobileSidebarOpen);
+
   // 1-indexed month → 0-indexed lookup. Defensive clamp in case a save
   // file carries a bad value.
   const monthAbbrev = MONTH_ABBREV[Math.max(0, Math.min(11, date.month - 1))];
 
   return (
     <header
-      className="h-12 bg-bg-secondary border-b border-rule px-5 grid items-center"
+      className="h-12 bg-bg-secondary border-b border-rule px-2 sm:px-5 grid items-center gap-2"
       style={{ gridTemplateColumns: '1fr auto 1fr' }}
     >
-      {/* ─── LEFT: Identity ──────────────────────────────────── */}
-      <div className="flex items-baseline gap-3 min-w-0">
-        <span className="font-headline text-sm text-accent-gold truncate">
-          {name || 'Senator'}
-        </span>
-        <span className="font-mono text-label text-text-muted shrink-0">
-          LV {level} · {xp} XP
-        </span>
+      {/* ─── LEFT: Identity (and mobile hamburger) ──────────── */}
+      <div className="flex items-center gap-2 min-w-0">
+        {/* Hamburger — only visible below md, where the sidebar is a
+            drawer. Above md the sidebar is always inline so the toggle
+            would be a no-op. */}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+          aria-expanded={sidebarOpen}
+          aria-controls="sidebar-drawer"
+          data-testid="topbar-menu-button"
+          className="md:hidden w-9 h-9 flex items-center justify-center rounded-sm text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/60 transition-colors duration-instant shrink-0"
+        >
+          <Icon name="menu" size={20} aria-hidden />
+        </button>
+        <div className="flex items-baseline gap-2 sm:gap-3 min-w-0">
+          <span className="font-headline text-sm text-accent-gold truncate">
+            {name || 'Senator'}
+          </span>
+          {/* LV/XP is a tertiary readout — we keep it visible at all
+              widths but tighten the gap on phones so it doesn't push
+              the date readout out of the centre slot. */}
+          <span className="hidden sm:inline font-mono text-label text-text-muted shrink-0">
+            LV {level} · {xp} XP
+          </span>
+          <span className="sm:hidden font-mono text-label text-text-muted shrink-0">
+            LV {level}
+          </span>
+        </div>
       </div>
 
       {/* ─── CENTER: Date ────────────────────────────────────── */}
@@ -78,20 +107,77 @@ function TopBarImpl(): JSX.Element {
       </div>
 
       {/* ─── RIGHT: Resources ────────────────────────────────── */}
-      <div className="flex items-center justify-end gap-5">
-        <div className="flex items-baseline gap-1.5">
-          <span className="font-mono text-data text-accent-gold tabular-nums">
-            {pc}
-          </span>
-          <span className="font-mono text-label text-text-muted">PC</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <ResourcePips value={ap} max={apMax} tone="gold" label="Action Points" />
-          <span className="font-mono text-label text-text-muted">AP</span>
-        </div>
+      <div className="flex items-center justify-end gap-2 sm:gap-5 min-w-0">
+        <ExtendedTooltip term="political-capital">
+          <div tabIndex={0} className="flex items-baseline gap-1.5 cursor-help focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm">
+            <span className="font-mono text-data text-accent-gold tabular-nums">
+              {pc}
+            </span>
+            <span className="font-mono text-label text-text-muted">PC</span>
+          </div>
+        </ExtendedTooltip>
+        {/* Treasury — money. Distinct from PC (which is influence). The
+            coin icon plus the dollar-formatted number reads at a glance
+            as "campaign cash" without needing a label. We always show
+            it, even at $0, so the player learns the resource exists.
+            See docs/todo.md item 12. */}
+        <ExtendedTooltip term="treasury">
+          <div
+            tabIndex={0}
+            className="flex items-baseline gap-1.5 cursor-help focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm"
+            data-testid="topbar-treasury"
+          >
+            <Icon
+              name="economy"
+              size={14}
+              className="text-accent-gold self-center"
+              aria-hidden
+            />
+            <span
+              className="font-mono text-sm text-text-primary tabular-nums"
+              title={`$${treasury.toLocaleString('en-US')}`}
+            >
+              {formatTreasury(treasury)}
+            </span>
+          </div>
+        </ExtendedTooltip>
+        <ExtendedTooltip term="action-points">
+          <div tabIndex={0} className="flex items-center gap-1.5 cursor-help focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm">
+            <ResourcePips value={ap} max={apMax} tone="gold" label="Action Points" />
+            {/* "AP" caption is redundant on phones where the pip row
+                already telegraphs the resource; hide it below sm to
+                save horizontal real estate. */}
+            <span className="hidden sm:inline font-mono text-label text-text-muted">AP</span>
+          </div>
+        </ExtendedTooltip>
       </div>
     </header>
   );
+}
+
+/**
+ * Format a treasury amount as a compact dollar string. The bar is tight
+ * on horizontal real estate, so we collapse thousands → "k" and
+ * millions → "m" once the number is too wide for the slot.
+ *
+ *   0          → "$0"
+ *   850        → "$850"
+ *   12_400     → "$12.4k"
+ *   1_300_000  → "$1.3m"
+ */
+export function formatTreasury(amount: number): string {
+  if (amount < 1_000) return `$${amount}`;
+  if (amount < 1_000_000) {
+    // Round first, then check for the suffix boundary: a value like
+    // 999,950 rounds to "1000.0k", which is wrong-suffix and reads as
+    // a thousand units of magnitude rather than the million it is.
+    const k = (amount / 1_000).toFixed(1);
+    if (parseFloat(k) >= 1_000) {
+      return `$${(amount / 1_000_000).toFixed(1)}m`;
+    }
+    return `$${k}k`;
+  }
+  return `$${(amount / 1_000_000).toFixed(1)}m`;
 }
 
 export const TopBar = memo(TopBarImpl);

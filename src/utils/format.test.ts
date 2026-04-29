@@ -1,15 +1,16 @@
 /**
  * Unit tests for the formatting utilities.
  *
- * Covers the two helpers added in the April 2026 UI pass:
+ * Covers the helpers added in the April 2026 UI passes:
  *   - formatBillionsUSD — compact economy display (`$34.0T`, `$1.7T`, `-$900B`)
  *   - describeIdeology  — humanized compass label for the dashboard
+ *   - formatTag         — human-readable labels for snake_case tag identifiers
  *
  * Pre-existing helpers (`formatDateLong`, `formatCurrency`, etc.) are left
- * to the broader utility suite; this file is scoped to the two additions.
+ * to the broader utility suite; this file is scoped to the additions.
  */
 import { describe, it, expect } from 'vitest';
-import { formatBillionsUSD, describeIdeology } from './format';
+import { formatBillionsUSD, describeIdeology, formatTag } from './format';
 
 describe('formatBillionsUSD', () => {
   it('compacts values of 1000B or more into trillions with one decimal', () => {
@@ -68,5 +69,28 @@ describe('describeIdeology', () => {
     expect(describeIdeology(0.15, 0.15)).toBe('Centrist');
     // Anything strictly above becomes a quadrant.
     expect(describeIdeology(0.16, 0.16)).toBe('Authoritarian Right');
+  });
+});
+
+describe('formatTag', () => {
+  it('title-cases a single lowercase word', () => {
+    expect(formatTag('economy')).toBe('Economy');
+    expect(formatTag('healthcare')).toBe('Healthcare');
+    expect(formatTag('media')).toBe('Media');
+  });
+
+  it('converts underscores to spaces and title-cases each word', () => {
+    expect(formatTag('civil_rights')).toBe('Civil Rights');
+    expect(formatTag('criminal_justice')).toBe('Criminal Justice');
+    expect(formatTag('floor_debate')).toBe('Floor Debate');
+  });
+
+  it('applies known overrides from the lookup table', () => {
+    expect(formatTag('pork')).toBe('Pork Barrel');
+    expect(formatTag('dark')).toBe('Dark Money');
+  });
+
+  it('handles multi-segment snake_case', () => {
+    expect(formatTag('foreign_policy_aid')).toBe('Foreign Policy Aid');
   });
 });

@@ -1,0 +1,25 @@
+{
+  "$schemaVersion": 1,
+  "figures": [
+    { "id": "fdr",        "name": "Franklin D. Roosevelt", "era": "1933–1945 · Democrat",   "x": -0.55, "y":  0.25 },
+    { "id": "lbj",        "name": "Lyndon B. Johnson",     "era": "1963–1969 · Democrat",   "x": -0.40, "y":  0.40 },
+    { "id": "jfk",        "name": "John F. Kennedy",       "era": "1961–1963 · Democrat",   "x": -0.20, "y":  0.10 },
+    { "id": "lincoln",    "name": "Abraham Lincoln",       "era": "1861–1865 · Republican", "x":  0.05, "y":  0.40 },
+    { "id": "eisenhower", "name": "Dwight D. Eisenhower",  "era": "1953–1961 · Republican", "x":  0.30, "y":  0.30 },
+    { "id": "nixon",      "name": "Richard Nixon",         "era": "1969–1974 · Republican", "x":  0.50, "y":  0.60 },
+    { "id": "reagan",     "name": "Ronald Reagan",         "era": "1981–1989 · Republican", "x":  0.70, "y":  0.30 },
+    { "id": "carter",     "name": "Jimmy Carter",          "era": "1977–1981 · Democrat",   "x": -0.30, "y": -0.10 },
+    { "id": "obama",      "name": "Barack Obama",          "era": "2009–2017 · Democrat",   "x": -0.30, "y":  0.10 },
+    { "id": "clinton",    "name": "Bill Clinton",          "era": "1993–2001 · Democrat",   "x":  0.10, "y":  0.20 },
+    { "id": "sanders",    "name": "Bernie Sanders",        "era": "Senator · Independent",  "x": -0.80, "y": -0.25 },
+    { "id": "aoc",        "name": "Alexandria Ocasio-Cortez","era": "Rep. · Democrat",       "x": -0.70, "y": -0.35 },
+    { "id": "thatcher",   "name": "Margaret Thatcher",     "era": "UK PM 1979–1990",        "x":  0.80, "y":  0.50 },
+    { "id": "goldwater",  "name": "Barry Goldwater",       "era": "Senator · Republican",   "x":  0.60, "y": -0.35 },
+    { "id": "wallace",    "name": "George Wallace",        "era": "Governor · Democrat",    "x":  0.25, "y":  0.75 },
+    { "id": "friedman",   "name": "Milton Friedman",       "era": "Economist · Theorist",   "x":  0.75, "y": -0.60 },
+    { "id": "chomsky",    "name": "Noam Chomsky",          "era": "Theorist · Anarchist",   "x": -0.85, "y": -0.70 },
+    { "id": "mill",       "name": "John Stuart Mill",      "era": "Philosopher · 1806–73",  "x": -0.15, "y": -0.70 },
+    { "id": "rand",       "name": "Ayn Rand",              "era": "Philosopher · 1905–82",  "x":  0.80, "y": -0.75 },
+    { "id": "mlk",        "name": "Martin Luther King Jr.","era": "Civil Rights · 1929–68", "x": -0.50, "y": -0.50 }
+  ]
+}

@@ -403,6 +403,33 @@ interface DialogueOption {
 }
 ```
 
+### 4.x Card pack engine
+
+`src/engine/cardPackEngine.ts` is a pure module that turns `(seed, packTemplate, cardPool) → CardDefinition[5]`. No React, no
+DOM, no global state. The engine seeds a `SeededRNG`, weights the pool
+by rarity (per-template), enforces guarantee slots ("at least one
+uncommon-or-better"), and never mutates inputs. Determinism: identical
+seeds always produce identical packs — required for save-restore and
+testability.
+
+### 4.y Tooltip system
+
+`src/renderer/components/tooltip/` is the Paradox-style hover layer:
+
+- `registry.ts` — pure store mapping `term-id → TooltipDefinition`.
+  Side-effect-free; consumed by both presentation and unit tests.
+- `glossary.ts` — seed file that registers terms at module load
+  (imported once from `App.tsx`).
+- `ExtendedTooltip.tsx` — React component. Renders a portal-mounted
+  panel with `role="tooltip"`, viewport clamping, 500 ms openDelay,
+  Shift-to-pin, Esc-to-close, and nested term-link traversal.
+- Components opt in by wrapping their trigger node:
+  `<ExtendedTooltip term="political-capital">…</ExtendedTooltip>`.
+
+The system is engine-agnostic: it never reads game state, only static
+term definitions. This lets us test it without booting the engine and
+keeps it cheap to render.
+
 ---
 
 ## 5. DATA FORMAT STANDARDS

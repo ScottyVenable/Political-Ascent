@@ -42,9 +42,11 @@ class AchievementEngineImpl implements AchievementEngineAPI {
       if (allMet) {
         world.unlockAchievement(def.id);
         useUIStore.getState().pushToast({
-          message: `Achievement unlocked — ${def.name}`,
+          message: `Achievement unlocked \u2014 ${def.name}`,
           severity: 'success',
           ttl: 5000,
+          // todo#54: clicking the toast opens the Achievements screen.
+          actionRoute: 'achievements',
         });
         log.info('unlocked', def.id);
       }

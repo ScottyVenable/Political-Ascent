@@ -42,6 +42,35 @@ body,
   min-height: 100%;
 }
 
+/* ────────────────────────────────────────────────────────────────
+   GLOBAL NO-SELECT — game-feel rule
+   The application is treated as a game UI, not a document. Accidental
+   text selection while clicking through the dashboard, tooltips, or
+   cards reads as a bug to most players. We disable text selection
+   globally and re-enable it only on inputs/textareas/contenteditable
+   regions where the user actually expects to manipulate text.
+   See docs/todo.md item 4.
+   ──────────────────────────────────────────────────────────────── */
+html, body {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* Prevent the iOS long-press magnifier and the Android tap-highlight
+     callout, both of which feel out of place in a game UI. */
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+input,
+textarea,
+[contenteditable='true'],
+[contenteditable=''] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
 /* The previous rule here hard-forced Inter, which silently defeated the
    Tailwind `font-body` token on every element that did not explicitly opt
    in. The game's primary typeface is Inria Serif; the shell inherits it. */
@@ -205,4 +234,213 @@ body {
   background-image:
     radial-gradient(rgba(216, 214, 204, 0.015) 1px, transparent 1px);
   background-size: 3px 3px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   RARITY TREATMENTS — CARD VISUAL LANGUAGE
+   ────────────────────────────────────────────────────────────────
+   Cards declare a rarity (`common` … `prismatic`). The treatment is
+   driven entirely by these utility classes so any card surface
+   (hand row, collection grid, pack reveal) renders consistently.
+
+   The five-tier ladder mirrors the deckbuilder vocabulary players
+   already know from games like Hearthstone or Slay the Spire:
+     common    — flat, no glow
+     uncommon  — green hairline
+     rare      — institutional teal-blue with soft glow
+     epic      — purple, pronounced glow
+     legendary — gold, animated shimmer
+     prismatic — animated rainbow border, the "you got something" tier
+   ──────────────────────────────────────────────────────────────── */
+
+.rarity-common {
+  --rarity-color: #5f6158;
+  --rarity-glow: rgba(0, 0, 0, 0);
+}
+.rarity-uncommon {
+  --rarity-color: #6b8f5a;
+  --rarity-glow: rgba(107, 143, 90, 0.35);
+}
+.rarity-rare {
+  --rarity-color: #4a7a96;
+  --rarity-glow: rgba(74, 122, 150, 0.45);
+}
+.rarity-epic {
+  --rarity-color: #9b6dbf;
+  --rarity-glow: rgba(155, 109, 191, 0.55);
+}
+.rarity-legendary {
+  --rarity-color: #c9a84c;
+  --rarity-glow: rgba(201, 168, 76, 0.65);
+}
+.rarity-prismatic {
+  --rarity-color: #d8d6cc;
+  --rarity-glow: rgba(216, 214, 204, 0.55);
+}
+
+.rarity-frame {
+  border: 1px solid var(--rarity-color);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  transition: box-shadow var(--pa-dur-normal) var(--pa-ease-standard),
+    transform var(--pa-dur-normal) var(--pa-ease-standard);
+  position: relative;
+}
+.rarity-frame:hover,
+.rarity-frame:focus-visible {
+  box-shadow: 0 0 14px var(--rarity-glow);
+  transform: translateY(-2px);
+}
+
+/* Legendary shimmer — a slow, low-amplitude border-color animation that
+   reads as "this card is special" without becoming a strobe. */
+@keyframes pa-legendary-shimmer {
+  0%, 100% { box-shadow: 0 0 8px var(--rarity-glow); }
+  50%      { box-shadow: 0 0 18px var(--rarity-glow); }
+}
+.rarity-legendary.rarity-frame {
+  animation: pa-legendary-shimmer 3.2s ease-in-out infinite;
+}
+
+/* Prismatic — an animated conic-gradient overlay. We set it as the
+   border via a pseudo-element so the card body's content stays crisp.
+
+   --- IMPLEMENTATION HISTORY ---
+   v1 (broken): we rotated the entire `::before` element with
+   `transform: rotate()`. Because the pseudo-element is a *rectangle*
+   inset:-2px outside the card, rotating it by anything other than
+   90°/180°/270° caused the corners to sweep outside the parent's
+   rounded clip, producing the ugly "spotlight wedge" the Lead Director
+   flagged on The Statesman card. Worse, when an ancestor was already
+   running its own `transform` animation (pack-reveal flip, hover lift)
+   browsers occasionally froze the rotation entirely.
+   v2 (this version): use `@property` to register a custom angle
+   property that the browser can interpolate as a real <angle> value.
+   The conic gradient reads `from var(...)`, so animating the property
+   sweeps the *gradient stops* around the static rectangle. The element
+   itself never rotates, so corners never escape the clip and the
+   animation composes cleanly with parent transforms.
+
+   `@property` ships in Chrome 85+, Safari 16.4+, Firefox 128+ — covers
+   every platform Political Ascent currently targets. Older browsers
+   simply see a static prismatic gradient (still distinguishable from
+   other rarities, just not animated), which is an acceptable
+   degradation.
+
+   Other notes:
+   - `isolation: isolate` on the parent contains the stacking context
+     so the gradient never bleeds onto siblings or gets clipped by an
+     ancestor's `overflow`.
+   - `pointer-events: none` keeps the gradient from intercepting hover.
+   - `will-change: background` hints the compositor at the right
+     property; rotating gradient *stops* (not the layer) is GPU-cheap
+     when the layer itself is promoted. */
+@property --pa-prismatic-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes pa-prismatic-spin {
+  to { --pa-prismatic-angle: 360deg; }
+}
+.rarity-prismatic.rarity-frame {
+  border-color: transparent;
+  background-clip: padding-box;
+  isolation: isolate;
+  z-index: 0;
+}
+.rarity-prismatic.rarity-frame::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--pa-prismatic-angle),
+    #c9a84c, #9b6dbf, #4a7a96, #6b8f5a, #c9a84c
+  );
+  animation: pa-prismatic-spin 6s linear infinite;
+  filter: blur(0.5px);
+  pointer-events: none;
+  will-change: background;
+}
+/* Honour reduced-motion for the spin specifically. The global
+   reduced-motion rule already sets `animation-duration: 0s` but we
+   keep the gradient visible (just static) so the rarity is still
+   communicated. */
+@media (prefers-reduced-motion: reduce) {
+  .rarity-prismatic.rarity-frame::before {
+    animation: none;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CARD PACK OPENING — ANIMATIONS
+   ──────────────────────────────────────────────────────────────── */
+
+/* Pack idle shake — three quick wiggles before the burst. */
+@keyframes pa-pack-shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  20%      { transform: translateX(-3px) rotate(-1.5deg); }
+  40%      { transform: translateX(3px)  rotate(1.5deg); }
+  60%      { transform: translateX(-2px) rotate(-1deg); }
+  80%      { transform: translateX(2px)  rotate(1deg); }
+}
+.animate-pack-shake {
+  animation: pa-pack-shake 0.6s ease-in-out;
+}
+
+/* Pack burst — quick scale-up + fade, used as the "reveal" trigger. */
+@keyframes pa-pack-burst {
+  0%   { transform: scale(1);    opacity: 1; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1.4);  opacity: 0; }
+}
+.animate-pack-burst {
+  animation: pa-pack-burst 350ms var(--pa-ease-depart) forwards;
+}
+
+/* Card flip-reveal — used per-card during the reveal phase. */
+@keyframes pa-card-reveal {
+  from { transform: rotateY(90deg) translateY(20px); opacity: 0; }
+  to   { transform: rotateY(0deg)  translateY(0);    opacity: 1; }
+}
+.animate-card-reveal {
+  animation: pa-card-reveal 360ms var(--pa-ease-arrive) both;
+  transform-style: preserve-3d;
+  perspective: 800px;
+}
+
+/* Tooltip enter — used by the extended tooltip portal. Subtle so the
+   tooltip never feels like a popup ad. */
+@keyframes pa-tooltip-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-tooltip-enter {
+  animation: pa-tooltip-enter 120ms var(--pa-ease-arrive) both;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   Cards panel — playable glow ring (todo#33)
+   Surrounds an entire card-row-playable row with a faint gold
+   pulse so the player can scan the hand and see at a glance which
+   cards are currently legal to play. The pulse uses a longer 1.8s
+   period than the standard hover so it reads as a "live" indicator
+   rather than a hover effect. Reduced motion users see the static
+   ring without the pulse.
+   ──────────────────────────────────────────────────────────── */
+@keyframes pa-card-playable-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.20), 0 0 6px rgba(201, 168, 76, 0.18); }
+  50%      { box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.55), 0 0 14px rgba(201, 168, 76, 0.40); }
+}
+.card-row-playable {
+  border-radius: 0.25rem;
+  animation: pa-card-playable-pulse 1.8s var(--pa-ease-standard) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-row-playable {
+    animation: none;
+    box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.45);
+  }
 }

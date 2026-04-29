@@ -3,9 +3,14 @@
  *
  * Dismissal is both automatic (ttl) and manual (click). Caps visible toasts
  * at 5 to avoid stacking noise.
+ *
+ * todo#54: if a toast has an `actionRoute`, clicking it navigates to that
+ * route (via the router store) and dismisses the toast. Achievement toasts
+ * use this to open the Achievements screen.
  */
 import { useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
+import { useRouter } from '../router';
 
 const TONE: Record<string, string> = {
   info: 'bg-bg-secondary border-accent-blue',
@@ -17,6 +22,7 @@ const TONE: Record<string, string> = {
 export function ToastRoot(): JSX.Element {
   const toasts = useUIStore((s) => s.toasts);
   const dismissToast = useUIStore((s) => s.dismissToast);
+  const navigate = useRouter((s) => s.navigate);
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -35,10 +41,25 @@ export function ToastRoot(): JSX.Element {
       {toasts.slice(-5).map((t) => (
         <button
           key={t.id}
-          onClick={() => dismissToast(t.id)}
-          className={`text-left max-w-xs rounded border-l-4 px-3 py-2 text-sm shadow ${TONE[t.severity] ?? TONE.info}`}
+          onClick={() => {
+            if (t.actionRoute) {
+              // Navigate to the target route (e.g. achievements screen)
+              // then dismiss so the toast doesn't linger after navigation.
+              navigate(t.actionRoute as Parameters<typeof navigate>[0]);
+            }
+            dismissToast(t.id);
+          }}
+          className={`text-left max-w-xs rounded border-l-4 px-3 py-2 text-sm shadow ${TONE[t.severity] ?? TONE.info}${
+            t.actionRoute ? ' cursor-pointer hover:brightness-110' : ''
+          }`}
+          title={t.actionRoute ? 'Click to view' : undefined}
         >
           <span className="text-text-primary">{t.message}</span>
+          {t.actionRoute && (
+            <span className="block font-mono text-[0.6rem] uppercase tracking-wider text-text-muted mt-0.5">
+              Click to view
+            </span>
+          )}
         </button>
       ))}
     </div>

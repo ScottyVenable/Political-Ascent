@@ -1,4 +1,4 @@
-import type { PropsWithChildren, HTMLAttributes } from 'react';
+import type { PropsWithChildren, HTMLAttributes, ReactNode } from 'react';
 
 /**
  * Card — a ruled panel used to group related UI.
@@ -15,9 +15,13 @@ import type { PropsWithChildren, HTMLAttributes } from 'react';
  *   - No drop-shadow. Elevation in this UI comes from colour contrast
  *     (bg-secondary on bg-primary), not soft shadows.
  */
-export interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  title?: string;
-  subtitle?: string;
+export interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+  /**
+   * Card heading. String for the common case; ReactNode so callers can
+   * pass a `<Term>` (glossary-link header) or any composed element.
+   */
+  title?: ReactNode;
+  subtitle?: ReactNode;
   accent?: 'blue' | 'red' | 'gold';
 }
 

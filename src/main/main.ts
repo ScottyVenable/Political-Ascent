@@ -38,6 +38,10 @@ const persist = new Store<StoreSchema>({
 });
 
 function createMainWindow(): BrowserWindow {
+  // Read persisted settings so we can restore display prefs on launch.
+  const savedSettings = persist.get('settings') as Record<string, unknown>;
+  const restoreFullscreen = savedSettings.fullscreen === true;
+
   const win = new BrowserWindow({
     width: 1440,
     height: 900,
@@ -45,7 +49,11 @@ function createMainWindow(): BrowserWindow {
     minHeight: 700,
     backgroundColor: '#0F1117',
     show: false,
-    autoHideMenuBar: false,
+    // Menu bar is hidden by default (reappears on Alt/F10 on Windows).
+    // This keeps the game surface clean without permanently removing the
+    // menu — the View → Toggle Fullscreen and Help items remain
+    // discoverable for players who need them. (#79)
+    autoHideMenuBar: true,
     title: 'Political Ascent',
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
@@ -56,7 +64,26 @@ function createMainWindow(): BrowserWindow {
     },
   });
 
-  win.once('ready-to-show', () => win.show());
+  win.once('ready-to-show', () => {
+    win.show();
+    // Restore fullscreen state from the last session. We set it here
+    // (inside ready-to-show) so the window is already visible before
+    // it enters full screen, which avoids a black-flash on some GPUs.
+    // (#80)
+    if (restoreFullscreen) win.setFullScreen(true);
+  });
+
+  // Persist the current fullscreen state whenever the window
+  // enters or leaves full screen (keyboard shortcut, menu item, or
+  // a programmatic call from the renderer). (#80)
+  win.on('enter-full-screen', () => {
+    const s = persist.get('settings') as Record<string, unknown>;
+    persist.set('settings', { ...s, fullscreen: true });
+  });
+  win.on('leave-full-screen', () => {
+    const s = persist.get('settings') as Record<string, unknown>;
+    persist.set('settings', { ...s, fullscreen: false });
+  });
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url);
@@ -148,6 +175,25 @@ function registerIpc(): void {
 
   ipcMain.handle('pa:app:version', () => app.getVersion());
   ipcMain.handle('pa:app:platform', () => process.platform);
+
+  // Fullscreen toggle — called from the Settings screen. The window
+  // 'enter-full-screen' / 'leave-full-screen' events then persist the
+  // new state automatically. (#80)
+  ipcMain.handle('pa:window:setFullscreen', (_event, value: boolean) => {
+    const [win] = BrowserWindow.getAllWindows();
+    if (win) {
+      win.setFullScreen(value);
+      return true;
+    }
+    return false;
+  });
+
+  // Report current fullscreen state to the renderer so the Settings
+  // screen can initialise its toggle to the correct value.
+  ipcMain.handle('pa:window:isFullscreen', () => {
+    const [win] = BrowserWindow.getAllWindows();
+    return win ? win.isFullScreen() : false;
+  });
 }
 
 void app.whenReady().then(() => {
