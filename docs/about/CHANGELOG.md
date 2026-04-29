@@ -6,6 +6,12 @@ All notable changes to Political Ascent are recorded here.
 
 ### Changed
 
+- **Congress hemicycle fits viewport + Character creator point-budget polish** (`exp--congress-fit-and-budget`, todo#56 + todo#28).
+  - **#56 Hemicycle fit.** The Congress map (`Hemicycle.tsx`) now uses `w-full h-auto max-w-full max-h-full` with the default `xMidYMid meet` `preserveAspectRatio` so it shrinks to whichever axis is more constrained. Container in `CongressPanel.tsx` switched to `max-h-[55vh] min-h-[220px] flex items-center justify-center` so the chamber stays centred while it scales. Previously `h-auto` honoured width but allowed height to overflow `max-h-[45vh]` on widescreen displays, clipping the bottom of the back row.
+  - **#28 Stat budget.** `StatBudget` (Character creator) gains (a) a subtle vertical hairline at `min/max` along the bar marking where the lower bound sits, and (b) a status line below the bar that translates the numeric total into a single action-oriented sentence: "Spend N more points to continue" / "Ready · N points unspent" / "Over budget by N points". Players no longer have to do the arithmetic themselves.
+
+### Changed
+
 - **Humanise data tags across the renderer** (`exp--humanize-data-tags`, todo#75). New `src/utils/humanize.ts` centralises the small label dictionaries that were previously duplicated inline in `Game.tsx` and `QuestsPanel.tsx`. Exposes generic `humaniseId(id)` (camelCase / kebab-case / snake_case → Title Case) plus typed lookups `humaniseResource`, `humaniseEconomyMetric`, `humaniseCohortId`, `humaniseStat`, each backed by an authored dictionary with a generic fallback so modder-added ids still render readably. Wired into both `describeEffect` implementations: cohort ids in quest reward bullets and card-effects modal rows now read as e.g. "Working Class Happiness" instead of "working-class Happiness". 7 new tests (`humanize.test.ts`) cover camelCase / kebab / snake / empty / repeated-separator inputs and dictionary fallbacks. `QuestsPanel.test.ts` updated to expect the humanised cohort label.
 
 ### Changed

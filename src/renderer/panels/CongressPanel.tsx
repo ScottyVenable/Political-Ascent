@@ -272,7 +272,16 @@ export function CongressPanel(): JSX.Element {
             </div>
             <PartyStrip breakdown={breakdown} total={totalSeats} className="mt-2" />
           </header>
-          <div className="px-2 pt-1 max-h-[45vh] overflow-hidden">
+          {/*
+            Constrained height so the hemicycle never requires vertical
+            scrolling to see in full (todo#56). The SVG is
+            `w-full h-auto max-h-full` inside a flex column whose body
+            has `max-h-[55vh]` — `flex items-center justify-center`
+            keeps the chamber centred while it scales down to fit.
+            On phones with very short viewports we fall back to
+            `min-h` so the hemicycle keeps a legible minimum size.
+          */}
+          <div className="px-2 pt-1 max-h-[55vh] min-h-[220px] overflow-hidden flex items-center justify-center">
             <Hemicycle
               legislators={hemicycleMembers}
               onSelect={onSeatClick}
