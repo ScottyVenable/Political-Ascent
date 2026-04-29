@@ -24,6 +24,7 @@
  * @module renderer/components/DraftLegislationScreen
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useScrollLock } from '@/utils/useScrollLock';
 import policyModulesData from '@/data/legislation/modules/policy-modules.json';
 import { LegislationSystem } from '@/systems/LegislationSystem';
 import { useUIStore } from '@/store/uiStore';
@@ -60,6 +61,9 @@ export function DraftLegislationScreen({
   const [title, setTitle] = useState(baseTemplate.title);
   const [activeModuleIds, setActiveModuleIds] = useState<Set<string>>(new Set());
   const pushToast = useUIStore((s) => s.pushToast);
+
+  // Lock body scroll while the full-screen drafting overlay is open.
+  useScrollLock();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {

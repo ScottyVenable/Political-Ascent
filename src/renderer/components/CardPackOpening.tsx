@@ -28,6 +28,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cardPackEngine } from '@/engine/cardPackEngine';
 import type { CardPackId, CardPackResult } from '@/types';
+import { useScrollLock } from '@/utils/useScrollLock';
 import { Button } from './Button';
 import { CardFace } from './CardFace';
 import { Icon } from './Icon';
@@ -47,6 +48,9 @@ function prefersReducedMotion(): boolean {
 }
 
 export function CardPackOpening({ packId, seed, onClose }: CardPackOpeningProps): JSX.Element {
+  // Lock body scroll while the pack-opening overlay is visible.
+  useScrollLock();
+
   // Open the pack ONCE and memoize. Re-renders during the reveal must
   // not produce different cards.
   const result: CardPackResult = useMemo(

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useScrollLock } from '@/utils/useScrollLock';
 import { useUIStore } from '@/store/uiStore';
 import type { VoteResultPayload, CardEffectsPayload } from '@/store/uiStore';
 import type { Effect } from '@/types';
@@ -228,6 +229,12 @@ function VoteResultModal(): JSX.Element | null {
   // Pick the first vote-result in the queue; other modal types are
   // handled by their own components (e.g. EventModal above).
   const modal = modals.find((m) => m.type === 'vote-result');
+
+  // Lock scroll when the modal is visible. Hook must be called
+  // unconditionally (Rules of Hooks) so we call it here and rely on
+  // the early-return guard that follows.
+  useScrollLock(!!modal);
+
   if (!modal) return null;
 
   const data = modal.payload as VoteResultPayload;
@@ -484,6 +491,10 @@ function CardEffectsModal(): JSX.Element | null {
   const closeModal = useUIStore((s) => s.closeModal);
 
   const modal = modals.find((m) => m.type === 'card-effects');
+
+  // Lock scroll when the modal is visible (hook must precede early return).
+  useScrollLock(!!modal);
+
   if (!modal) return null;
 
   const { cardName, effects } = modal.payload as CardEffectsPayload;

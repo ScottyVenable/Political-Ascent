@@ -29,6 +29,7 @@
  * @module renderer/panels/CongressPanel
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useScrollLock } from '@/utils/useScrollLock';
 import { useWorldStore } from '@/store/worldStore';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -795,6 +796,9 @@ function MemberModal({
   legislator: Legislator;
   onClose: () => void;
 }): JSX.Element {
+  // Lock body scroll while the member detail overlay is open.
+  useScrollLock();
+
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
       if (e.key === 'Escape') onClose();

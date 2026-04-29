@@ -13,6 +13,7 @@
  * @module renderer/panels/PopulationPanel
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useScrollLock } from '@/utils/useScrollLock';
 import { useWorldStore } from '@/store/worldStore';
 import { useCharacterStore } from '@/store/characterStore';
 import { Card } from '../components/Card';
@@ -253,6 +254,9 @@ function GroupFocusModal({
   group: PopulationGroup;
   onClose: () => void;
 }): JSX.Element {
+  // Lock body scroll while the cohort detail overlay is open.
+  useScrollLock();
+
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
       if (e.key === 'Escape') onClose();

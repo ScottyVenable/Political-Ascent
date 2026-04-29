@@ -17,6 +17,7 @@
  * @module renderer/components/SaveLoadModal
  */
 import { useCallback, useEffect, useState } from 'react';
+import { useScrollLock } from '@/utils/useScrollLock';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import {
@@ -96,6 +97,9 @@ async function loadSlots(): Promise<SlotEntry[]> {
 }
 
 export function SaveLoadModal({ mode, onClose, onLoaded }: Props): JSX.Element {
+  // Lock body scroll while save/load overlay is open.
+  useScrollLock();
+
   const [slots, setSlots] = useState<SlotEntry[] | null>(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
