@@ -53,6 +53,17 @@ const RARITY_LABEL: Record<CardRarity, string> = {
   prismatic: 'Prismatic',
 };
 
+/** Map card types to a background gradient style for the art area. */
+const TYPE_ART_STYLE: Record<CardType, string> = {
+  action:       'from-amber-900/40 to-amber-700/10',
+  boost:        'from-emerald-900/40 to-emerald-700/10',
+  sabotage:     'from-red-900/40 to-red-700/10',
+  resource:     'from-blue-900/40 to-blue-700/10',
+  legislation:  'from-violet-900/40 to-violet-700/10',
+  relationship: 'from-pink-900/40 to-pink-700/10',
+  wild:         'from-slate-700/50 to-slate-500/10',
+};
+
 function CardFaceImpl({
   def,
   state = 'idle',
@@ -112,17 +123,6 @@ function CardFaceImpl({
 
   return (
     <ExtendedTooltip content={tooltipContent} openDelay={500}>
-/** Map card types to a background gradient style for the art area. */
-const TYPE_ART_STYLE: Record<CardType, string> = {
-  action:       'from-amber-900/40 to-amber-700/10',
-  boost:        'from-emerald-900/40 to-emerald-700/10',
-  sabotage:     'from-red-900/40 to-red-700/10',
-  resource:     'from-blue-900/40 to-blue-700/10',
-  legislation:  'from-violet-900/40 to-violet-700/10',
-  relationship: 'from-pink-900/40 to-pink-700/10',
-  wild:         'from-slate-700/50 to-slate-500/10',
-};
-
       <article
         onClick={onClick}
         className={
