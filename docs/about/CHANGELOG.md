@@ -6,6 +6,13 @@ All notable changes to Political Ascent are recorded here.
 
 ### Added
 
+- **Mobile polish + new pre-release APK** (`exp--mobile-polish-and-apk`, todo#23 follow-up).
+  - **Modal viewport sizing.** `ModalShell` now clamps to `max-h: calc(100dvh - 1.5rem)`, switches to a `flex flex-col` column with the header pinned and the body region scrolling internally (`overflow-y-auto min-h-0 game-scroll`). On portrait Pixel-class devices, long event descriptions and vote-result modals no longer overflow the viewport. Outer overlay padding now respects `env(safe-area-inset-*)` so the dialog can't tuck under the Pixel notch.
+  - **Modal close glyph.** Replaced the literal `✕` Unicode character with `<Icon name="close" size={16} />` so the close affordance follows the same icon registry policy as everything else (and inherits `currentColor` for theme tinting).
+  - **APK pre-release** `v0.1.0-alpha.1-exp.20260429` published. Bumped `package.json` to match (`0.1.0-alpha.1-exp.20260429`) and `android/app/build.gradle` to `versionCode 2 / versionName "0.1.0-alpha.1-exp.20260429"`. Debug APK ~3.83 MB.
+
+### Added
+
 - **Polish pack 2** (`exp--polish-pack-2`, todo#41 / todo#54 / todo#58 / todo#86).
   - **Determinism guard test** (todo#86). New `src/test/determinism.test.ts` walks `src/engine/`, `src/systems/`, and `src/store/` and fails the suite if any non-test, non-comment line contains `Math.random(`. Honours `// eslint-disable-line determinism/seeded-rng` for explicit, justified opt-outs. The guard caught one real violation: `uiStore.pushToast` was assigning `Math.floor(Math.random() * 1000)` to toast IDs. Replaced with a session-monotonic `toastSeq` counter so toast IDs remain unique without the prohibited primitive.
   - **Money formatting precision** (todo#58). New `formatBillionsUSDFull(n)` helper returns the full comma-grouped USD value (e.g. `$1,734,000,000,000`); new `formatBillionsUSDForDisplay(n, precision)` consumes the new `display.numberPrecision` setting (`'auto' | 0 | 1 | 2 | 3`). Settings panel grows a "Number precision" `<select>` between Reduce-motion and Fullscreen toggles. The Dashboard's Annual Deficit KPI now renders with the player's chosen precision and exposes the full comma-grouped value inside its hover tooltip. Nine new tests added to `format.test.ts`.
