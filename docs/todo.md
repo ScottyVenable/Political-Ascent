@@ -51,7 +51,6 @@
 72. Implement a system for tracking and displaying the player's/NPCs relationships with various political factions and interest groups, including their level of support and influence. This would allow players to make informed decisions about which factions to align with and how to navigate the complex web of political alliances in the game.
 73. Have a breakdown on the bill creation showing where the opposition from the bill is coming from on certain provisions. Expand on this system more by making the Draft New menu have the player creaete the name of the bill (or generate one), choose the category, and various other adjustments before going in the adding of provisions and drafting the bill. More provisions and features will be added based on upgrades, cards, traits, ideology, feedback from constituants, and research gathered from the players team (which would be a new menu to manage staff and direct them based on role).
 74. In the Character screen, track the player characters personal funds and implement ways to get more.
-75. Find all data tags rendered in the game and make sure to render them to be better fitting in the game instead of just the name of the variable.
 78. Add an autosave system
 82. (no entry — original numbering jumped from 81 to 83 in source)
 84. Show an effects modal when playing a card that tell's you what it did.
@@ -126,3 +125,5 @@ Items below were on this list and are now shipped on `experimental`. Kept here a
   
 - **#90** —   
   
+- **#75** — Find all data tags rendered in the game and make sure to render them to be better fitting in the game instead of just the name of the variable.  
+  **Shipped in `exp--humanize-data-tags`.** New `src/utils/humanize.ts` centralises camelCase/kebab/snake → Title Case conversion plus typed lookups (`humaniseResource`, `humaniseEconomyMetric`, `humaniseCohortId`, `humaniseStat`) backed by authored dictionaries with a generic fallback. Wired into both `describeEffect` implementations in `Game.tsx` and `QuestsPanel.tsx` so cohort ids in quest reward bullets and card-effects rows now read as "Working Class Happiness" rather than "working-class Happiness".

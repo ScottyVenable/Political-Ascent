@@ -6,6 +6,10 @@ All notable changes to Political Ascent are recorded here.
 
 ### Changed
 
+- **Humanise data tags across the renderer** (`exp--humanize-data-tags`, todo#75). New `src/utils/humanize.ts` centralises the small label dictionaries that were previously duplicated inline in `Game.tsx` and `QuestsPanel.tsx`. Exposes generic `humaniseId(id)` (camelCase / kebab-case / snake_case → Title Case) plus typed lookups `humaniseResource`, `humaniseEconomyMetric`, `humaniseCohortId`, `humaniseStat`, each backed by an authored dictionary with a generic fallback so modder-added ids still render readably. Wired into both `describeEffect` implementations: cohort ids in quest reward bullets and card-effects modal rows now read as e.g. "Working Class Happiness" instead of "working-class Happiness". 7 new tests (`humanize.test.ts`) cover camelCase / kebab / snake / empty / repeated-separator inputs and dictionary fallbacks. `QuestsPanel.test.ts` updated to expect the humanised cohort label.
+
+### Changed
+
 - **UX polish pack 1** (`exp--ux-polish-pack-1`, todo#26 + housekeeping #29/#37/#76/#77/#90).
   - **Tooltip pin default 2s → 3s** (todo#26). `gameplay.tooltipPinMs` default in `settingsStore` bumped from 2000ms to 3000ms after playtesting showed 2s was just shy of comfortable for nested-term reading. Settings slider still allows 0.5–5.0s in 250ms steps.
   - **`docs/todo.md` archive** (todo#90). All twenty-four strikethrough-completed items previously inline in the numbered list moved to a single `## Completed (archived)` section at the bottom. Six items shipped in earlier branches but never crossed off (#29 sibling pin eviction, #37 cursor-anchored tooltip top-left, #76 modal scroll lock via `useScrollLock`, #77 nested-pin coexistence, #90 itself, plus #26 above) added to the archive with attribution. Active list is now noticeably shorter and easier to triage.
