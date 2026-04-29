@@ -4,6 +4,13 @@ All notable changes to Political Ascent are recorded here.
 
 ## [Unreleased]
 
+### Changed
+
+- **UX polish pack 1** (`exp--ux-polish-pack-1`, todo#26 + housekeeping #29/#37/#76/#77/#90).
+  - **Tooltip pin default 2s → 3s** (todo#26). `gameplay.tooltipPinMs` default in `settingsStore` bumped from 2000ms to 3000ms after playtesting showed 2s was just shy of comfortable for nested-term reading. Settings slider still allows 0.5–5.0s in 250ms steps.
+  - **`docs/todo.md` archive** (todo#90). All twenty-four strikethrough-completed items previously inline in the numbered list moved to a single `## Completed (archived)` section at the bottom. Six items shipped in earlier branches but never crossed off (#29 sibling pin eviction, #37 cursor-anchored tooltip top-left, #76 modal scroll lock via `useScrollLock`, #77 nested-pin coexistence, #90 itself, plus #26 above) added to the archive with attribution. Active list is now noticeably shorter and easier to triage.
+  - No engine/system code changed; behaviour change is limited to the new default pin duration.
+
 ### Added
 
 - **Tooltip polish 3 — category-coloured term underlines** (`exp--tooltip-polish-3`, todo#51 + housekeeping). The inline `<Term>` chip now reads its registered tooltip's `subtitle` and applies a category-specific Tailwind decoration class (Resource → gold, Stat → sky, Mechanic → slate, Concept → violet, Legislation → emerald, Action → amber, Population → rose, Economy → teal, Cohort metric → pink, Event → orange). Unknown / missing subtitles fall back to the original `decoration-accent-gold/60` so legacy terms look unchanged. The mapping is exposed as `termCategoryDecorationClass(subtitle)` for tests and any future surfaces that need to colour terms outside of `<Term>`. New `termCategory.test.ts` covers fallback, case-insensitivity, whitespace tolerance, and uniqueness across the ten known categories. Branch also reconciles `docs/todo.md`: items 49, 50, 52, 57, 59, 79, 80, 83 were already shipped in earlier PRs but had not been crossed off — they are now annotated with the PR or commit they shipped in.
