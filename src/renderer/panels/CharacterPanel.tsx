@@ -14,6 +14,7 @@
  */
 import { useState } from 'react';
 import { useCharacterStore } from '@/store/characterStore';
+import { useGameStore } from '@/store/gameStore';
 import { GameEngine } from '@/engine/GameEngine';
 import { Card } from '../components/Card';
 import { StatBlock } from '../components/StatBlock';
@@ -21,12 +22,15 @@ import { IdeologyCompass } from '../components/IdeologyCompass';
 import { AvatarMedallion } from '../components/AvatarMedallion';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { formatCurrency } from '@/utils/format';
+import { personalFinanceActions } from '@/utils/personalFinance';
 import { Button } from '../components/Button';
 import { getAvatarPreset, DEFAULT_AVATAR_ID } from '@/data/avatars';
 
 export function CharacterPanel(): JSX.Element {
   const char = useCharacterStore((s) => s);
   const setAvatar = useCharacterStore((s) => s.setAvatar);
+  const adjustFunds = useCharacterStore((s) => s.adjustFunds);
+  const addTreasury = useGameStore((s) => s.addTreasury);
   const traitDefs = GameEngine.getTraits();
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -34,6 +38,17 @@ export function CharacterPanel(): JSX.Element {
   // legacy saves that pre-date the avatarId field.
   const avatarId = char.avatarId ?? DEFAULT_AVATAR_ID;
   const avatar = getAvatarPreset(avatarId);
+  const financeActions = personalFinanceActions(char);
+
+  function applyFinanceAction(action: (typeof financeActions)[number]): void {
+    adjustFunds(action.delta);
+    if (action.treasuryDelta) addTreasury(action.treasuryDelta);
+  }
+
+  function formatFinanceDelta(delta: number): string {
+    if (delta === 0) return formatCurrency(0);
+    return `${delta > 0 ? '+' : '-'}${formatCurrency(Math.abs(delta))}`;
+  }
 
   return (
     <div className="space-y-4">
@@ -169,6 +184,40 @@ export function CharacterPanel(): JSX.Element {
             balance — salary income, investments, and asset sales flow in; campaign expenditures
             and fines flow out.
           </p>
+
+          {/* Finance actions (todo#74). These are deterministic bridge
+              actions until deeper campaign-finance and staff systems
+              exist. They let the player actually change the tracked
+              balance from the Character screen, while keeping all
+              deltas pure/testable in `utils/personalFinance.ts`. */}
+          <div className="mt-4 grid sm:grid-cols-2 gap-3" data-testid="character-finance-actions">
+            {financeActions.map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                disabled={action.disabled}
+                onClick={() => applyFinanceAction(action)}
+                className={`text-left rounded border p-3 transition-colors ${
+                  action.kind === 'income'
+                    ? 'border-status-success/40 bg-status-success/5 hover:bg-status-success/10'
+                    : 'border-accent-gold/40 bg-accent-gold/5 hover:bg-accent-gold/10'
+                } disabled:opacity-45 disabled:cursor-not-allowed`}
+                data-testid={`finance-action-${action.id}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="font-headline text-sm text-text-primary">{action.label}</span>
+                  <span
+                    className={`font-mono text-sm tabular-nums ${
+                      action.delta >= 0 ? 'text-status-success' : 'text-accent-red'
+                    }`}
+                  >
+                    {formatFinanceDelta(action.delta)}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-text-muted leading-snug">{action.description}</p>
+              </button>
+            ))}
+          </div>
         </Card>
       </div>
 

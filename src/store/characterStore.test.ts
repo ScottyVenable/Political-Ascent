@@ -88,3 +88,33 @@ describe('characterStore.reorderHand', () => {
     expect(useCharacterStore.getState().hand).toEqual([]);
   });
 });
+
+describe('characterStore.adjustFunds', () => {
+  beforeEach(() => {
+    useCharacterStore.getState().reset();
+  });
+
+  it('increases personal funds for income actions', () => {
+    useCharacterStore.setState({ personalFunds: 100_000 });
+
+    useCharacterStore.getState().adjustFunds(12_500);
+
+    expect(useCharacterStore.getState().personalFunds).toBe(112_500);
+  });
+
+  it('decreases personal funds for spend actions', () => {
+    useCharacterStore.setState({ personalFunds: 100_000 });
+
+    useCharacterStore.getState().adjustFunds(-25_000);
+
+    expect(useCharacterStore.getState().personalFunds).toBe(75_000);
+  });
+
+  it('floors personal funds at zero instead of allowing personal debt', () => {
+    useCharacterStore.setState({ personalFunds: 10_000 });
+
+    useCharacterStore.getState().adjustFunds(-50_000);
+
+    expect(useCharacterStore.getState().personalFunds).toBe(0);
+  });
+});
