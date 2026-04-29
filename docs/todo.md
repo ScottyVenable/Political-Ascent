@@ -58,7 +58,7 @@
 
 65. Have bills randomly come up from various members based on their ideology, the country sentiment, and the member's ambitions. Bills may be randomly generated for this.
 
-66. Implement a better graph renderer for the bar graphs and implement where possible other types of graphs.
+66. Implement a better graph renderer for the bar graphs and implement where possible other types of graphs. — **Shipped (`exp--graph-renderer-polish`).** New `src/renderer/components/charts/` module with `Sparkline` (line + area-fill + latest dot + responsive mode) and `MiniBarChart` (vertical bars). Two duplicate local Sparkline implementations consolidated. EconomyPanel trends now show area gradient + last-value dot.
 
 68. Allow to filter the cohort views based on national level, state level, or local level to see more details based on where the player chooses to have their character come from and their role. Implement this into the game in the character creator to choose their state and their district.
 
