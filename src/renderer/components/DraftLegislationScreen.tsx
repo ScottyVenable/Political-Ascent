@@ -646,19 +646,23 @@ function BreakdownStep({
 }
 
 /**
+ * Permissive shape for the breakdown effect describer. The `Effect` union
+ * grows over time (new kinds appear in JSON before they appear in the type
+ * union) so we narrow defensively via `unknown` rather than crash on an
+ * unknown shape.
+ */
+type LooseEffect = { type: string; [k: string]: unknown };
+
+/**
  * Render a single Effect as a one-line, plain-English bullet for the
  * mechanical breakdown. Kept inline (rather than reusing the existing
  * `describeEffect` in `Game.tsx` / `QuestsPanel.tsx`) because the
  * breakdown wants slightly different phrasing — "the bill" as the
  * grammatical subject — than the toast-style describer those callers
- * use. Defensive: the Effect union expands over time, so we string-
- * format unknown shapes from the JSON tag without throwing.
+ * use.
  */
 function breakdownEffectLine(eff: Effect): string {
-  // The Effect type is a discriminated union over `type`; we cast to a
-  // permissive shape because new effect kinds will appear in JSON before
-  // they appear in the type, and we want to surface them gracefully.
-  const e = eff as unknown as { type: string; [k: string]: unknown };
+  const e = eff as unknown as LooseEffect;
   const value = typeof e.value === 'number' ? e.value : null;
   const sign = value === null ? '' : value > 0 ? '+' : '';
   switch (e.type) {
