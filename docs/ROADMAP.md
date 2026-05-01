@@ -31,7 +31,7 @@ engine and a deterministic seeded RNG.
 
 **Known MVP limitations / paper-cuts** *(addressed in v0.1.1 below)*:
 
-1. `applyEffect` does not honor `Effect.delayDays` / `Effect.duration` — every effect lands immediately.
+1. ~~`applyEffect` does not honor `Effect.delayDays` / `Effect.duration` — every effect lands immediately.~~ **`delayDays` shipped 2026-05-01;** `duration` still pending.
 2. `gameStore.advanceDay` is a stub; the real advancement lives in `TimeEngine.step`.
 3. `EventEngine` `stat` requirement check has been wired but `relationship` requirement compare is still narrow (`gt|lt` only).
 4. No **Press Room** panel yet (speech segments + briefings — GDD §15).
@@ -66,7 +66,7 @@ the loop so a new player can play their first 30 minutes without confusion.
 ### M0 — MVP gap-fix
 **Branch:** `exp--0.1.1--mvp-gaps`
 
-- [x] **Deferred / scheduled effects.** Honor `Effect.delayDays` in `applyEffect`. Persist a `scheduledEffects` queue in `worldStore`. Drain on the daily TimeEngine hook. *(in this PR)*
+- [x] **Deferred / scheduled effects.** Honor `Effect.delayDays` in `applyEffect`. Persist a `scheduledEffects` queue in `worldStore`. Drain on the daily TimeEngine hook. *(shipped in this PR)*
 - [ ] Bill **Implementation phase** — once a bill passes, schedule its effects with the bill's `implementationDays` so legislation feels like it actually takes time.
 - [ ] Honour `Effect.duration` (revert effects after N days). Lower priority than `delayDays`.
 - [ ] Remove or correct `gameStore.advanceDay` stub.

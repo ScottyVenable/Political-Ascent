@@ -19,6 +19,7 @@ import { TimeEngine } from './TimeEngine';
 import { EventEngine } from './EventEngine';
 import { AchievementEngine } from './AchievementEngine';
 import { ActionEngine } from './ActionEngine';
+import { EffectScheduler } from './EffectScheduler';
 
 import { CongressSystem } from '@/systems/CongressSystem';
 import { CardSystem } from '@/systems/CardSystem';
@@ -182,6 +183,7 @@ class GameEngineImpl implements GameEngineAPI {
     this.teardown();
     this.unsubs.push(
       TimeEngine.onDaily(() => {
+        EffectScheduler.processDue();
         EventEngine.checkDailyTriggers();
         QuestSystem.dailyUpdate();
       }),

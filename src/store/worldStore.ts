@@ -10,6 +10,7 @@ import type {
   QuestInstance,
   NewsItem,
   ScenarioId,
+  ScheduledEffect,
 } from '@/types';
 
 interface WorldStoreActions {
@@ -28,6 +29,8 @@ interface WorldStoreActions {
   pushNews: (news: NewsItem) => void;
   setFlag: (flag: string, value: boolean) => void;
   unlockAchievement: (id: string) => void;
+  enqueueScheduledEffect: (entry: ScheduledEffect) => void;
+  removeScheduledEffects: (ids: readonly string[]) => void;
   reset: () => void;
 }
 
@@ -57,6 +60,7 @@ const EMPTY: WorldState = {
   unlockedAchievements: [],
   news: [],
   flags: {},
+  scheduledEffects: [],
   seed: 1,
 };
 
@@ -149,6 +153,18 @@ export const useWorldStore = create<Store>()(
     unlockAchievement: (id) =>
       set((s) => {
         if (!s.unlockedAchievements.includes(id)) s.unlockedAchievements.push(id);
+      }),
+
+    enqueueScheduledEffect: (entry) =>
+      set((s) => {
+        s.scheduledEffects.push(entry);
+      }),
+
+    removeScheduledEffects: (ids) =>
+      set((s) => {
+        if (ids.length === 0) return;
+        const drop = new Set(ids);
+        s.scheduledEffects = s.scheduledEffects.filter((e) => !drop.has(e.id));
       }),
 
     reset: () => set(() => ({ ...EMPTY })),

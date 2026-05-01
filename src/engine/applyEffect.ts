@@ -1,8 +1,17 @@
-import type { Effect } from '@/types';
+import type { Effect, ScheduledEffect } from '@/types';
 import { useGameStore } from '@/store/gameStore';
 import { useCharacterStore } from '@/store/characterStore';
 import { useWorldStore } from '@/store/worldStore';
 import { clamp } from '@/utils/math';
+import { toEpochDays } from '@/utils/date';
+
+/** Monotonic counter for deterministic-looking scheduled-effect ids. */
+let _scheduleCounter = 0;
+
+/** Reset the schedule-id counter — used by tests for deterministic ids. */
+export function resetScheduleCounterForTests(): void {
+  _scheduleCounter = 0;
+}
 
 /**
  * The one and only entry point for applying game effects.
@@ -11,11 +20,44 @@ import { clamp } from '@/utils/math';
  * here. This is the choke point where we keep simulation consistency — if an
  * effect doesn't go through `applyEffect`, it is almost certainly a bug.
  *
- * Delayed/durational effects are NOT implemented here yet — MVP applies all
- * effects immediately. `delayDays` and `duration` metadata is preserved on the
- * Effect shape so a post-MVP scheduler can honor them.
+ * If `effect.delayDays > 0`, the effect is enqueued on
+ * `worldStore.scheduledEffects` and applied later by `EffectScheduler.processDue`
+ * from the daily TimeEngine hook. See GDD §25.
+ *
+ * Note: `effect.duration` is preserved on the Effect shape but not yet honored.
+ * A reverting-effect implementation is planned for a follow-up.
  */
-export function applyEffect(effect: Effect): void {
+export function applyEffect(
+  effect: Effect,
+  source?: ScheduledEffect['source'],
+): void {
+  if (effect.delayDays && effect.delayDays > 0) {
+    const currentDate = useGameStore.getState().currentDate;
+    const applyOnEpochDay = toEpochDays(currentDate) + effect.delayDays;
+    // Strip delayDays so the eventual immediate-apply doesn't re-enqueue.
+    const { delayDays: _drop, ...rest } = effect;
+    void _drop;
+    const stored = rest as Effect;
+    const id = `sch-${applyOnEpochDay}-${++_scheduleCounter}`;
+    useWorldStore.getState().enqueueScheduledEffect({
+      id,
+      effect: stored,
+      applyOnEpochDay,
+      source,
+    });
+    return;
+  }
+  applyEffectImmediate(effect);
+}
+
+/**
+ * Apply an effect immediately, bypassing the deferred-effect queue. Used by
+ * `EffectScheduler.processDue()` to drain due effects without recursion.
+ *
+ * Callers in simulation code should generally prefer `applyEffect` so that
+ * `delayDays` is honored.
+ */
+export function applyEffectImmediate(effect: Effect): void {
   switch (effect.type) {
     case 'stat': {
       useCharacterStore.getState().updateStat(effect.target, effect.value);
@@ -100,6 +142,9 @@ export function applyEffect(effect: Effect): void {
 }
 
 /** Batch helper for lists of effects. */
-export function applyEffects(effects: readonly Effect[]): void {
-  for (const e of effects) applyEffect(e);
+export function applyEffects(
+  effects: readonly Effect[],
+  source?: ScheduledEffect['source'],
+): void {
+  for (const e of effects) applyEffect(e, source);
 }
