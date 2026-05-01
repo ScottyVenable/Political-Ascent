@@ -10,8 +10,8 @@
  *
  * @see tests/e2e/fixtures/a11y-fixture.ts
  */
-import { test, expect } from "../fixtures/a11y-fixture";
-import { runStructuralA11y } from "../fixtures/a11y-fixture";
+import { test, expect } from "./fixtures/a11y-fixture";
+import { runStructuralA11y } from "./fixtures/a11y-fixture";
 
 test.describe("accessibility", () => {
   test("initial screen has no emoji leaks and no unnamed controls", async ({
