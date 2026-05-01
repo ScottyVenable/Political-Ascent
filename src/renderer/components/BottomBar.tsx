@@ -138,64 +138,62 @@ function BottomBarImpl(): JSX.Element {
       </div>
 
       {/* ─── CENTER: Active bill/event timeline ──────────────────── */}
-      <div className="pa-bottombar-progress min-w-0">
-        {activeBill ? (
-          <button
-            type="button"
-            className="min-w-0 w-full rounded-sm border border-rule bg-bg-tertiary/30 px-3 py-2 text-left hover:border-accent-gold hover:bg-bg-tertiary/55 transition-colors"
-            onClick={() => setActivePanel('legislation')}
-            data-testid="bottombar-progress"
-            aria-label={`Open Legislation. ${activeBill.bill.title} is in ${activeBill.stageLabel}.`}
-          >
-            <div className="flex items-center justify-between gap-3 mb-1">
-              <span className="min-w-0 flex items-center gap-1.5 text-xs text-text-secondary">
-                <Icon name="legislation" size={13} aria-hidden />
-                <span className="truncate font-semibold text-text-primary">{activeBill.bill.title}</span>
-              </span>
-              <span className="shrink-0 font-mono text-[0.625rem] uppercase tracking-widest text-accent-gold">
-                {activeBill.remainingDays === 0 ? 'Ready' : `${activeBill.remainingDays}d`}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="shrink-0 font-mono text-[0.625rem] uppercase tracking-wider text-text-muted">
-                {activeBill.stageLabel}
-              </span>
+      {activeBill ? (
+        <button
+          type="button"
+          className="pa-bottombar-progress min-w-0 w-full rounded-sm border border-rule bg-bg-tertiary/30 px-3 py-2 text-left hover:border-accent-gold hover:bg-bg-tertiary/55 transition-colors"
+          onClick={() => setActivePanel('legislation')}
+          data-testid="bottombar-progress"
+          aria-label={`Open Legislation. ${activeBill.bill.title} is in ${activeBill.stageLabel}.`}
+        >
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <span className="min-w-0 flex items-center gap-1.5 text-xs text-text-secondary">
+              <Icon name="legislation" size={13} aria-hidden />
+              <span className="truncate font-semibold text-text-primary">{activeBill.bill.title}</span>
+            </span>
+            <span className="shrink-0 font-mono text-[0.625rem] uppercase tracking-widest text-accent-gold">
+              {activeBill.remainingDays === 0 ? 'Ready' : `${activeBill.remainingDays}d`}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 font-mono text-[0.625rem] uppercase tracking-wider text-text-muted">
+              {activeBill.stageLabel}
+            </span>
+            <div
+              className="h-1.5 flex-1 rounded-full bg-bg-primary overflow-hidden"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={activeBill.totalDays}
+              aria-valuenow={activeBill.elapsedDays}
+              aria-label={`${activeBill.stageLabel} progress`}
+            >
               <div
-                className="h-1.5 flex-1 rounded-full bg-bg-primary overflow-hidden"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={activeBill.totalDays}
-                aria-valuenow={activeBill.elapsedDays}
-                aria-label={`${activeBill.stageLabel} progress`}
-              >
-                <div
-                  className="h-full rounded-full bg-accent-gold transition-all duration-base"
-                  style={{ width: `${activeBill.percent}%` }}
-                />
-              </div>
+                className="h-full rounded-full bg-accent-gold transition-all duration-base"
+                style={{ width: `${activeBill.percent}%` }}
+              />
             </div>
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="min-w-0 w-full rounded-sm border border-rule bg-bg-tertiary/20 px-3 py-2 text-left hover:border-accent-gold/60 transition-colors"
-            onClick={() => setActivePanel(activeEvents.length > 0 ? 'news' : 'legislation')}
-            data-testid="bottombar-progress-empty"
-          >
-            <div className="flex items-center gap-1.5 text-xs text-text-secondary">
-              <Icon name={activeEvents.length > 0 ? 'alert' : 'legislation'} size={13} aria-hidden />
-              <span className="truncate">
-                {activeEvents.length > 0
-                  ? `${activeEvents.length} event${activeEvents.length === 1 ? '' : 's'} awaiting decision`
-                  : 'No active bill timeline'}
-              </span>
-            </div>
-            <div className="mt-2 h-1.5 rounded-full bg-bg-primary overflow-hidden">
-              <div className="h-full w-0 bg-accent-gold" />
-            </div>
-          </button>
-        )}
-      </div>
+          </div>
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="pa-bottombar-progress min-w-0 w-full rounded-sm border border-rule bg-bg-tertiary/20 px-3 py-2 text-left hover:border-accent-gold/60 transition-colors"
+          onClick={() => setActivePanel(activeEvents.length > 0 ? 'news' : 'legislation')}
+          data-testid="bottombar-progress-empty"
+        >
+          <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+            <Icon name={activeEvents.length > 0 ? 'alert' : 'legislation'} size={13} aria-hidden />
+            <span className="truncate">
+              {activeEvents.length > 0
+                ? `${activeEvents.length} event${activeEvents.length === 1 ? '' : 's'} awaiting decision`
+                : 'No active bill timeline'}
+            </span>
+          </div>
+          <div className="mt-2 h-1.5 rounded-full bg-bg-primary overflow-hidden">
+            <div className="h-full w-0 bg-accent-gold" />
+          </div>
+        </button>
+      )}
 
       {/* ─── RIGHT: Compact date + game-management buttons ───────── */}
       <div className="pa-bottombar-actions min-w-0 flex items-center justify-end gap-1 sm:gap-2">
