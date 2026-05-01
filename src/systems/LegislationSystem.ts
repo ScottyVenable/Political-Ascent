@@ -74,6 +74,11 @@ const CLOCKED_STAGES: readonly BillStage[] = ['committee', 'floor_debate', 'vote
  */
 const MAX_CATCH_UP_STAGES = CLOCKED_STAGES.length;
 
+/** True when a bill stage participates in the day-based legislative clock. */
+function isStageClocked(stage: BillStage): boolean {
+  return CLOCKED_STAGES.includes(stage);
+}
+
 /** Result shape returned by `expediteStage` — keeps the panel's wiring thin. */
 export interface ExpediteResult {
   ok: boolean;
@@ -141,7 +146,7 @@ export interface LegislationSystemAPI {
  * stage. Respects per-template overrides and falls back to the default.
  */
 function durationFor(template: BillTemplate | undefined, stage: BillStage): number {
-  if (!CLOCKED_STAGES.includes(stage)) return 0;
+  if (!isStageClocked(stage)) return 0;
   const key = stage as keyof typeof STAGE_DURATION_DAYS;
   const override = template?.stageDurations?.[key];
   return override ?? STAGE_DURATION_DAYS[key];
@@ -381,10 +386,10 @@ class LegislationSystemImpl implements LegislationSystemAPI {
     // old save or returning from a paused/backgrounded tab, so each bill gets a
     // bounded catch-up loop rather than a single one-stage nudge.
     for (const bill of [...world.pendingLegislation]) {
-      if (!CLOCKED_STAGES.includes(bill.stage)) continue;
+      if (!isStageClocked(bill.stage)) continue;
 
       let current: Bill = bill;
-      let catchUpSteps = 0;
+      let advancementCount = 0;
 
       // A legacy save may have no timer at all — seed one on first sight so
       // the bill still progresses under the new rules.
@@ -399,12 +404,12 @@ class LegislationSystemImpl implements LegislationSystemAPI {
       }
 
       while (
-        CLOCKED_STAGES.includes(current.stage) &&
+        isStageClocked(current.stage) &&
         current.stageEndsOnDay !== undefined &&
         today >= current.stageEndsOnDay &&
-        catchUpSteps < MAX_CATCH_UP_STAGES
+        advancementCount < MAX_CATCH_UP_STAGES
       ) {
-        catchUpSteps += 1;
+        advancementCount += 1;
 
         // Clock expired. Transition naturally — no PC cost on a natural
         // advance; time is the toll.

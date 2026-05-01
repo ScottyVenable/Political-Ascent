@@ -295,6 +295,7 @@ export function EffectSummary({ effects, compact, limit = 4 }: EffectSummaryProp
   );
 }
 
+/** Format an effect delta with an explicit plus sign for positive values. */
 function signed(value: number): string {
   return value > 0 ? `+${value}` : String(value);
 }

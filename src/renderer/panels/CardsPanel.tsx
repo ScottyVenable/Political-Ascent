@@ -204,7 +204,7 @@ export function CardsPanel(): JSX.Element {
           const pending = playingId === inst.instanceId;
           const isDragging = dragId === inst.instanceId;
           const isDropTarget = dropTargetId === inst.instanceId && dragId !== inst.instanceId;
-          const openCardMenu = (e: MouseEvent): void =>
+          const handleCardContextMenu = (e: MouseEvent): void =>
             menu.open(e, [
               {
                 id: 'play',
@@ -304,7 +304,7 @@ export function CardsPanel(): JSX.Element {
                 setDragId(null);
                 setDropTargetId(null);
               }}
-              onContextMenu={openCardMenu}
+              onContextMenu={handleCardContextMenu}
             >
               {/* Insertion indicator — a left-edge gold bar that
                   appears when this row is the active drop target.
@@ -323,7 +323,7 @@ export function CardsPanel(): JSX.Element {
                 onClick={() => {
                   if (dragId === null) setFocusedInstanceId(inst.instanceId);
                 }}
-                onContextMenu={openCardMenu}
+                onContextMenu={handleCardContextMenu}
               />
               <div className="flex gap-2">
                 <Button
@@ -383,6 +383,9 @@ interface ResourceSnapshot {
  * @param def Static card definition.
  * @param inst In-hand card instance with cooldown/use counters.
  * @param resources Current spendable resources and week index.
+ * The checks run in player-facing priority order — PC, AP, cooldown, then use
+ * cap — and the first failed check becomes the visible reason.
+ *
  * @returns Human-readable disabled reason for buttons and modal copy.
  */
 function blockedPlayReason(
