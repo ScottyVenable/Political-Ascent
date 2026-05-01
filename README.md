@@ -159,7 +159,7 @@ A GitHub Actions workflow now builds and publishes Android **debug APK** pre-rel
 2. Download the latest pre-release asset: `app-debug.apk`.
 3. Install it on your Android device for quick validation testing.
 
-You can also download the same APK from the workflow run artifacts (`app-debug-apk`).
+You can also download the same APK from the workflow run artifacts (`app-debug-apk`), but those artifacts are retained for 14 days while GitHub Releases remain available long-term.
 
 ### Requirements
 

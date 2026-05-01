@@ -10,6 +10,10 @@ on:
 permissions:
   contents: write
 
+env:
+  ANDROID_PLATFORM: "android-34"
+  ANDROID_BUILD_TOOLS: "34.0.0"
+
 concurrency:
   group: apk-prerelease-${{ github.ref }}
   cancel-in-progress: true
@@ -41,7 +45,7 @@ jobs:
 
       - name: Install Android platform dependencies
         run: |
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          sdkmanager "platform-tools" "platforms;${ANDROID_PLATFORM}" "build-tools;${ANDROID_BUILD_TOOLS}"
 
       - name: Install dependencies
         run: npm ci
@@ -70,9 +74,9 @@ jobs:
         id: metadata
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
-          TAG="apk-preview-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
+          TAG="apk-prerelease-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "name=Android APK Preview #${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "name=Android APK Pre-release #${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
 
       - name: Publish pre-release
         uses: softprops/action-gh-release@v2
