@@ -11,11 +11,7 @@
  * GameEngine bootstrap so they stay fast and focused.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {
-  LegislationSystem,
-  STAGE_DURATION_DAYS,
-  EXPEDITE_PC_COST,
-} from './LegislationSystem';
+import { LegislationSystem, STAGE_DURATION_DAYS, EXPEDITE_PC_COST } from './LegislationSystem';
 import { CongressSystem } from './CongressSystem';
 import { useGameStore } from '@/store/gameStore';
 import { useWorldStore } from '@/store/worldStore';
@@ -95,9 +91,7 @@ describe('LegislationSystem — pacing', () => {
     for (let i = 0; i < 5; i++) useGameStore.getState().advanceDay();
     LegislationSystem.dailyUpdate();
 
-    const updated = useWorldStore
-      .getState()
-      .pendingLegislation.find((b) => b.id === bill.id);
+    const updated = useWorldStore.getState().pendingLegislation.find((b) => b.id === bill.id);
     expect(updated?.stage).toBe('committee');
   });
 
@@ -111,9 +105,7 @@ describe('LegislationSystem — pacing', () => {
     }
     LegislationSystem.dailyUpdate();
 
-    const updated = useWorldStore
-      .getState()
-      .pendingLegislation.find((b) => b.id === bill.id);
+    const updated = useWorldStore.getState().pendingLegislation.find((b) => b.id === bill.id);
     expect(updated?.stage).toBe('floor_debate');
     // Free advance — no PC paid.
     expect(useGameStore.getState().politicalCapital).toBe(pcBefore);
@@ -131,9 +123,7 @@ describe('LegislationSystem — pacing', () => {
 
     expect(result.ok).toBe(true);
     expect(result.newStage).toBe('floor_debate');
-    expect(useGameStore.getState().politicalCapital).toBe(
-      pcBefore - EXPEDITE_PC_COST.committee,
-    );
+    expect(useGameStore.getState().politicalCapital).toBe(pcBefore - EXPEDITE_PC_COST.committee);
   });
 
   it('expediteStage refuses when the player cannot afford the cost', () => {
@@ -147,9 +137,7 @@ describe('LegislationSystem — pacing', () => {
     expect(result.ok).toBe(false);
     expect(result.reason).toMatch(/insufficient/i);
     // Bill stayed put.
-    const updated = useWorldStore
-      .getState()
-      .pendingLegislation.find((b) => b.id === bill.id);
+    const updated = useWorldStore.getState().pendingLegislation.find((b) => b.id === bill.id);
     expect(updated?.stage).toBe('committee');
   });
 
@@ -180,9 +168,7 @@ describe('LegislationSystem — pacing', () => {
     LegislationSystem.expediteStage(bill.id); // committee → floor_debate
     LegislationSystem.expediteStage(bill.id); // floor_debate → vote
 
-    const voteStageBill = useWorldStore
-      .getState()
-      .pendingLegislation.find((b) => b.id === bill.id);
+    const voteStageBill = useWorldStore.getState().pendingLegislation.find((b) => b.id === bill.id);
     expect(voteStageBill?.stage).toBe('vote');
 
     // Let the 7-day vote clock expire.
@@ -196,6 +182,21 @@ describe('LegislationSystem — pacing', () => {
       useWorldStore.getState().failedLegislation.find((b) => b.id === bill.id);
     expect(finalBill).toBeDefined();
     expect(['signed', 'failed']).toContain(finalBill!.stage);
+  });
+
+  it('dailyUpdate can introduce deterministic NPC-sponsored bills on cadence', () => {
+    expect(useWorldStore.getState().pendingLegislation.length).toBe(0);
+
+    useGameStore.setState((s) => {
+      s.currentDate.day = 14;
+    });
+    LegislationSystem.dailyUpdate();
+
+    const pending = useWorldStore.getState().pendingLegislation;
+    expect(pending.length).toBeGreaterThan(0);
+    expect(pending[0].sponsor).not.toBe('player');
+    expect(pending[0].description).toContain('Introduced by');
+    expect(pending[0].stage).toBe('committee');
   });
 });
 

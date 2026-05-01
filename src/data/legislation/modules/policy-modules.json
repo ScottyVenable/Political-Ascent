@@ -58,9 +58,7 @@
       "previewText": "reserves twenty percent of program disbursements for counties with populations under fifty thousand",
       "oppositionDelta": -5,
       "budgetImpactDelta": -3,
-      "effects": [
-        { "type": "group_happiness", "group": "rural", "value": 6 }
-      ]
+      "effects": [{ "type": "group_happiness", "group": "rural", "value": 6 }]
     },
     {
       "id": "module-strict-enforcement",
@@ -93,8 +91,165 @@
       "previewText": "authorizes supplemental appropriations whenever annualized GDP growth falls below one percent",
       "oppositionDelta": 4,
       "budgetImpactDelta": -15,
+      "effects": [{ "type": "economy", "metric": "deficit", "value": 6 }]
+    },
+    {
+      "id": "module-school-modernization-grants",
+      "name": "School Modernization Grants",
+      "category": "regional",
+      "summary": "Targeted grants for district facilities and teacher retention in underfunded counties.",
+      "previewText": "directs federal grants to school districts with persistent infrastructure deficits and staffing shortages",
+      "oppositionDelta": -2,
+      "budgetImpactDelta": -10,
       "effects": [
-        { "type": "economy", "metric": "deficit", "value": 6 }
+        { "type": "group_happiness", "group": "students", "value": 5 },
+        { "type": "group_happiness", "group": "professionals", "value": 2 }
+      ]
+    },
+    {
+      "id": "module-permitting-reform",
+      "name": "Permitting Reform Fast Track",
+      "category": "procedural",
+      "summary": "Accelerates federal permit timelines with strict agency deadlines.",
+      "previewText": "imposes a one-year decision deadline for covered federal permitting actions",
+      "oppositionDelta": -6,
+      "budgetImpactDelta": 2,
+      "effects": [{ "type": "economy", "metric": "gdpGrowth", "value": 0.12 }]
+    },
+    {
+      "id": "module-public-option-pilot",
+      "name": "Public Option Pilot",
+      "category": "regulatory",
+      "summary": "Creates a state opt-in public insurance pilot with federal backstop funding.",
+      "previewText": "creates a state opt-in public insurance pilot for counties with fewer than two private carriers",
+      "oppositionDelta": 11,
+      "budgetImpactDelta": -18,
+      "effects": [
+        { "type": "group_happiness", "group": "working-class", "value": 4 },
+        { "type": "group_happiness", "group": "retirees", "value": 3 }
+      ]
+    },
+    {
+      "id": "module-domestic-manufacturing-credit",
+      "name": "Domestic Manufacturing Credit",
+      "category": "fiscal",
+      "summary": "Incentivizes domestic supply chain investment in strategic industries.",
+      "previewText": "offers a production tax credit for domestic manufacturing in strategic sectors",
+      "oppositionDelta": -1,
+      "budgetImpactDelta": -12,
+      "effects": [
+        { "type": "economy", "metric": "unemployment", "value": -0.1 },
+        { "type": "group_happiness", "group": "working-class", "value": 3 }
+      ]
+    },
+    {
+      "id": "module-grid-reliability-standard",
+      "name": "Grid Reliability Standard",
+      "category": "climate",
+      "summary": "Sets minimum grid resilience standards and funds storage retrofits.",
+      "previewText": "requires utilities to meet federal reliability standards with phased storage benchmarks",
+      "oppositionDelta": 5,
+      "budgetImpactDelta": -9,
+      "effects": [
+        { "type": "group_happiness", "group": "environmentalists", "value": 5 },
+        { "type": "economy", "metric": "inflation", "value": -0.05 }
+      ]
+    },
+    {
+      "id": "module-labor-apprenticeship-fund",
+      "name": "Labor Apprenticeship Fund",
+      "category": "labor",
+      "summary": "Scales union-employer apprenticeship pipelines for high-demand trades.",
+      "previewText": "appropriates matching funds for certified apprenticeship partnerships in high-demand trades",
+      "oppositionDelta": 3,
+      "budgetImpactDelta": -6,
+      "effects": [
+        { "type": "group_loyalty", "group": "workers", "value": 5 },
+        { "type": "economy", "metric": "unemployment", "value": -0.08 }
+      ]
+    },
+    {
+      "id": "module-transparency-disclosure",
+      "name": "Contract Transparency Disclosure",
+      "category": "procedural",
+      "summary": "Requires public reporting for large contracts and major grant recipients.",
+      "previewText": "mandates quarterly public disclosure of federal contract performance and beneficiary ownership data",
+      "oppositionDelta": 2,
+      "budgetImpactDelta": -1,
+      "effects": [{ "type": "group_happiness", "group": "progressives", "value": 3 }]
+    },
+    {
+      "id": "module-increased-services-funding",
+      "name": "Increased Services Funding",
+      "category": "fiscal",
+      "summary": "Provides additional funding for public services.",
+      "previewText": "allocates increased federal funding for essential public services",
+      "oppositionDelta": 4,
+      "budgetImpactDelta": -15,
+      "effects": [
+        { "type": "group_happiness", "group": "working-class", "value": 4 },
+        { "type": "group_happiness", "group": "progressives", "value": 3 }
+      ]
+    },
+    {
+      "id": "module-student-loan-forgiveness-mild",
+      "name": "Student Loan Forgiveness (Mild)",
+      "category": "fiscal",
+      "summary": "Forgives a portion of federal student loans for eligible borrowers.",
+      "previewText": "forgives up to $10,000 in federal student loans for eligible borrowers",
+      "oppositionDelta": 6,
+      "budgetImpactDelta": -20,
+      "effects": [
+        { "type": "group_happiness", "group": "students", "value": 3 },
+        { "type": "group_happiness", "group": "progressives", "value": 2 },
+        { "type": "group_happiness", "group": "working-class", "value": 2 },
+        { "type": "group_happiness", "group": "business", "value": -2 }
+      ]
+    },
+    {
+      "id": "module-student-loan-forgiveness-aggressive",
+      "name": "Student Loan Forgiveness (Aggressive)",
+      "category": "fiscal",
+      "summary": "Forgives a large portion of federal student loans for eligible borrowers.",
+      "previewText": "forgives up to $50,000 in federal student loans for eligible borrowers",
+      "oppositionDelta": 12,
+      "budgetImpactDelta": -50,
+      "effects": [
+        { "type": "group_happiness", "group": "students", "value": 8 },
+        { "type": "group_happiness", "group": "progressives", "value": 5 },
+        { "type": "group_happiness", "group": "working-class", "value": 4 },
+        { "type": "group_happiness", "group": "business", "value": -5 }
+      ]
+    },
+    {
+      "id": "module-student-loan-forgiveness-complete",
+      "name": "Student Loan Forgiveness (Complete)",
+      "category": "fiscal",
+      "summary": "Forgives all federal student loans for eligible borrowers.",
+      "previewText": "forgives all federal student loans for eligible borrowers",
+      "oppositionDelta": 20,
+      "budgetImpactDelta": -100,
+      "effects": [
+        { "type": "group_happiness", "group": "students", "value": 10 },
+        { "type": "group_happiness", "group": "progressives", "value": 7 },
+        { "type": "group_happiness", "group": "working-class", "value": 5 },
+        { "type": "group_happiness", "group": "business", "value": -8 }
+      ]
+    },
+    {
+      "id": "module-universal-basic-income",
+      "name": "Universal Basic Income",
+      "category": "fiscal",
+      "summary": "Provides a guaranteed monthly income to all citizens.",
+      "previewText": "establishes a universal basic income program providing a guaranteed monthly payment to all citizens",
+      "oppositionDelta": 15,
+      "budgetImpactDelta": -200,
+      "effects": [
+        { "type": "group_happiness", "group": "working-class", "value": 7 },
+        { "type": "group_happiness", "group": "progressives", "value": 4 },
+        { "type": "group_happiness", "group": "business", "value": -10 },
+        { "type": "economy", "metric": "inflation", "value": 0.1 },
+        { "type": "economy", "metric": "unemployment", "value": 0.1 }
       ]
     }
   ]
