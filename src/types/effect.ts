@@ -81,3 +81,21 @@ export type Requirement =
   | { type: 'trait'; traitId: string }
   | { type: 'relationship'; npcId: string; operator: 'gt' | 'lt'; value: number }
   | { type: 'flag'; flag: string; value: boolean };
+
+/**
+ * A single Effect deferred until a future game-day.
+ *
+ * Created by `applyEffect()` whenever an Effect carries `delayDays > 0`.
+ * Drained by `EffectScheduler.processDue()` which runs from the daily
+ * TimeEngine hook. See GDD §25 for the full lifecycle.
+ */
+export interface ScheduledEffect {
+  /** Stable id for save migration and cancellation. */
+  id: string;
+  /** The effect to apply when due. `delayDays` is cleared on the stored copy. */
+  effect: Effect;
+  /** Game-day epoch (toEpochDays) at which to apply. */
+  applyOnEpochDay: number;
+  /** Optional traceability — what scheduled this effect. */
+  source?: { kind: 'bill' | 'event' | 'card' | 'speech' | 'system'; id: string };
+}

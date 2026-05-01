@@ -26,14 +26,10 @@ All notable changes to Political Ascent are recorded here.
 ## [Unreleased]
 
 ### Added
-- Initial project scaffold (Electron + Vite + React + TypeScript + Tailwind + Zustand).
-- Core TypeScript types for Character, World, Bill, Event, Card, Quest, Achievement.
-- Engine shells: GameEngine, TimeEngine, EventEngine, ActionEngine, AchievementEngine.
-- System shells for Character, Legislation, Congress, Population, Economy, Card, Quest, Influence, Skill, Dialogue.
-- Zustand stores: game, character, world, ui, settings (with immer middleware).
-- Main Menu, Character Creation, Scenario Select, Game shell with TopBar/Sidebar/BottomBar.
-- Modern America 2024 scenario data (procedural legislator seeding, 6 population groups, starting economy).
-- Card, event, quest, trait, bill-template, and achievement starter JSON.
-- Seeded RNG (Mulberry32), math helpers, formatting, logger utility.
-- Capacitor Android wrapper for APK builds (debug + release).
-- Docs: GDD, Architecture, Roadmap, Copilot instructions.
+- **Documentation:** new `docs/BIBLE.md` (Project Bible — tone, themes, world canon, faction lore, sensitivity guidelines, visual & audio identity, naming, writing style, design principles, decision log, glossary).
+- **Documentation:** rewritten `docs/ROADMAP.md` grounded in current shipped state — v0.1.1 polish sprint, v0.2 elections, v0.3 historical scenarios + map, v0.4 diplomacy + Creator Mode, v0.5 audio + full achievements, v1.0 launch.
+- **Documentation:** GDD expanded with chapters 23–33 — balancing formulas, Press Room v1 spec, deferred-effect scheduler spec, onboarding flow, accessibility plan, content production pipeline, save format pointer, localization, telemetry, debug menu, v0.2 system previews.
+- **Engine:** **deferred-effect scheduler** — `Effect.delayDays` is now honored. Effects with `delayDays > 0` are enqueued onto `worldStore.scheduledEffects` and drained by `EffectScheduler.processDue()` from the daily TimeEngine hook (GDD §25). New `applyEffectImmediate` helper for the scheduler bypass; `applyEffect`/`applyEffects` accept an optional traceability `source`.
+- **Tests:** 8 new tests for `EffectScheduler` covering immediate fast-path, queue mechanics, due/not-due drain, source metadata round-trip, batch behavior, and empty-queue no-op (73 tests total).
+- **CI:** `.github/workflows/android-apk-prerelease.yml` — manually-triggered (`workflow_dispatch`) workflow that builds a debug Android APK from the selected branch and publishes it as a GitHub **pre-release** tagged `apk-v<version>-<YYYYMMDD-HHMM>` (UTC) with the APK attached. Runs on `ubuntu-latest` with Node 20, JDK 17, Android SDK 34. Includes optional `release_notes` input.
+

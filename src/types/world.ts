@@ -3,6 +3,7 @@ import type { Legislator } from './congress';
 import type { Bill } from './legislation';
 import type { ActiveEvent } from './event';
 import type { QuestInstance } from './quest';
+import type { ScheduledEffect } from './effect';
 
 /** Macro economic metrics tracked for the whole nation. */
 export interface EconomicState {
@@ -75,6 +76,12 @@ export interface WorldState {
   unlockedAchievements: string[];
   news: NewsItem[];
   flags: Record<string, boolean>;
+  /**
+   * Pending deferred effects awaiting their `applyOnEpochDay`. Drained by
+   * `EffectScheduler.processDue()` from the daily TimeEngine hook.
+   * See GDD §25.
+   */
+  scheduledEffects: ScheduledEffect[];
   /** Deterministic seed for all RNG calls. */
   seed: number;
 }
