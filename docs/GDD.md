@@ -283,7 +283,20 @@ Every piece of legislation has:
 | Defense | Military budget, foreign aid, arms treaties |
 | Constitutional | Amendments, electoral reform, court reform |
 
-### 8.4 Negotiation Mini-System
+### 8.4 Drafting Modules And Rider Stack
+
+Bill drafting supports both starter templates and a blank-canvas bill. During drafting, the player can attach policy modules as riders, then order the active rider stack before introducing the bill.
+
+Modules are not just flat bonuses. Each module has a strategic role such as pay-for, benefit expansion, coalition builder, oversight, implementation, enforcement, or carveout. Rider stacks are evaluated for:
+- **Opposition math** — base opposition plus rider pressure, complexity, fiscal strain, public appeal, and coalition mix
+- **Complexity** — sprawling bills become harder to defend, even if each rider is attractive alone
+- **Public appeal** — visible benefits can soften opposition but do not erase fiscal or procedural problems
+- **Recommended categories** — off-agenda riders are allowed but surfaced as horse-trading risks
+- **Incompatibilities** — mutually exclusive riders must be resolved before introduction
+
+The design goal is for drafting to feel like legislative package-building: players should decide whether to write a clean bill, broaden the coalition with carveouts, add oversight to calm skeptics, or fund a popular but costly promise with a politically painful pay-for.
+
+### 8.5 Negotiation Mini-System
 
 When a bill needs votes, a **Negotiation Panel** opens:
 - Shows list of undecided/opposing legislators with their priorities

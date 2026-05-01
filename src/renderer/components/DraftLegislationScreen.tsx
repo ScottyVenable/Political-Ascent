@@ -17,9 +17,9 @@
  * it to the existing `LegislationSystem.draftBill` pipeline so the
  * bill enters the same in-flight queue used by the static templates.
  *
- * Drag-and-drop ordering of modules is intentionally deferred — the
- * click-to-toggle interaction is honest about scope and matches the
- * "stack of riders" mental model for now.
+ * Active riders are ordered in a right-rail stack. The order is used
+ * for preview text today and leaves room for later committee-stage
+ * tactics that care about which rider leads the package.
  *
  * @module renderer/components/DraftLegislationScreen
  */
@@ -30,6 +30,14 @@ import { LegislationSystem } from '@/systems/LegislationSystem';
 import { useUIStore } from '@/store/uiStore';
 import type { BillTemplate, PolicyModule, Effect, PolicyTag } from '@/types';
 import { formatTag } from '@/utils/format';
+import {
+  MODULE_COMPLEXITY_BUDGET,
+  analyzePolicyModules,
+  moduleComplexity,
+  modulePublicAppeal,
+  moduleRoleLabel,
+  summarizeEffect,
+} from '@/utils/legislativeModules';
 import { Button } from './Button';
 import { TermText } from './tooltip';
 
@@ -75,7 +83,7 @@ export function DraftLegislationScreen({ baseTemplate, onSubmitted, onClose }: P
   const [title, setTitle] = useState(baseTemplate.title);
   const [purpose, setPurpose] = useState(baseTemplate.description);
   const [selectedTags, setSelectedTags] = useState<Set<PolicyTag>>(new Set(baseTemplate.tags));
-  const [activeModuleIds, setActiveModuleIds] = useState<Set<string>>(new Set());
+  const [activeModuleIds, setActiveModuleIds] = useState<string[]>([]);
   const [moduleSearch, setModuleSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | PolicyModule['category']>('all');
   const pushToast = useUIStore((s) => s.pushToast);
@@ -91,10 +99,18 @@ export function DraftLegislationScreen({ baseTemplate, onSubmitted, onClose }: P
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const activeModules = useMemo(
-    () => POLICY_MODULES.filter((m) => activeModuleIds.has(m.id)),
-    [activeModuleIds],
-  );
+  useEffect(() => {
+    setTitle(baseTemplate.title);
+    setPurpose(baseTemplate.description);
+    setSelectedTags(new Set(baseTemplate.tags));
+    setActiveModuleIds([]);
+  }, [baseTemplate.description, baseTemplate.id, baseTemplate.tags, baseTemplate.title]);
+
+  const activeModules = useMemo(() => {
+    return activeModuleIds
+      .map((id) => POLICY_MODULES.find((module) => module.id === id))
+      .filter((module): module is PolicyModule => module !== undefined);
+  }, [activeModuleIds]);
 
   const visibleModules = useMemo(() => {
     const q = moduleSearch.trim().toLowerCase();
@@ -119,32 +135,41 @@ export function DraftLegislationScreen({ baseTemplate, onSubmitted, onClose }: P
     return grouped;
   }, [visibleModules]);
 
+  const draftTags = useMemo(
+    () => (selectedTags.size > 0 ? [...selectedTags] : baseTemplate.tags),
+    [baseTemplate.tags, selectedTags],
+  );
+
+  const moduleAnalysis = useMemo(
+    () =>
+      analyzePolicyModules(
+        {
+          opposition: baseTemplate.opposition,
+          budgetImpact: baseTemplate.budgetImpact,
+          tags: draftTags,
+        },
+        activeModules,
+      ),
+    [baseTemplate.budgetImpact, baseTemplate.opposition, draftTags, activeModules],
+  );
+
   /**
    * Compose the synthesised template. Modules contribute additive
    * deltas; effects concat. We rebuild the template object every
    * time so the forecast / preview always reflect the current state.
    */
   const synthesised: BillTemplate = useMemo(() => {
-    const opposition = Math.max(
-      0,
-      Math.min(
-        100,
-        baseTemplate.opposition + activeModules.reduce((s, m) => s + m.oppositionDelta, 0),
-      ),
-    );
-    const budgetImpact =
-      baseTemplate.budgetImpact + activeModules.reduce((s, m) => s + m.budgetImpactDelta, 0);
     const effects: Effect[] = [...baseTemplate.effects, ...activeModules.flatMap((m) => m.effects)];
     return {
       ...baseTemplate,
       title: title.trim() || baseTemplate.title,
       description: purpose.trim() || baseTemplate.description,
-      tags: selectedTags.size > 0 ? [...selectedTags] : baseTemplate.tags,
-      opposition,
-      budgetImpact,
+      tags: draftTags,
+      opposition: moduleAnalysis.finalOpposition,
+      budgetImpact: moduleAnalysis.budgetImpact,
       effects,
     };
-  }, [baseTemplate, title, purpose, selectedTags, activeModules]);
+  }, [baseTemplate, title, purpose, draftTags, moduleAnalysis, activeModules]);
 
   const forecast = LegislationSystem.estimatePassageChance(synthesised);
 
@@ -155,9 +180,19 @@ export function DraftLegislationScreen({ baseTemplate, onSubmitted, onClose }: P
 
   function toggleModule(id: string): void {
     setActiveModuleIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (prev.includes(id)) return prev.filter((existingId) => existingId !== id);
+      return [...prev, id];
+    });
+  }
+
+  function moveModule(id: string, direction: -1 | 1): void {
+    setActiveModuleIds((prev) => {
+      const index = prev.indexOf(id);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= prev.length) return prev;
+      const next = [...prev];
+      const [item] = next.splice(index, 1);
+      next.splice(nextIndex, 0, item);
       return next;
     });
   }
@@ -186,6 +221,15 @@ export function DraftLegislationScreen({ baseTemplate, onSubmitted, onClose }: P
         message: 'Select at least one bill category.',
         severity: 'warning',
         ttl: 2500,
+      });
+      return;
+    }
+
+    if (moduleAnalysis.conflicts.length > 0) {
+      pushToast({
+        message: 'Resolve rider conflicts before introducing the bill.',
+        severity: 'warning',
+        ttl: 3000,
       });
       return;
     }
@@ -277,7 +321,8 @@ export function DraftLegislationScreen({ baseTemplate, onSubmitted, onClose }: P
               </h3>
               <p className="text-body text-text-secondary leading-relaxed mb-3">
                 Modules attach as riders to the bill. Each one shifts opposition, budget impact, and
-                the on-enactment effects. Toggle to include.
+                the on-enactment effects. Toggle to include, then order the active rider stack in
+                the forecast rail.
               </p>
               <div className="grid sm:grid-cols-[1fr_180px] gap-2 mb-3">
                 <input
@@ -317,7 +362,7 @@ export function DraftLegislationScreen({ baseTemplate, onSubmitted, onClose }: P
                     </h4>
                     <ul className="grid sm:grid-cols-2 gap-2" data-testid="policy-module-list">
                       {modules.map((m) => {
-                        const active = activeModuleIds.has(m.id);
+                        const active = activeModuleIds.includes(m.id);
                         return (
                           <li key={m.id}>
                             <button
@@ -343,8 +388,21 @@ export function DraftLegislationScreen({ baseTemplate, onSubmitted, onClose }: P
                                   {m.name}
                                 </span>
                                 <span className="font-mono text-[0.625rem] uppercase tracking-widest text-text-muted">
+                                  {moduleRoleLabel(m.strategicRole)}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-1 mb-2 font-mono text-[0.625rem] uppercase tracking-wider text-text-muted">
+                                <span className="rounded-sm bg-bg-tertiary/70 px-1.5 py-0.5">
                                   {m.category}
                                 </span>
+                                {m.recommendedTags?.slice(0, 2).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="rounded-sm bg-bg-tertiary/40 px-1.5 py-0.5"
+                                  >
+                                    {formatTag(tag)}
+                                  </span>
+                                ))}
                               </div>
                               <p className="text-body text-text-secondary leading-snug">
                                 <TermText text={m.summary} />
@@ -356,7 +414,21 @@ export function DraftLegislationScreen({ baseTemplate, onSubmitted, onClose }: P
                                   invertGood
                                 />
                                 <DeltaChip label="Budget" value={m.budgetImpactDelta} suffix="B" />
+                                <DeltaChip label="Complexity" value={moduleComplexity(m)} />
+                                <DeltaChip label="Appeal" value={modulePublicAppeal(m)} />
                               </div>
+                              {m.effects.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1 text-[0.6875rem] text-text-muted">
+                                  {m.effects.slice(0, 3).map((effect, index) => (
+                                    <span
+                                      key={`${m.id}-effect-${index}`}
+                                      className="rounded-sm bg-bg-tertiary/40 px-1.5 py-0.5"
+                                    >
+                                      {summarizeEffect(effect)}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </button>
                           </li>
                         );
@@ -420,31 +492,110 @@ export function DraftLegislationScreen({ baseTemplate, onSubmitted, onClose }: P
                 <Stat label="Budget impact" value={`$${synthesised.budgetImpact}B/yr`} />
                 <Stat label="Categories" value={`${synthesised.tags.length}`} />
                 <Stat label="Modules" value={`${activeModules.length}`} />
-                <Stat label="Effects" value={`${synthesised.effects.length}`} />
+                <Stat
+                  label="Complexity"
+                  value={`${moduleAnalysis.complexity}/${MODULE_COMPLEXITY_BUDGET}`}
+                />
+                <Stat label="Public appeal" value={`${moduleAnalysis.publicAppeal}`} />
               </dl>
             </section>
 
             <section>
               <h3 className="font-mono text-label uppercase tracking-widest text-text-muted mb-2">
-                Active riders
+                Opposition math
+              </h3>
+              <dl className="space-y-1 text-xs text-text-secondary">
+                <MathRow label="Base" value={moduleAnalysis.baseOpposition} />
+                <MathRow label="Riders" value={moduleAnalysis.moduleOppositionDelta} signed />
+                <MathRow label="Complexity" value={moduleAnalysis.complexityPenalty} signed />
+                <MathRow label="Fiscal strain" value={moduleAnalysis.fiscalStrainPenalty} signed />
+                <MathRow label="Public appeal" value={-moduleAnalysis.publicAppealRelief} signed />
+                <MathRow label="Coalition mix" value={-moduleAnalysis.coalitionBonus} signed />
+              </dl>
+            </section>
+
+            {moduleAnalysis.warnings.length > 0 && (
+              <section>
+                <h3 className="font-mono text-label uppercase tracking-widest text-text-muted mb-2">
+                  Drafting notes
+                </h3>
+                <ul className="space-y-2">
+                  {moduleAnalysis.warnings.map((warning, index) => (
+                    <li
+                      key={`${warning.severity}-${index}`}
+                      className={
+                        'rounded-sm border px-2 py-1 text-xs leading-snug ' +
+                        warningToneClass(warning.severity)
+                      }
+                    >
+                      {warning.message}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            <section>
+              <h3 className="font-mono text-label uppercase tracking-widest text-text-muted mb-2">
+                Active rider stack
               </h3>
               {activeModules.length === 0 ? (
                 <p className="text-body text-text-muted italic">None. The bill ships as-written.</p>
               ) : (
-                <ul className="space-y-1">
-                  {activeModules.map((m) => (
+                <ol className="space-y-2">
+                  {activeModules.map((m, index) => (
                     <li
                       key={m.id}
-                      className="font-mono text-[0.6875rem] uppercase tracking-wider text-accent-gold"
+                      className="rounded-sm border border-rule bg-bg-secondary/60 px-2 py-1.5"
                     >
-                      &bull; {m.name}
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-mono text-[0.6875rem] uppercase tracking-wider text-accent-gold">
+                            {index + 1}. {m.name}
+                          </p>
+                          <p className="text-xs text-text-muted">
+                            {moduleRoleLabel(m.strategicRole)}
+                          </p>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => moveModule(m.id, -1)}
+                            disabled={index === 0}
+                            className="rounded-sm border border-rule px-1.5 py-0.5 text-[0.625rem] uppercase tracking-wider text-text-secondary disabled:opacity-30"
+                          >
+                            Up
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveModule(m.id, 1)}
+                            disabled={index === activeModules.length - 1}
+                            className="rounded-sm border border-rule px-1.5 py-0.5 text-[0.625rem] uppercase tracking-wider text-text-secondary disabled:opacity-30"
+                          >
+                            Down
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleModule(m.id)}
+                            className="rounded-sm border border-status-danger/50 px-1.5 py-0.5 text-[0.625rem] uppercase tracking-wider text-status-danger"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
                     </li>
                   ))}
-                </ul>
+                </ol>
               )}
             </section>
 
-            <Button variant="primary" size="md" onClick={submit} data-testid="draft-submit">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={submit}
+              disabled={moduleAnalysis.conflicts.length > 0}
+              data-testid="draft-submit"
+            >
               Introduce bill
             </Button>
           </aside>
@@ -488,6 +639,45 @@ function Stat({ label, value }: { label: string; value: string }): JSX.Element {
       <dd className="font-mono text-body text-text-primary tabular-nums">{value}</dd>
     </div>
   );
+}
+
+/** Row in the forecast math ledger. Signed values show contribution direction. */
+function MathRow({
+  label,
+  value,
+  signed,
+}: {
+  label: string;
+  value: number;
+  signed?: boolean;
+}): JSX.Element {
+  const rendered = signed && value > 0 ? `+${value}` : `${value}`;
+  const tone =
+    value > 0 ? 'text-status-danger' : value < 0 ? 'text-status-success' : 'text-text-muted';
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <dt>{label}</dt>
+      <dd className={`font-mono tabular-nums ${signed ? tone : 'text-text-primary'}`}>
+        {rendered}
+      </dd>
+    </div>
+  );
+}
+
+/** Tone classes for analysis warnings. */
+function warningToneClass(severity: 'info' | 'warning' | 'danger'): string {
+  switch (severity) {
+    case 'info':
+      return 'border-rule bg-bg-tertiary/40 text-text-secondary';
+    case 'warning':
+      return 'border-accent-gold/50 bg-accent-gold/10 text-accent-gold';
+    case 'danger':
+      return 'border-status-danger/50 bg-status-danger/10 text-status-danger';
+    default: {
+      const exhaustive: never = severity;
+      return exhaustive;
+    }
+  }
 }
 
 /**
