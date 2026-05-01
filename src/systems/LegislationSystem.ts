@@ -66,6 +66,14 @@ export const EXPEDITE_PC_COST: Record<'committee' | 'floor_debate' | 'vote', num
 /** Ordered stages that have a clock attached. Used for stage transitions. */
 const CLOCKED_STAGES: readonly BillStage[] = ['committee', 'floor_debate', 'vote'] as const;
 
+/**
+ * Safety cap for one `dailyUpdate` catch-up pass. There are three clocked
+ * legislative stages today, so a wildly overdue bill can move committee →
+ * floor → vote → resolved without risking an accidental infinite loop if a
+ * future stage-duration override is malformed.
+ */
+const MAX_CATCH_UP_STAGES = CLOCKED_STAGES.length;
+
 /** Result shape returned by `expediteStage` — keeps the panel's wiring thin. */
 export interface ExpediteResult {
   ok: boolean;
@@ -394,7 +402,7 @@ class LegislationSystemImpl implements LegislationSystemAPI {
         CLOCKED_STAGES.includes(current.stage) &&
         current.stageEndsOnDay !== undefined &&
         today >= current.stageEndsOnDay &&
-        catchUpSteps < CLOCKED_STAGES.length
+        catchUpSteps < MAX_CATCH_UP_STAGES
       ) {
         catchUpSteps += 1;
 
