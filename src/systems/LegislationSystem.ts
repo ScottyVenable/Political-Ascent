@@ -369,15 +369,20 @@ class LegislationSystemImpl implements LegislationSystemAPI {
     const pushToast = useUIStore.getState().pushToast;
 
     // Iterate over a snapshot so `movePending` calls inside resolveVote don't
-    // interfere with the loop.
+    // interfere with the loop. A bill may be wildly overdue after loading an
+    // old save or returning from a paused/backgrounded tab, so each bill gets a
+    // bounded catch-up loop rather than a single one-stage nudge.
     for (const bill of [...world.pendingLegislation]) {
       if (!CLOCKED_STAGES.includes(bill.stage)) continue;
 
+      let current: Bill = bill;
+      let catchUpSteps = 0;
+
       // A legacy save may have no timer at all — seed one on first sight so
       // the bill still progresses under the new rules.
-      if (bill.stageEndsOnDay === undefined) {
+      if (current.stageEndsOnDay === undefined) {
         const template = this.findTemplate(bill.templateId);
-        const duration = durationFor(template, bill.stage);
+        const duration = durationFor(template, current.stage);
         world.updateBill(bill.id, {
           stageEnteredOnDay: today,
           stageEndsOnDay: today + duration,
@@ -385,49 +390,58 @@ class LegislationSystemImpl implements LegislationSystemAPI {
         continue;
       }
 
-      if (today < bill.stageEndsOnDay) continue; // still in progress
+      while (
+        CLOCKED_STAGES.includes(current.stage) &&
+        current.stageEndsOnDay !== undefined &&
+        today >= current.stageEndsOnDay &&
+        catchUpSteps < CLOCKED_STAGES.length
+      ) {
+        catchUpSteps += 1;
 
-      // Clock expired. Transition naturally — no PC cost on a natural
-      // advance; time is the toll.
-      if (bill.stage === 'vote') {
-        const result = this.resolveVote(bill.id);
-        // Push the styled vote-result modal (todo#85). The brief toast is
-        // still kept so the player sees a notification if they dismiss the
-        // modal instantly or if the modal fires off-screen.
-        useUIStore.getState().openModal({
-          id: `vote-result-${bill.id}`,
-          type: 'vote-result',
-          payload: {
-            billTitle: bill.title,
-            passed: result.passed,
-            yea: result.yea,
-            nay: result.nay,
-            breakdown: result.breakdown,
-          },
-        });
+        // Clock expired. Transition naturally — no PC cost on a natural
+        // advance; time is the toll.
+        if (current.stage === 'vote') {
+          const result = this.resolveVote(current.id);
+          // Push the styled vote-result modal (todo#85). The brief toast is
+          // still kept so the player sees a notification if they dismiss the
+          // modal instantly or if the modal fires off-screen.
+          useUIStore.getState().openModal({
+            id: `vote-result-${current.id}`,
+            type: 'vote-result',
+            payload: {
+              billTitle: current.title,
+              passed: result.passed,
+              yea: result.yea,
+              nay: result.nay,
+              breakdown: result.breakdown,
+            },
+          });
+          pushToast({
+            message: result.passed
+              ? `${current.title} PASSED ${result.yea}\u2013${result.nay}`
+              : `${current.title} FAILED ${result.yea}\u2013${result.nay}`,
+            severity: result.passed ? 'success' : 'danger',
+            ttl: 5000,
+          });
+          break;
+        }
+
+        const template = this.findTemplate(current.templateId);
+        const next = nextStageAfter(current.stage);
+        const duration = durationFor(template, next);
+        const patch: Partial<Bill> = {
+          stage: next,
+          stageEnteredOnDay: current.stageEndsOnDay,
+          stageEndsOnDay: current.stageEndsOnDay + duration,
+        };
+        world.updateBill(current.id, patch);
+        current = { ...current, ...patch };
         pushToast({
-          message: result.passed
-            ? `${bill.title} PASSED ${result.yea}\u2013${result.nay}`
-            : `${bill.title} FAILED ${result.yea}\u2013${result.nay}`,
-          severity: result.passed ? 'success' : 'danger',
-          ttl: 5000,
+          message: `${current.title} → ${humanStage(next)}`,
+          severity: 'info',
+          ttl: 3000,
         });
-        continue;
       }
-
-      const template = this.findTemplate(bill.templateId);
-      const next = nextStageAfter(bill.stage);
-      const duration = durationFor(template, next);
-      world.updateBill(bill.id, {
-        stage: next,
-        stageEnteredOnDay: today,
-        stageEndsOnDay: today + duration,
-      });
-      pushToast({
-        message: `${bill.title} → ${humanStage(next)}`,
-        severity: 'info',
-        ttl: 3000,
-      });
     }
   }
 

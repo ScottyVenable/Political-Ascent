@@ -3,10 +3,14 @@ import { useCharacterStore } from '@/store/characterStore';
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
 import { CardSystem } from '@/systems/CardSystem';
-import { CardFace } from '../components/CardFace';
+import { CardFace, EffectSummary } from '../components/CardFace';
 import { Button } from '../components/Button';
+import { ModalShell } from '../components/ModalShell';
+import { TermText } from '../components/tooltip';
 import { useContextMenu } from '../hooks/useContextMenu';
 import { writeClipboard } from '@/utils/clipboard';
+import { formatTag } from '@/utils/format';
+import type { CardDefinition, CardInstance } from '@/types';
 
 /**
  * CardsPanel — view, reorder, and play cards in hand.
@@ -70,6 +74,7 @@ export function CardsPanel(): JSX.Element {
    * zone. Drives the zone's highlighted state.
    */
   const [overPlayZone, setOverPlayZone] = useState(false);
+  const [focusedInstanceId, setFocusedInstanceId] = useState<string | null>(null);
   const menu = useContextMenu();
 
   function play(instanceId: string): void {
@@ -194,24 +199,7 @@ export function CardsPanel(): JSX.Element {
           if (!def) return null;
           // Compute disabled state and a human reason in one pass so the
           // button title attribute can explain *why* it's disabled.
-          const apCost = def.apCost ?? 0;
-          const stats = def.stats;
-          let blockedReason: string | null = null;
-          if (pc < def.cost) blockedReason = 'Not enough political capital';
-          else if (apCost > 0 && ap < apCost) blockedReason = 'Not enough action points';
-          else if (stats?.cooldownWeeks && inst.lastPlayedWeek != null) {
-            const weeksSince = week - inst.lastPlayedWeek;
-            if (weeksSince < stats.cooldownWeeks) {
-              const wait = stats.cooldownWeeks - weeksSince;
-              blockedReason = `On cooldown (${wait} week${wait === 1 ? '' : 's'})`;
-            }
-          } else if (
-            stats?.usesPerGame != null &&
-            stats.usesPerGame > 0 &&
-            (inst.timesPlayed ?? 0) >= stats.usesPerGame
-          ) {
-            blockedReason = 'No uses left this game';
-          }
+          const blockedReason = blockedPlayReason(def, inst, { pc, ap, week });
           const canPay = blockedReason === null;
           const pending = playingId === inst.instanceId;
           const isDragging = dragId === inst.instanceId;
@@ -329,7 +317,13 @@ export function CardsPanel(): JSX.Element {
                   className="absolute -left-1.5 top-0 bottom-0 w-1 bg-accent-gold rounded-sm shadow-[0_0_8px_rgba(201,168,76,0.6)]"
                 />
               )}
-              <CardFace def={def} state={canPay ? 'playable' : 'locked'} />
+              <CardFace
+                def={def}
+                state={canPay ? 'playable' : 'locked'}
+                onClick={() => {
+                  if (dragId === null) setFocusedInstanceId(inst.instanceId);
+                }}
+              />
               <div className="flex gap-2">
                 <Button
                   size="sm"
@@ -354,7 +348,197 @@ export function CardsPanel(): JSX.Element {
           );
         })}
       </div>
+      {focusedInstanceId && (
+        <CardFocusModal
+          instanceId={focusedInstanceId}
+          onClose={() => setFocusedInstanceId(null)}
+          onPlay={(instanceId) => {
+            play(instanceId);
+            setFocusedInstanceId(null);
+          }}
+          onDiscard={(instanceId) => {
+            discard(instanceId);
+            setFocusedInstanceId(null);
+          }}
+          pc={pc}
+          ap={ap}
+          week={week}
+        />
+      )}
       {menu.element}
+    </div>
+  );
+}
+
+interface ResourceSnapshot {
+  pc: number;
+  ap: number;
+  week: number;
+}
+
+/**
+ * Returns why a card cannot currently be played, or `null` when it is legal.
+ *
+ * @param def Static card definition.
+ * @param inst In-hand card instance with cooldown/use counters.
+ * @param resources Current spendable resources and week index.
+ * @returns Human-readable disabled reason for buttons and modal copy.
+ */
+function blockedPlayReason(
+  def: CardDefinition,
+  inst: CardInstance,
+  resources: ResourceSnapshot,
+): string | null {
+  const apCost = def.apCost ?? 0;
+  const stats = def.stats;
+  if (resources.pc < def.cost) return 'Not enough political capital';
+  if (apCost > 0 && resources.ap < apCost) return 'Not enough action points';
+  if (stats?.cooldownWeeks && inst.lastPlayedWeek != null) {
+    const weeksSince = resources.week - inst.lastPlayedWeek;
+    if (weeksSince < stats.cooldownWeeks) {
+      const wait = stats.cooldownWeeks - weeksSince;
+      return `On cooldown (${wait} week${wait === 1 ? '' : 's'})`;
+    }
+  }
+  if (
+    stats?.usesPerGame != null &&
+    stats.usesPerGame > 0 &&
+    (inst.timesPlayed ?? 0) >= stats.usesPerGame
+  ) {
+    return 'No uses left this game';
+  }
+  return null;
+}
+
+/**
+ * Focused card reader modal.
+ *
+ * The hand grid must stay dense, but clicking a card should provide a slower
+ * reading mode with every cost, effect, tag, and flavor line visible. TermText
+ * remains active here, so glossary hypertext survives after removing the
+ * old full-card ExtendedTooltip wrapper.
+ */
+function CardFocusModal({
+  instanceId,
+  onClose,
+  onPlay,
+  onDiscard,
+  pc,
+  ap,
+  week,
+}: {
+  instanceId: string;
+  onClose: () => void;
+  onPlay: (instanceId: string) => void;
+  onDiscard: (instanceId: string) => void;
+  pc: number;
+  ap: number;
+  week: number;
+}): JSX.Element | null {
+  const inst = useCharacterStore((s) => s.hand.find((card) => card.instanceId === instanceId));
+  const def = inst ? CardSystem.getDefinition(inst.cardId) : undefined;
+  if (!inst || !def) return null;
+
+  const blockedReason = blockedPlayReason(def, inst, { pc, ap, week });
+  const canPlay = blockedReason === null;
+
+  return (
+    <ModalShell id={`card-focus-${instanceId}`} title={def.name} onClose={onClose} size="lg">
+      <div className="grid gap-4 md:grid-cols-[minmax(16rem,0.85fr)_1.15fr]" data-testid="card-focus-modal">
+        <CardFace def={def} state={canPlay ? 'playable' : 'locked'} hideRarityBadge />
+        <div className="space-y-4">
+          <section className="rounded-sm border border-rule bg-bg-tertiary/30 p-3">
+            <h3 className="font-headline text-sm text-accent-gold mb-2">Rules Text</h3>
+            <p className="text-sm text-text-secondary leading-relaxed">
+              <TermText text={def.description} />
+            </p>
+            {def.flavorText && (
+              <p className="mt-3 border-t border-rule pt-3 text-sm italic text-text-muted font-flavor">
+                &ldquo;<TermText text={def.flavorText} />&rdquo;
+              </p>
+            )}
+          </section>
+
+          <section className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+            <Fact label="PC Cost" value={def.cost} tone="gold" />
+            <Fact label="AP Cost" value={def.apCost ?? 0} tone="blue" />
+            <Fact label="Rarity" value={def.rarity} />
+            <Fact label="Type" value={def.type} />
+          </section>
+
+          {def.stats && (
+            <section className="grid grid-cols-3 gap-2 text-center">
+              {def.stats.power != null && <Fact label="Power" value={def.stats.power} />}
+              {def.stats.cooldownWeeks != null && <Fact label="Cooldown" value={`${def.stats.cooldownWeeks}w`} />}
+              {def.stats.usesPerGame != null && <Fact label="Uses" value={def.stats.usesPerGame} />}
+            </section>
+          )}
+
+          <section>
+            <h3 className="font-headline text-sm text-accent-gold mb-2">Effects</h3>
+            <EffectSummary effects={def.effects} limit={8} />
+          </section>
+
+          {def.tags.length > 0 && (
+            <section>
+              <h3 className="font-headline text-sm text-accent-gold mb-2">Tags</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {def.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-sm bg-bg-tertiary px-2 py-1 font-mono text-[0.625rem] uppercase tracking-wider text-text-muted"
+                  >
+                    {formatTag(tag)}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => onPlay(instanceId)}
+              disabled={!canPlay}
+              title={blockedReason ?? undefined}
+              data-testid="card-focus-play"
+            >
+              Play
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => onDiscard(instanceId)}>
+              Discard
+            </Button>
+            <Button size="sm" variant="ghost" onClick={onClose}>
+              Close
+            </Button>
+            {blockedReason && (
+              <span className="self-center text-xs text-text-muted">{blockedReason}</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+function Fact({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number | string;
+  tone?: 'gold' | 'blue';
+}): JSX.Element {
+  const toneClass =
+    tone === 'gold' ? 'text-accent-gold' : tone === 'blue' ? 'text-accent-blue' : 'text-text-primary';
+  return (
+    <div className="rounded-sm border border-rule bg-bg-tertiary/40 px-2 py-2">
+      <div className={`font-mono text-sm tabular-nums capitalize ${toneClass}`}>{value}</div>
+      <div className="mt-1 font-mono text-[0.6rem] uppercase tracking-wider text-text-muted">
+        {label}
+      </div>
     </div>
   );
 }
