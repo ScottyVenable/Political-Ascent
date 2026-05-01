@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Store from 'electron-store';
+import { isValidSaveSlotId } from '../utils/saveSlotId';
 
 /**
  * Electron main process entry point.
@@ -138,15 +139,20 @@ function buildMenu(): void {
 }
 
 function registerIpc(): void {
-  ipcMain.handle('pa:save:list', () => Object.keys(persist.get('saves')));
+  ipcMain.handle('pa:save:list', () => {
+    return Object.keys(persist.get('saves')).filter((slotId) =>
+      isValidSaveSlotId(slotId),
+    );
+  });
 
   ipcMain.handle('pa:save:read', (_event, slotId: string) => {
+    if (!isValidSaveSlotId(slotId)) return null;
     const saves = persist.get('saves');
     return saves[slotId] ?? null;
   });
 
   ipcMain.handle('pa:save:write', (_event, slotId: string, payload: unknown) => {
-    if (typeof slotId !== 'string' || !slotId) return false;
+    if (!isValidSaveSlotId(slotId)) return false;
     const saves = persist.get('saves');
     saves[slotId] = { version: 1, savedAt: Date.now(), payload };
     persist.set('saves', saves);
@@ -154,6 +160,7 @@ function registerIpc(): void {
   });
 
   ipcMain.handle('pa:save:delete', (_event, slotId: string) => {
+    if (!isValidSaveSlotId(slotId)) return false;
     const saves = persist.get('saves');
     if (slotId in saves) {
       delete saves[slotId];
