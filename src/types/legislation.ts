@@ -40,6 +40,11 @@ export interface BillTemplate {
    * original 10 templates which all default to `act`.
    */
   type?: BillType;
+  /**
+   * One-line stated purpose. Optional for static templates (they derive
+   * purpose from `description`); the drafting wizard always sets it.
+   */
+  purpose?: string;
   /** Budget impact per year (negative = cost, positive = revenue). */
   budgetImpact: number;
   /** Political-capital cost to push through each stage. */
@@ -82,6 +87,18 @@ export interface Bill {
   templateId: string;
   title: string;
   description: string;
+  /**
+   * Legal vehicle. Mirrors the `type` field on `BillTemplate`. Optional so
+   * legacy save files (drafted before the overhaul) load without error; the
+   * UI falls back to `'act'` when this is undefined.
+   */
+  type?: BillType;
+  /**
+   * One-line stated purpose written by the player in the drafting wizard.
+   * Surfaces in the bill text preview and may be used in future NPC
+   * dialogue and press-conference copy.
+   */
+  purpose?: string;
   tags: PolicyTag[];
   stage: BillStage;
   sponsor: string; // player id or NPC id

@@ -66,6 +66,10 @@ export function DraftLegislationScreen({
   onClose,
 }: Props): JSX.Element {
   const [title, setTitle] = useState(baseTemplate.title);
+  // One-line stated purpose that opens the bill text and surfaces in future
+  // NPC dialogue. Defaults to the template description so the field is never
+  // empty on first open.
+  const [purpose, setPurpose] = useState(baseTemplate.purpose ?? baseTemplate.description);
   const [billType, setBillType] = useState<BillType>(baseTemplate.type ?? 'act');
   // Ordered list of active module ids. Order matters: drag-reorderable in the
   // right rail; the bill text and the engine's "later module wins" semantics
@@ -77,6 +81,10 @@ export function DraftLegislationScreen({
   const [step, setStep] = useState<'compose' | 'breakdown'>('compose');
   // Drag-and-drop state for reorder of active modules.
   const [dragId, setDragId] = useState<string | null>(null);
+  // Module catalogue filter state. `categoryFilter` hides all modules except
+  // the chosen category; `moduleSearch` does a case-insensitive name match.
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [moduleSearch, setModuleSearch] = useState('');
   const pushToast = useUIStore((s) => s.pushToast);
 
   // Lock body scroll while the full-screen drafting overlay is open.
@@ -97,6 +105,28 @@ export function DraftLegislationScreen({
         .filter((m): m is PolicyModule => Boolean(m)),
     [activeModuleOrder],
   );
+
+  /**
+   * Distinct category values from the full module catalogue, sorted
+   * alphabetically. Used to render the filter chip row.
+   */
+  const moduleCategories = useMemo(
+    () => [...new Set(POLICY_MODULES.map((m) => m.category))].sort(),
+    [],
+  );
+
+  /**
+   * The subset of POLICY_MODULES visible in the catalogue grid after applying
+   * both the category chip and the search text filter.
+   */
+  const visibleModules = useMemo(() => {
+    const q = moduleSearch.trim().toLowerCase();
+    return POLICY_MODULES.filter(
+      (m) =>
+        (!categoryFilter || m.category === categoryFilter) &&
+        (!q || m.name.toLowerCase().includes(q) || m.summary.toLowerCase().includes(q)),
+    );
+  }, [categoryFilter, moduleSearch]);
 
   /**
    * Compose the synthesised template. Modules contribute additive
@@ -122,11 +152,12 @@ export function DraftLegislationScreen({
       ...baseTemplate,
       title: title.trim() || baseTemplate.title,
       type: billType,
+      purpose: purpose.trim() || baseTemplate.purpose || baseTemplate.description,
       opposition,
       budgetImpact,
       effects,
     };
-  }, [baseTemplate, title, billType, activeModules]);
+  }, [baseTemplate, title, billType, purpose, activeModules]);
 
   // Effective template = synthesised + bill-type modifier. The forecast and
   // the breakdown step both use this so the numbers the player sees match
@@ -233,6 +264,27 @@ export function DraftLegislationScreen({
                 );
               })}
             </div>
+            {/*
+              Stated purpose — one-line player-authored summary that opens the
+              bill text preview and surfaces in future press-conference / NPC
+              dialogue copy. Defaults to the template description so the field
+              is never empty on first open.
+            */}
+            <label
+              htmlFor="draft-purpose-input"
+              className="block font-mono text-[0.625rem] uppercase tracking-widest text-text-muted mt-2 mb-0.5"
+            >
+              Stated purpose
+            </label>
+            <input
+              id="draft-purpose-input"
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+              data-testid="draft-purpose-input"
+              placeholder="One-line stated purpose…"
+              className="w-full bg-transparent border-b border-rule/60 text-body text-text-secondary focus:outline-none focus:border-accent-gold/60 py-0.5"
+              aria-label="Stated purpose"
+            />
           </div>
           <Button variant="ghost" size="sm" onClick={onClose} data-testid="draft-cancel">
             Cancel
@@ -251,8 +303,61 @@ export function DraftLegislationScreen({
                 Modules attach as riders to the bill. Each one shifts opposition,
                 budget impact, and the on-enactment effects. Toggle to include.
               </p>
+              {/* Module search input */}
+              <input
+                type="search"
+                value={moduleSearch}
+                onChange={(e) => setModuleSearch(e.target.value)}
+                placeholder="Search modules…"
+                aria-label="Filter modules"
+                data-testid="module-search"
+                className="w-full bg-bg-primary/40 border border-rule rounded-sm px-3 py-1.5 text-body text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-gold/60 mb-2"
+              />
+              {/* Category filter chips */}
+              <div
+                className="flex flex-wrap gap-1 mb-3"
+                role="group"
+                aria-label="Filter by category"
+                data-testid="module-category-filter"
+              >
+                <button
+                  type="button"
+                  onClick={() => setCategoryFilter(null)}
+                  data-active={!categoryFilter}
+                  className={
+                    'px-2 py-0.5 rounded-sm font-mono text-[0.625rem] uppercase tracking-widest border transition-colors ' +
+                    (!categoryFilter
+                      ? 'bg-accent-gold/20 border-accent-gold text-accent-gold'
+                      : 'bg-bg-primary/40 border-rule text-text-muted hover:border-rule-strong')
+                  }
+                >
+                  All
+                </button>
+                {moduleCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategoryFilter((prev) => (prev === cat ? null : cat))}
+                    data-active={categoryFilter === cat}
+                    data-testid={`module-cat-${cat}`}
+                    className={
+                      'px-2 py-0.5 rounded-sm font-mono text-[0.625rem] uppercase tracking-widest border transition-colors ' +
+                      (categoryFilter === cat
+                        ? 'bg-accent-gold/20 border-accent-gold text-accent-gold'
+                        : 'bg-bg-primary/40 border-rule text-text-muted hover:border-rule-strong')
+                    }
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              {visibleModules.length === 0 ? (
+                <p className="text-body text-text-muted italic py-2">
+                  No modules match the current filter.
+                </p>
+              ) : (
               <ul className="grid sm:grid-cols-2 gap-2" data-testid="policy-module-list">
-                {POLICY_MODULES.map((m) => {
+                {visibleModules.map((m) => {
                   const active = activeModuleOrder.includes(m.id);
                   return (
                     <li key={m.id}>
@@ -294,6 +399,7 @@ export function DraftLegislationScreen({
                   );
                 })}
               </ul>
+              )}
             </section>
 
             <section>
@@ -460,19 +566,48 @@ export function DraftLegislationScreen({
 
 /**
  * Compose the player-facing "bill text" preview. This is illustrative,
- * not parsed by the engine — it concatenates the template description
- * with each active module's preview phrase, formatted as a single
- * paragraph in legalese-adjacent prose.
+ * not parsed by the engine — it opens with a type-appropriate preamble,
+ * then appends the stated purpose (or the template description), followed
+ * by each active module's preview phrase as a "Whereas" rider.
+ *
+ * Type-aware openings:
+ *   - resolution:     "Be it Resolved by the Congress of the United States, that…"
+ *   - act:            "An Act to…"
+ *   - amendment:      "Proposed Amendment — Resolved by two-thirds of the
+ *                      Senate and House of Representatives, that…"
+ *   - appropriations: "An Act making appropriations for…"
  */
 export function composeBillText(template: BillTemplate, modules: PolicyModule[]): string {
-  const opening = `An Act ${template.description.replace(/\.$/, '')}.`;
+  const purposeText = (template.purpose ?? template.description).replace(/\.$/, '');
+
+  let opening: string;
+  let ridersPrefix: string;
+  switch (template.type) {
+    case 'resolution':
+      opening = `Be it Resolved by the Congress of the United States, that ${purposeText}.`;
+      ridersPrefix = 'The Resolution further provides that it ';
+      break;
+    case 'amendment':
+      opening = `Proposed Amendment — Resolved by two-thirds of the Senate and House of Representatives, that ${purposeText}.`;
+      ridersPrefix = 'The Amendment further stipulates that it ';
+      break;
+    case 'appropriations':
+      opening = `An Act making appropriations for ${purposeText}.`;
+      ridersPrefix = 'The Act further directs that it ';
+      break;
+    case 'act':
+    default:
+      opening = `An Act to ${purposeText}.`;
+      ridersPrefix = 'The Act ';
+      break;
+  }
+
   if (modules.length === 0) return opening;
 
-  // Each module reads as a "Whereas" rider phrase, joined into a
-  // single declarative sentence. Order follows the player's toggle
-  // order to keep the preview stable across re-renders.
+  // Each module reads as a rider phrase. Order follows the player's drag
+  // order; later modules win on conflicting effect targets.
   const riders = modules.map((m, i) => {
-    const sep = i === 0 ? 'The Act ' : '; further, the Act ';
+    const sep = i === 0 ? ridersPrefix : '; further, it ';
     return `${sep}${m.previewText}`;
   });
   return `${opening} ${riders.join('')}.`;

@@ -216,6 +216,10 @@ class LegislationSystemImpl implements LegislationSystemAPI {
       templateId: effective.id,
       title: effective.title,
       description: effective.description,
+      // Carry the legal vehicle and stated purpose through to the live bill so
+      // the Legislation panel can badge it and future systems can branch on it.
+      type: effective.type,
+      purpose: effective.purpose,
       tags: effective.tags,
       stage,
       sponsor: useCharacterStore.getState().id || 'player',
