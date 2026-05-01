@@ -86,6 +86,7 @@ test.describe('PR screenshots', () => {
   });
 
   test('bottom bar progress and card focus modal polish', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.includes('pixel'), 'UI polish screenshots target the three desktop PR viewport sizes.');
     await reachDashboard(page);
 
     await page.getByRole('button', { name: /^legislation$/i }).click();

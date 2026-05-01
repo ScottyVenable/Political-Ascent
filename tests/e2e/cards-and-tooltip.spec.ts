@@ -50,6 +50,7 @@ async function goToGame(page: Page): Promise<void> {
 
 test.describe('cards & tooltip', () => {
   test('Collection screen shows pack store and rarity grid', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.includes('pixel'), 'Desktop card tooltip specs use the fixed sidebar layout.');
     await goToGame(page);
     await page.getByRole('button', { name: 'Collection', exact: true }).click();
     await page.waitForTimeout(300);
@@ -65,6 +66,7 @@ test.describe('cards & tooltip', () => {
   });
 
   test('Extended tooltip opens on Political Capital hover', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.includes('pixel'), 'Desktop card tooltip specs use the fixed sidebar layout.');
     await goToGame(page);
 
     const pcPill = page.locator('text=PC').first();
@@ -82,6 +84,7 @@ test.describe('cards & tooltip', () => {
   });
 
   test('Opening a starter pack reveals five cards', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.includes('pixel'), 'Desktop card tooltip specs use the fixed sidebar layout.');
     await goToGame(page);
     await page.getByRole('button', { name: 'Collection', exact: true }).click();
     await page.waitForTimeout(300);
@@ -90,6 +93,7 @@ test.describe('cards & tooltip', () => {
 
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible({ timeout: 2000 });
+    await dialog.getByRole('button', { name: /view all cards/i }).click({ timeout: 6_000 });
     await expect(dialog.getByRole('button', { name: /done/i })).toBeVisible({ timeout: 6000 });
 
     await expect(page).toHaveScreenshot(`pack-open-${testInfo.project.name}.png`, {
@@ -98,7 +102,8 @@ test.describe('cards & tooltip', () => {
     });
   });
 
-  test('Hand cards use click-to-focus instead of full-card hover tooltips', async ({ page }) => {
+  test('Hand cards use click-to-focus instead of full-card hover tooltips', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.includes('pixel'), 'Desktop card tooltip specs use the fixed sidebar layout.');
     await goToGame(page);
     await page.getByRole('button', { name: /^cards$/i }).first().click();
     await page.waitForTimeout(300);

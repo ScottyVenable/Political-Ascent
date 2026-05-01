@@ -13,7 +13,7 @@
  *
  * @module renderer/components/CardFace
  */
-import { memo } from 'react';
+import { memo, type MouseEventHandler } from 'react';
 import type { CardDefinition, CardRarity, CardType, Effect } from '@/types';
 import { formatTag } from '@/utils/format';
 import {
@@ -39,6 +39,7 @@ export interface CardFaceProps {
   /** Compact mode shrinks padding & hides flavor text. */
   compact?: boolean;
   onClick?: () => void;
+  onContextMenu?: MouseEventHandler<HTMLElement>;
 }
 
 /** Map card types to a sensible default icon. */
@@ -78,6 +79,7 @@ function CardFaceImpl({
   hideRarityBadge,
   compact,
   onClick,
+  onContextMenu,
 }: CardFaceProps): JSX.Element {
   const iconName: IconName = (def.icon as IconName | undefined) ?? TYPE_ICON[def.type];
   const stats = def.stats;
@@ -85,6 +87,7 @@ function CardFaceImpl({
   return (
     <article
       onClick={onClick}
+      onContextMenu={onContextMenu}
       className={
         'rarity-frame rarity-' +
         def.rarity +

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { useCharacterStore } from '@/store/characterStore';
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
@@ -204,6 +204,40 @@ export function CardsPanel(): JSX.Element {
           const pending = playingId === inst.instanceId;
           const isDragging = dragId === inst.instanceId;
           const isDropTarget = dropTargetId === inst.instanceId && dragId !== inst.instanceId;
+          const openCardMenu = (e: MouseEvent): void =>
+            menu.open(e, [
+              {
+                id: 'play',
+                label: pending ? 'Playing\u2026' : 'Play card',
+                icon: 'check',
+                onSelect: () => play(inst.instanceId),
+                disabled: !canPay || pending,
+              },
+              {
+                id: 'copy-id',
+                label: 'Copy card ID',
+                icon: 'copy',
+                onSelect: () => {
+                  // See utils/clipboard.ts for why we don't chain
+                  // off `navigator.clipboard?.writeText` directly.
+                  void writeClipboard(def.id).then((ok) =>
+                    pushToast({
+                      message: ok ? `Copied: ${def.id}` : 'Clipboard unavailable',
+                      severity: ok ? 'info' : 'warning',
+                      ttl: ok ? 2000 : 2500,
+                    }),
+                  );
+                },
+              },
+              {
+                id: 'discard',
+                label: 'Discard',
+                icon: 'x',
+                onSelect: () => discard(inst.instanceId),
+                disabled: pending,
+                danger: true,
+              },
+            ]);
           return (
             <div
               key={inst.instanceId}
@@ -270,41 +304,7 @@ export function CardsPanel(): JSX.Element {
                 setDragId(null);
                 setDropTargetId(null);
               }}
-              onContextMenu={(e) =>
-                menu.open(e, [
-                  {
-                    id: 'play',
-                    label: pending ? 'Playing\u2026' : 'Play card',
-                    icon: 'check',
-                    onSelect: () => play(inst.instanceId),
-                    disabled: !canPay || pending,
-                  },
-                  {
-                    id: 'copy-id',
-                    label: 'Copy card ID',
-                    icon: 'copy',
-                    onSelect: () => {
-                      // See utils/clipboard.ts for why we don't chain
-                      // off `navigator.clipboard?.writeText` directly.
-                      void writeClipboard(def.id).then((ok) =>
-                        pushToast({
-                          message: ok ? `Copied: ${def.id}` : 'Clipboard unavailable',
-                          severity: ok ? 'info' : 'warning',
-                          ttl: ok ? 2000 : 2500,
-                        }),
-                      );
-                    },
-                  },
-                  {
-                    id: 'discard',
-                    label: 'Discard',
-                    icon: 'x',
-                    onSelect: () => discard(inst.instanceId),
-                    disabled: pending,
-                    danger: true,
-                  },
-                ])
-              }
+              onContextMenu={openCardMenu}
             >
               {/* Insertion indicator — a left-edge gold bar that
                   appears when this row is the active drop target.
@@ -323,6 +323,7 @@ export function CardsPanel(): JSX.Element {
                 onClick={() => {
                   if (dragId === null) setFocusedInstanceId(inst.instanceId);
                 }}
+                onContextMenu={openCardMenu}
               />
               <div className="flex gap-2">
                 <Button
