@@ -32,6 +32,7 @@ import { SeededRNG } from '@/utils/random';
 import { makeId } from '@/utils/id';
 import { clamp } from '@/utils/math';
 import { toEpochDays } from '@/utils/date';
+import { applyBillType } from '@/utils/billType';
 
 /**
  * Default per-stage duration, in simulated days. Exported so tests and
@@ -197,27 +198,34 @@ class LegislationSystemImpl implements LegislationSystemAPI {
     const rng = new SeededRNG(useWorldStore.getState().seed + Date.now());
     const today = toEpochDays(useGameStore.getState().currentDate);
 
+    // Apply the bill-type modifier (resolution / act / amendment /
+    // appropriations) before any downstream sampling so the in-flight bill
+    // carries the effective opposition and the engine reads the scaled
+    // PC costs from `pcCost` going forward. Templates without `type`
+    // default to `act` (no-op) — see `docs/LEGISLATION_OVERHAUL_PLAN.md`.
+    const effective = applyBillType(template);
+
     // Bills skip the `draft` stage immediately: in this sim, "drafting" is
     // the act that *introduces* the bill into committee. A user-facing
     // draft-then-polish flow can be layered on later if desired.
     const stage: BillStage = 'committee';
-    const committeeDays = durationFor(template, stage);
+    const committeeDays = durationFor(effective, stage);
 
     const bill: Bill = {
       id: makeId('bill', rng) as BillId,
-      templateId: template.id,
-      title: template.title,
-      description: template.description,
-      tags: template.tags,
+      templateId: effective.id,
+      title: effective.title,
+      description: effective.description,
+      tags: effective.tags,
       stage,
       sponsor: useCharacterStore.getState().id || 'player',
       cosponsors: [],
       pcInvested: 0,
-      opposition: template.opposition,
+      opposition: effective.opposition,
       supportVotes: 0,
       opposeVotes: 0,
       createdAt: isoDate(),
-      effects: template.effects,
+      effects: effective.effects,
       stageEnteredOnDay: today,
       stageEndsOnDay: today + committeeDays,
     };
