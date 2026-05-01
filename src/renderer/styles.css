@@ -223,6 +223,101 @@ body {
 }
 
 /* ────────────────────────────────────────────────────────────────
+   RESPONSIVE GAME SHELL
+   Keep desktop/tablet (`md+`) exactly as-is while tuning the game shell
+   for phone portrait and landscape viewport constraints.
+   ──────────────────────────────────────────────────────────────── */
+
+/* Desktop baseline (unchanged): 48px top bar + 72px bottom bar. */
+.pa-game-shell {
+  grid-template-rows: 48px minmax(0, 1fr) 72px;
+}
+
+/* Match existing desktop composition at md+ exactly. */
+.pa-bottombar {
+  grid-template-columns: minmax(10rem, 0.9fr) minmax(14rem, 1.4fr) minmax(12rem, 1fr);
+}
+
+/* Phone portrait: allow slightly taller rails and stack the command strip
+   for readable touch targets and unclipped timeline text. */
+@media (max-width: 767px) {
+  .pa-game-shell {
+    grid-template-rows: 56px minmax(0, 1fr) auto;
+  }
+
+  .pa-topbar {
+    height: 56px;
+    padding-inline: 0.5rem;
+  }
+
+  .pa-topbar-date {
+    font-size: 0.75rem;
+  }
+
+  .pa-topbar-day {
+    margin-top: 0.125rem;
+    font-size: 0.52rem;
+  }
+
+  .pa-topbar-resources {
+    gap: 0.5rem;
+  }
+
+  .pa-bottombar {
+    height: auto;
+    min-height: 88px;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'progress progress'
+      'speed actions';
+    column-gap: 0.5rem;
+    row-gap: 0.5rem;
+  }
+
+  .pa-bottombar-speed {
+    grid-area: speed;
+  }
+
+  .pa-bottombar-progress {
+    grid-area: progress;
+  }
+
+  .pa-bottombar-actions {
+    grid-area: actions;
+  }
+}
+
+/* Phone landscape: compress chrome to prioritise the active panel while
+   keeping primary controls in one row. */
+@media (max-width: 767px) and (orientation: landscape) {
+  .pa-game-shell {
+    grid-template-rows: 44px minmax(0, 1fr) auto;
+  }
+
+  .pa-topbar {
+    height: 44px;
+  }
+
+  .pa-topbar-level,
+  .pa-topbar-day {
+    display: none;
+  }
+
+  .pa-topbar-name {
+    font-size: 0.75rem;
+  }
+
+  .pa-bottombar {
+    min-height: 56px;
+    grid-template-columns: minmax(8.5rem, 0.85fr) minmax(0, 1fr) auto;
+    grid-template-areas: 'speed progress actions';
+    row-gap: 0;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
    UTILITY: diamond clip-path for stage-track nodes. Using a class
    instead of repeating the clip-path declaration keeps stage markers
    visually identical across every use site.
