@@ -1,389 +1,265 @@
 # POLITICAL ASCENT — Development Roadmap
-**Lead Director:** [Your Name] | **Engine Version:** 0.1
+**Lead Director:** Scotty Venable | **Engine Version:** 0.1 | **Last refreshed:** 2026-05-01
+
+> This roadmap is the single source of truth for *what we are building next*.
+> It is grounded in the **current state** of the codebase — see
+> `docs/about/CHANGELOG.md` for what is shipped, and `HANDOFF.md` for the
+> low-level "what was I doing" snapshot.
+
+---
+
+## 0. STATE OF PLAY (as of 2026-05-01)
+
+The MVP scaffold (`v0.1.0-alpha.1`) is **substantially built**. The whole
+loop — `MainMenu → CharacterCreation → ScenarioSelect → Game` — runs in the
+browser, Electron and a Capacitor Android wrapper, on top of a typed core
+engine and a deterministic seeded RNG.
+
+| Layer | Status | Notes |
+|---|---|---|
+| Build & tooling (Vite, Electron, Capacitor, electron-builder, ESLint, Vitest) | ✅ | `npm run dev / typecheck / test / build:web / build:win / android:build` |
+| TypeScript types & branded IDs | ✅ | All cross-boundary types in `src/types/`, no `any` |
+| Stores (game / character / world / ui / settings) — Zustand + immer | ✅ | |
+| Utilities (RNG, math, date, format, logger, id) | ✅ | 51 unit tests |
+| Engine — `TimeEngine`, `EventEngine`, `ActionEngine`, `AchievementEngine`, `applyEffect`, `dataLoader`, `GameEngine` orchestrator | ✅ | 65 tests passing |
+| Systems — Character / Population / Economy / Legislation / Congress / Card / Quest / Influence / Skill / Dialogue | ✅ | All wired through `GameEngine` to TimeEngine hooks |
+| MVP content (Modern America 2024 scenario, 12 cards, 10 traits, 5 events, 4 quests, 10 bill templates, 10 achievements, 6 population groups) | ✅ | `src/data/**` JSON, validated by loader |
+| UI — router, screens, panels (Dashboard / Legislation / Congress / Population / Economy / Quests / Cards / Skills / Character), shared components | ✅ | Tailwind + Recharts |
+| Save/load (electron-store + IPC) | ✅ | One autosave + 5 manual slots |
+| Android scaffold (Capacitor + Gradle) | ✅ | Debug & release flow documented |
+| PowerShell launcher | ✅ | `launcher.ps1` |
+
+**Known MVP limitations / paper-cuts** *(addressed in v0.1.1 below)*:
+
+1. `applyEffect` does not honor `Effect.delayDays` / `Effect.duration` — every effect lands immediately.
+2. `gameStore.advanceDay` is a stub; the real advancement lives in `TimeEngine.step`.
+3. `EventEngine` `stat` requirement check has been wired but `relationship` requirement compare is still narrow (`gt|lt` only).
+4. No **Press Room** panel yet (speech segments + briefings — GDD §15).
+5. No **negotiation panel** UX during a Senate vote — `LegislationSystem.resolveVote` is purely mechanical.
+6. No **morning briefing** modal at week start — Dashboard surfaces a static panel instead.
+7. No keyboard shortcut help overlay.
+8. No onboarding tooltips for first-time players.
+9. No `cap-resources` or app icons committed for Android — uses Capacitor defaults.
 
 ---
 
 ## ROADMAP OVERVIEW
 
 ```
-v0.1-alpha  ← MVP: Character creation + Modern America scenario + core systems
-v0.2-alpha  ← Elections, campaigns, judicial system
-v0.3-alpha  ← Historical scenarios (Civil War, Civil Rights)
-v0.4-beta   ← Diplomacy, military (basic), creator mode
-v0.5-beta   ← Polish, audio, full achievement system, modding toolkit
-v1.0        ← Launch candidate
+v0.1.0-alpha.1  ✅ SHIPPED (2026-04-24)  Scaffold, engine, MVP content, UI
+v0.1.1-alpha    ◀ ACTIVE                Polish, gap-fill, paper-cuts, UX
+v0.2-alpha                              Elections & campaigns
+v0.3-alpha                              Historical scenarios + Map view
+v0.4-beta                               Diplomacy + Military + Creator Mode v1
+v0.5-beta                               Audio, full achievements, modding toolkit
+v1.0                                    Launch candidate
 ```
 
 ---
 
-## v0.1 — MVP (Current Sprint)
+## v0.1.1 — POLISH & GAP-FILL  *(active)*
 
-### Milestone 0: Project Setup
-**Branch:** `exp--0.1--project-setup`
+Goal: take the MVP from "running" to "first-player-friendly". No new pillar
+systems — only finish what we have, fix the known issues above, and tighten
+the loop so a new player can play their first 30 minutes without confusion.
 
-- [ ] Initialize Electron + Vite + React + TypeScript project
-- [ ] Configure Tailwind CSS
-- [ ] Set up Zustand
-- [ ] Set up ESLint + Prettier
-- [ ] Set up Vitest
-- [ ] Create complete folder structure per Architecture doc
-- [ ] Set up electron-builder config (win + mac targets)
-- [ ] Create base Git branches (release, development, experimental)
-- [ ] Write initial README
-- [ ] Set up GitHub repo with branch protections
-- [ ] Place COPILOT_INSTRUCTIONS.md in `.github/`
+### M0 — MVP gap-fix
+**Branch:** `exp--0.1.1--mvp-gaps`
 
-**Done When:** `npm run dev` launches an Electron window with a React app
+- [x] **Deferred / scheduled effects.** Honor `Effect.delayDays` in `applyEffect`. Persist a `scheduledEffects` queue in `worldStore`. Drain on the daily TimeEngine hook. *(in this PR)*
+- [ ] Bill **Implementation phase** — once a bill passes, schedule its effects with the bill's `implementationDays` so legislation feels like it actually takes time.
+- [ ] Honour `Effect.duration` (revert effects after N days). Lower priority than `delayDays`.
+- [ ] Remove or correct `gameStore.advanceDay` stub.
+- [ ] Generalize `AchievementEngine` `relationship` operator handling (support `gte` / `lte` / `eq` too).
 
----
+### M1 — UX polish
+**Branch:** `exp--0.1.1--ux-polish`
 
-### Milestone 1: Core Types & Architecture
-**Branch:** `exp--0.1--core-types`
+- [ ] **Morning Briefing modal** on week roll-over: prior-week summary, top 3 news, AP regen, queued events.
+- [ ] **Keyboard shortcut help** (`?` key) overlay; complete sidebar shortcut list.
+- [ ] Consistent **tooltips** on every stat, resource, and policy tag (auto-glossary).
+- [ ] **Onboarding tooltips** triggered on first-encounter of: AP, PC, Ideology, Cards, Bills, Congress.
+- [ ] **Toast variants** wired (`success / info / warning / danger`) and an audio hook stub.
+- [ ] App icon set committed for Electron (icns/ico/png) and Android (`mipmap-*`).
+- [ ] Loading skeletons on the Dashboard, Legislation, and Economy panels.
 
-- [ ] Define all TypeScript interfaces (`GameState`, `Character`, `WorldState`, etc.)
-- [ ] Set up all Zustand stores (empty, typed)
-- [ ] Create `utils/random.ts` (seeded Mulberry32 RNG)
-- [ ] Create `utils/math.ts` (clamp, lerp, stat helpers)
-- [ ] Create `utils/format.ts` (date, number, currency formatting)
-- [ ] Create `utils/logger.ts` (dev-mode logging wrapper)
-- [ ] Create `GameEngine.ts` shell
-- [ ] Create all system shells (empty class/object with typed interfaces)
-- [ ] Set up JSON data loader with validation
-- [ ] Write unit tests for all utils
+### M2 — Negotiation Panel (vertical slice of GDD §8.4)
+**Branch:** `exp--0.1.1--negotiation-panel`
 
-**Done When:** TypeScript compiles with zero errors, all interfaces are defined
+- [ ] When a Senate vote is called, open a Negotiation Panel before the tally if PC ≥ threshold.
+- [ ] Show top 5 swing legislators (closest-to-flipping by `LegislationSystem.predictVote`).
+- [ ] Offer **policy concessions** (PC cost), **favor calls** (relationship cost), **leverage** (Integrity cost).
+- [ ] Tie outcomes through `applyEffect` so they're saved correctly.
+- [ ] Skip / proceed buttons keep the existing instant-resolve flow available.
 
----
+### M3 — Press Room v1 (vertical slice of GDD §15)
+**Branch:** `exp--0.1.1--press-room`
 
-### Milestone 2: Main Menu & App Shell
-**Branch:** `exp--0.1--app-shell`
+- [ ] New `PressRoomPanel` accessible from sidebar.
+- [ ] **Speech composer**: opening + 2–4 body points + close, all from JSON segments.
+- [ ] `SpeechSystem.compose()` returns: poll shift per group, press reaction, PC delta, headline.
+- [ ] `src/data/speeches/segments.json` — 25+ segments.
+- [ ] `PressSystem.publish()` pushes a NewsItem with the headline; ties into the news ticker.
+- [ ] Charisma + Oratory skill apply multipliers.
 
-- [ ] Main Menu screen (New Game, Load Game, Settings, Quit)
-- [ ] Settings screen (Gameplay, Audio, Display, Accessibility)
-- [ ] Top bar layout component
-- [ ] Sidebar nav component
-- [ ] Bottom bar layout component (time controls + card hand area)
-- [ ] Context panel component
-- [ ] Router setup (menu → character creation → game → settings)
-- [ ] Global modal system
-- [ ] Toast notification system
-- [ ] App icon + window config
+### M4 — Save format v2
+**Branch:** `exp--0.1.1--save-format-v2`
 
-**Done When:** Can navigate between menu screens; no game content yet
+- [ ] Bump `SAVE_VERSION` and add a migration step from v1.
+- [ ] Persist the new `scheduledEffects` queue.
+- [ ] Persist news ticker, achievements unlocked, and quest history.
+- [ ] Save thumbnail (a small in-game screenshot dataURL).
 
----
+### M5 — QA + tag `v0.1.1-alpha.4`
+- [ ] Manual play-through of Modern America for 26 simulated weeks without crash.
+- [ ] All Vitest suites green; new tests for scheduler + speech composer.
+- [ ] Update CHANGELOG; tag.
 
-### Milestone 3: Character Creation
-**Branch:** `exp--0.1--character-system`
-
-- [ ] Character creation multi-step screen
-  - [ ] Step 1: Choose background (Citizen / Veteran / Executive)
-  - [ ] Step 2: Name + customization (text input, ideology compass)
-  - [ ] Step 3: Stat distribution (point-buy system with background bonuses)
-  - [ ] Step 4: Trait selection (choose 2 from pool)
-  - [ ] Step 5: Summary + confirm
-- [ ] Character presets (5 presets, selectable from step 1)
-- [ ] Ideology compass component (2-axis drag)
-- [ ] `CharacterSystem.ts` — stat calculations, validation
-- [ ] Character sheet panel (view-only during game)
-- [ ] Portrait placeholder component
-
-**Done When:** Can create a character and see their sheet
+**Done When:** A first-time player can launch from cold start, complete character creation, run a session for ~30 minutes, pass at least one bill (with delayed implementation effects firing), give a speech, and save/load — without referring to docs.
 
 ---
 
-### Milestone 4: Scenario & World Loading
-**Branch:** `exp--0.1--scenario-system`
+## v0.2 — ELECTIONS & CAMPAIGNS
 
-- [ ] Scenario select screen (list of scenarios, Modern America initially)
-- [ ] `modern-america-2024/scenario.json` — full scenario definition
-- [ ] `modern-america-2024/legislators.json` — 100 senators, 435 representatives (procedural seed)
-- [ ] `modern-america-2024/population.json` — starting population group states
-- [ ] `modern-america-2024/economy.json` — starting economic conditions
-- [ ] Scenario loader (reads JSON, seeds world state)
-- [ ] Procedural NPC name/stat generator (seeded from scenario ID)
-- [ ] World state initialization from scenario
+The first real *political loop*. Today the Senator is appointed forever; v0.2
+gives the world an electoral clock.
 
-**Done When:** Selecting a scenario loads the world into Zustand
+### Pillars
+1. **Election cycle** drives long-term play.
+2. **Campaigns** are a sub-mode with their own pacing.
+3. **Polling** is a permanent, live signal — not just an event.
 
----
+### Milestones
 
-### Milestone 5: Time System
-**Branch:** `exp--0.1--time-system`
+- **M0 — Election system core.** `ElectionSystem.ts`. Calendar of upcoming races (House biennial, Senate by class, Presidential 4-yr). Pre-computed for the scenario.
+- **M1 — Polling & approval.** `PollingSystem.ts` running weekly: head-to-head and approval rating per demographic. Sparkline on Dashboard.
+- **M2 — Campaign mode.** Pause main loop, open campaign sub-loop: ground game, ads, debates, fundraising. AP becomes campaign hours.
+- **M3 — Debates.** Dialogue-tree with stat checks; opponent has a personality profile. Outcome ⇒ poll shift.
+- **M4 — Election night.** Animated state-by-state call, dramatic holds for close calls, post-mortem screen.
+- **M5 — Approval breakdown.** New panel: approval by demographic, region, faction, with policy-impact markers.
+- **M6 — Judicial system v1.** Supreme Court roster. Rulings can strike down passed bills (the bill dies + flag set). No nomination flow yet.
+- **M7 — Constitutional amendment** mechanic — multi-stage, multi-year arc.
+- **M8 — Press v2** — individual journalists with personalities & beats; favorability shifts per-journalist.
+- **M9 — 5 additional starter scenarios (framework only)** — empty templates so modders can fork them.
+- **M10 — Creator Mode v1 (read-only).** A debug panel that shows the data graph — no editing yet.
+- **M11 — Polish + tag `v0.2.0-alpha`.**
 
-- [ ] `TimeEngine.ts` — tick loop, date advancement
-- [ ] Speed controls: Pause / 1× / 2× / 4× / Skip to event
-- [ ] Time controls UI component (bottom bar)
-- [ ] Auto-pause triggers (configurable in settings)
-- [ ] Date display in top bar
-- [ ] Weekly/monthly/annual tick hooks
-- [ ] Game start sequence (intro briefing on day 1)
-
-**Done When:** Time advances, pauses, and accelerates correctly
+**Done When:** Player can run for re-election, win or lose, and the world keeps simulating. A bill they pass can be struck down. Polling shows up everywhere a number is rendered.
 
 ---
 
-### Milestone 6: Action Point System
-**Branch:** `exp--0.1--action-system`
+## v0.3 — HISTORICAL SCENARIOS + MAP
 
-- [ ] AP tracking in game store
-- [ ] AP display in top bar (current / max)
-- [ ] AP regeneration (daily/weekly)
-- [ ] `ActionEngine.ts` — validates actions, deducts AP
-- [ ] Stamina stat integration (higher stamina = more AP per week)
-- [ ] "Low AP" auto-pause trigger
-- [ ] AP exhaustion state (blocked actions when AP = 0)
+The first content-heavy release. All systems exist; this is mostly **content,
+authoring tools, and a map**.
 
-**Done When:** Actions cost and regenerate AP correctly
+### Pillars
+1. Two **fully authored** historical scenarios.
+2. A **map view** the player consults regularly.
+3. **Faction leadership** (player can be a caucus chair / whip / leader).
 
----
+### Milestones
 
-### Milestone 7: Main Dashboard
-**Branch:** `exp--0.1--dashboard`
-
-- [ ] Dashboard panel (home screen inside game)
-- [ ] Approval rating widget (sparkline chart)
-- [ ] Political capital display
-- [ ] Upcoming events list
-- [ ] Active quests preview (top 3)
-- [ ] News ticker (recent headlines)
-- [ ] Quick-action buttons (Schedule Press Briefing, View Calendar, etc.)
-- [ ] Morning briefing modal (shows on each new week)
-
-**Done When:** Dashboard shows live game state meaningfully
+- **M0 — Map view.** US regional map (states + territories). Population overlay, election overlay, economy overlay.
+- **M1 — Civil War Era (USA, 1860–1865).** Full scenario — events, NPCs, bill templates, factions, victory conditions.
+- **M2 — Civil Rights Movement (USA, 1960–1968).** Full scenario.
+- **M3 — Faction leadership path.** Whip → Minority Leader → Majority Leader. Mechanically: extra AP, vote-prediction, relationship discount.
+- **M4 — Military system v1.** Budget line, readiness stat, deployment count. No tactical layer; events draw on these stats.
+- **M5 — Advanced dialogue** — branching press conferences with multi-turn memory.
+- **M6 — Sandbox tightening.** "What-if" mode that lets you fork a save and run alternate timelines.
+- **M7 — Tag `v0.3.0-alpha`.**
 
 ---
 
-### Milestone 8: Population System
-**Branch:** `exp--0.1--population-sim`
+## v0.4 — DIPLOMACY + CREATOR MODE
 
-- [ ] `PopulationSystem.ts` — weekly update logic
-- [ ] Population groups defined (8–10 groups for MVP)
-- [ ] Group stat calculations (happiness, radicalism drift)
-- [ ] Policy effect application to groups
-- [ ] Population panel UI
-  - [ ] Overview tab (aggregate nation stats)
-  - [ ] Groups tab (list with drill-down)
-  - [ ] Trends tab (historical sparklines)
-- [ ] Group detail modal (stats, behavior, current issues)
-- [ ] Radicalism event triggers (high radicalism → event)
+### Pillars
+1. **Foreign relations** as a recurring strategic concern.
+2. **Creator Mode v1** — first-class authoring tools.
+3. The game stops being just-domestic.
 
-**Done When:** Population groups update weekly and respond to legislation
+### Milestones
 
----
-
-### Milestone 9: Legislation System
-**Branch:** `exp--0.1--legislation-ui`
-
-- [ ] `LegislationSystem.ts` — bill lifecycle logic
-- [ ] Bill draft screen (template picker, custom edit)
-- [ ] `bill-templates.json` — 20+ bill templates covering major policy areas
-- [ ] Committee stage simulation
-- [ ] Floor debate simulation
-- [ ] Vote resolution (with negotiation panel)
-- [ ] Bill signing/veto (if executive branch applies)
-- [ ] Implementation phase (delayed effects)
-- [ ] Legislation hub panel
-  - [ ] Active bills list (with stage indicators)
-  - [ ] Drafting workspace
-  - [ ] Historical log (passed/failed bills)
-- [ ] Bill detail modal
-
-**Done When:** Can draft, push, and vote on a bill through full lifecycle
+- **M0 — Foreign leader contacts.** Roster of NPCs per country. Treaties, summits, sanctions as effects.
+- **M1 — Diplomacy panel** with relationship + treaty list per country.
+- **M2 — Crisis response** — hostage / war scare events that test foreign-policy stat lines.
+- **M3 — Creator Mode v1.**
+  - In-game scenario start-state configurator
+  - Politician (NPC) builder
+  - Event chain designer (graph editor)
+  - Card builder
+  - Local mod loader (`Game/mods/<name>/`)
+- **M4 — Modding API docs** in `docs/guides/MODDING.md`.
+- **M5 — Tag `v0.4.0-beta`.**
 
 ---
 
-### Milestone 10: Congress Chamber
-**Branch:** `exp--0.1--congress-chamber`
+## v0.5 — POLISH, AUDIO, FULL ACHIEVEMENTS
 
-- [ ] `CongressSystem.ts` — legislator logic, relationship updates
-- [ ] Seat grid component (Senate: 100 seats, House: 435 seats)
-- [ ] View mode toggles (Party / Ideology / Happiness / Influence / Vote Prediction)
-- [ ] Seat tooltip (hover: quick stats)
-- [ ] Legislator profile modal (click: full profile)
-- [ ] Vote sequence animation (seats light up, tally counter)
-- [ ] Skip vote option (instant resolution)
-- [ ] Negotiation panel (for bill votes)
-- [ ] Relationship display per legislator
+### Pillars
+1. The game **sounds and feels** like a finished product.
+2. Achievement coverage matches the GDD's full list.
+3. The modding toolkit is documented and stable.
 
-**Done When:** Full Congress chamber is viewable and interactive, votes animate
+### Milestones
 
----
-
-### Milestone 11: Event System
-**Branch:** `exp--0.1--event-system`
-
-- [ ] `EventEngine.ts` — trigger evaluation, event selection, resolution
-- [ ] `global-events.json` — 15+ generic events
-- [ ] `modern-america-events.json` — 10+ scenario-specific events
-- [ ] Event modal UI (description, options, costs, risk indicators)
-- [ ] Event chain system (events that spawn follow-up events)
-- [ ] Event outcome resolution + effect application
-- [ ] Event history log (journal of past events)
-- [ ] Crisis severity system (Minor / Moderate / Major / Catastrophic)
-
-**Done When:** Events trigger, present choices, and apply outcomes correctly
+- **M0 — Audio implementation.** Music layers (calm / tense / triumphant), full SFX bank, settings sliders wired.
+- **M1 — Full achievement set.** ~50 achievements across all categories from GDD §19.
+- **M2 — Card art pass.** Replace placeholder icons with illustrated art (commissioned or generated to a defined style).
+- **M3 — Character portrait generator.** Layered SVG portraits driven by character traits.
+- **M4 — Mod marketplace v0** (local catalogue, no remote hosting yet).
+- **M5 — Localization pass** — string extraction + en-US baseline + 1 community language as a proof of concept.
+- **M6 — Telemetry & playtest reports** — opt-in only, anonymous.
+- **M7 — Tag `v0.5.0-beta`.**
 
 ---
 
-### Milestone 12: Card System
-**Branch:** `exp--0.1--card-system`
+## v1.0 — LAUNCH CANDIDATE
 
-- [ ] `CardSystem.ts` — draw, play, effect resolution
-- [ ] `starter-deck.json` — 15 starter cards across all types
-- [ ] Card hand UI (bottom-right drawer, expandable)
-- [ ] Card detail tooltip (hover)
-- [ ] Card play UI (drag or right-click to play)
-- [ ] Card collection viewer (full deck inspector)
-- [ ] Card acquisition (from quests, events, party store)
-- [ ] Party Store UI (spend PC to acquire cards)
-- [ ] Card rarity visual treatment
+### Release criteria
 
-**Done When:** Cards can be collected, viewed, and played with correct effects
+- All v0.5 milestones complete and stable
+- Zero P0 / P1 bugs open
+- Full QA matrix (Win10/11, macOS 13+, Ubuntu 22.04, Android 10+) green
+- All scenarios complete a minimum 50-week play-through without crash
+- Save/load reliable across version migrations
+- Localization keys 100% covered
+- Marketing site + trailer
+- Privacy policy + telemetry docs published
+- Steam / itch.io listing pages up
 
----
-
-### Milestone 13: Quest System
-**Branch:** `exp--0.1--quest-system`
-
-- [ ] `QuestSystem.ts` — quest tracking, objective evaluation, rewards
-- [ ] `starter-quests.json` — 5 starter quests
-- [ ] Quest log panel (active / completed tabs)
-- [ ] Quest detail view (objectives, progress, rewards, timer)
-- [ ] Quest notification on completion
-- [ ] Issue quests (generated from population group events)
-- [ ] Quest reward application (cards, PC, traits, XP)
-
-**Done When:** Quests track progress and award rewards on completion
+### Tag and release `v1.0.0`.
 
 ---
 
-### Milestone 14: Economy Dashboard
-**Branch:** `exp--0.1--economy-dashboard`
+## LONG-TERM VISION (post-v1.0)
 
-- [ ] `EconomySystem.ts` — weekly/monthly/annual update logic
-- [ ] `economy.json` in Modern America scenario
-- [ ] Economy dashboard panel (all metrics + charts)
-- [ ] Recharts integration for time-series charts
-- [ ] Policy impact markers on charts
-- [ ] Economic alert system (triggers events when thresholds hit)
-- [ ] Budget panel (surplus/deficit, spending categories)
-
-**Done When:** Economic metrics update over time and visualize correctly
+- **Multiplayer** — co-op (cabinet members) and competitive (rival senators, parallel timelines).
+- **Steam Workshop** integration for mods.
+- **Mobile companion app** for stat dashboards + decision approvals while AFK.
+- **Historical accuracy research mode** — optional academic-grade overlays with citations.
+- **Community scenario library** with ratings, comments, version pinning.
+- **Multiple political systems** — parliamentary, authoritarian transitions, federal/unitary toggles.
+- **Procedural country generator** for sandbox / what-if play.
 
 ---
 
-### Milestone 15: Skill Tree
-**Branch:** `exp--0.1--skill-tree`
+## RELEASE CADENCE & BRANCH POLICY
 
-- [ ] `SkillSystem.ts` — XP, leveling, skill point allocation
-- [ ] 3 skill paths for MVP (Oratory, Legislative, Strategist)
-- [ ] Skill tree panel (visual tree with node states)
-- [ ] Skill unlock animations
-- [ ] Skill effect application (passive bonuses integrated into systems)
-- [ ] XP gain from actions, quests, events
+- **`main`** — last released tag. Tagged `vX.Y.Z`.
+- **`development`** — what becomes the next minor release. PRs target this.
+- **`exp--<version>--<feature>`** — short-lived feature branches; squash-merge into `development`.
+- **`copilot/<topic>`** — agent-driven branches; merge into `development`.
 
-**Done When:** Player can earn XP, level up, and unlock skills that affect gameplay
+Release cadence target: **every 4–6 weeks**, alpha during 0.x, beta from 0.4
+onwards.
 
 ---
 
-### Milestone 16: Save System
-**Branch:** `exp--0.1--save-system`
+## HOW TO USE THIS DOCUMENT
 
-- [ ] `electron-store` setup for save files
-- [ ] Save game (manual + auto-save on week end)
-- [ ] Load game (from main menu and in-game)
-- [ ] Save slot management (up to 5 manual saves + 1 autosave)
-- [ ] Save file metadata (character name, date, scenario, playtime)
-- [ ] Save file version field (for future migration)
-- [ ] Save confirmation modal
+- ✅ checked = **done & on disk** (verifiable by `git log` or by running the relevant npm script).
+- ◀ active = the working set this sprint.
+- A milestone is "done" when (a) its checkboxes are all ticked, (b) tests are green, and (c) the CHANGELOG entry is written.
 
-**Done When:** Game can be saved and loaded with complete state restoration
-
----
-
-### Milestone 17: Achievements
-**Branch:** `exp--0.1--achievements`
-
-- [ ] `AchievementEngine.ts` — condition checking, unlock tracking
-- [ ] `achievements.json` — 10 MVP achievements
-- [ ] Achievement unlock toast notification
-- [ ] Achievements screen (list, locked/unlocked, progress)
-- [ ] Achievement persistence (cross-save via separate store key)
-
-**Done When:** Achievements unlock in-game and persist across saves
-
----
-
-### Milestone 18: Polish & QA Pass
-**Branch:** `exp--0.1--polish`
-
-- [ ] Consistent typography + color usage audit
-- [ ] All loading states handled (skeleton screens)
-- [ ] All error states handled (error boundaries)
-- [ ] Keyboard shortcuts implemented (pause, speed, nav)
-- [ ] Accessibility pass (ARIA labels, focus management)
-- [ ] Tooltips on all stats and terms
-- [ ] Onboarding tooltips (first-time player guidance)
-- [ ] Performance profiling (React DevTools, no jank)
-- [ ] Cross-platform build test (Windows + macOS)
-- [ ] Play-through QA (full session without crashes)
-- [ ] README updated with setup instructions
-
-**Done When:** Game is playable start-to-finish without critical bugs
-
----
-
-### v0.1 RELEASE CRITERIA
-
-- [ ] Character creation → scenario → full play session works
-- [ ] All 18 milestones complete
-- [ ] Zero P0/P1 bugs
-- [ ] Builds successfully on Windows and macOS
-- [ ] Save/load works correctly
-- [ ] Merged to `development`, tagged `v0.1.0-alpha.1`
-- [ ] Release notes written in `docs/about/CHANGELOG.md`
-
----
-
-## v0.2 PLANNED FEATURES
-
-- Full election system (campaigns, debates, polling, election night)
-- Approval rating detailed breakdown (by demographic)
-- Judicial system (Supreme Court + lower courts)
-- Constitutional amendment mechanic
-- 5 additional starter scenarios (framework)
-- NPC press / media system (individual journalists with personalities)
-- Foreign leader contacts (basic diplomacy groundwork)
-- Creator Mode v1 (basic scenario editor)
-
----
-
-## v0.3 PLANNED FEATURES
-
-- Civil War Era scenario (full)
-- Civil Rights Movement scenario (full)
-- Military system (basic — budget, readiness, deployments)
-- Map view (US regional breakdown with population data)
-- Faction leadership system (player can lead a caucus)
-- Advanced dialogue trees (branching press conferences)
-- Party leadership path (whip → minority leader → majority leader)
-
----
-
-## LONG-TERM VISION (v1.0+)
-
-- Multiplayer (cooperative or competitive political simulation)
-- Steam Workshop integration for mods
-- Mobile companion app (view stats, approve/deny decisions)
-- Historical accuracy research mode (optional overlays)
-- Community scenario library
-- Full audio implementation (score + SFX)
-- Illustrated card art
-- Character portrait generator
-- Multiple countries/political systems (parliamentary, authoritarian, etc.)
-
----
-
-*Roadmap owned by Lead Director.*
-*Feature scope subject to change based on development velocity.*
+*Roadmap owned by Lead Director. Update with every merged PR that ships a milestone item.*

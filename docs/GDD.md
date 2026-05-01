@@ -27,6 +27,20 @@
 21. [Audio Design](#21-audio-design)
 22. [MVP v0.1 Scope](#22-mvp-v01-scope)
 
+**v0.1.1 Addendum (chapters 23–33):**
+
+23. Balancing Targets & Formulas
+24. Speech & Press Subsystem (Press Room v1)
+25. Deferred & Durational Effects (Scheduler)
+26. Onboarding & First-Run UX
+27. Accessibility Plan
+28. Content Production Pipeline
+29. Save Format (Pointer)
+30. Localization
+31. Telemetry (opt-in)
+32. Cheat / Debug Menu
+33. Post-MVP / v0.2 Systems — Preview
+
 ---
 
 ## 1. VISION STATEMENT
@@ -823,3 +837,381 @@ The game is built mod-first. All data is in editable JSON/YAML files.
 
 *Document maintained by Lead Director. Update with each sprint.*
 *Version history tracked in Git.*
+
+---
+
+# GDD EXPANSION — v0.1.1 ADDENDUM
+
+The chapters above (1–22) are the original MVP-scoped GDD. The chapters
+below extend the design with the depth needed to ship v0.1.1 and to plan
+v0.2+. Companion documents:
+
+- **`docs/BIBLE.md`** — tone, voice, world canon, sensitivity guidelines.
+- **`docs/ROADMAP.md`** — milestones and what's done.
+- **`docs/ARCHITECTURE.md`** — code structure.
+
+---
+
+## 23. BALANCING TARGETS & FORMULAS
+
+### 23.1 First-session pacing
+
+| Metric | Target | Hard min | Hard max |
+|---|---|---|---|
+| Time to first AP spent | 90 s | 30 s | 5 min |
+| Time to first event modal | 5 game-days | 1 game-day | 14 game-days |
+| Time to first bill drafted | game-week 2 | game-week 1 | game-week 6 |
+| Time to first bill passed *or* defeated | game-week 6 | game-week 3 | game-week 12 |
+| Crises in first 12 game-weeks | 1 | 0 | 3 |
+| AP idle waste in first session | < 10% | 0% | 25% |
+
+### 23.2 Action Point budget
+
+- `maxAP = 4 + round((stamina − 1) * (6 / 9))`
+  - stamina 1 → 4 AP, stamina 10 → 10 AP.
+- Weekly regeneration: full top-up at week-end.
+- Trait `Iron Will`: +1 AP/week.
+- Card `Energy Drink` (action card): +2 AP, single use.
+
+### 23.3 Political Capital generation
+
+Weekly PC delta is the sum of:
+
+| Source | Range |
+|---|---|
+| Approval ≥ 60% | +3/week |
+| Approval 40–59% | +1/week |
+| Approval ≤ 39% | -1/week |
+| Each passed bill | one-time +5..+25 by impact |
+| Each failed bill (sponsored) | one-time -3..-10 |
+| Each scandal severity 1..3 | -10/-25/-50 |
+| Trait `Dealmaker` | +1/week |
+
+### 23.4 Bill stage costs (PC)
+
+| Stage | PC cost |
+|---|---|
+| Draft | 0 |
+| Committee | 10 |
+| Floor Debate | 15 |
+| Vote | 10 |
+| **Total minimum** | **35** |
+
+Negotiation actions add cost on top. Implementation phase has no PC cost
+but consumes calendar time per `bill.implementationDays`.
+
+### 23.5 Vote model (per legislator, MVP)
+
+```
+align     = 1 - clamp(|legislator.ideology - bill.ideology|) / 100
+relation  = clamp(relationship[legislator] / 100, -1, 1)
+oppose    = bill.oppositionScore / 100   // 0..1
+strategy  = (player.strategy - 5) * 0.04 // -0.16..+0.20
+p_yes     = clamp(0.5 + 0.4*align + 0.25*relation - 0.5*oppose + strategy)
+```
+
+Senate threshold = 51 yes votes. House threshold = 218.
+
+### 23.6 Population happiness drift
+
+Happiness drifts towards 50 by `0.5/week` plus the per-policy effects
+already applied via `applyEffect`. Radicalism ratchets up by
+`max(0, 50 - happiness) / 200` per week and decays towards 0 by
+`0.3/week`.
+
+### 23.7 Scandal probability (post-MVP, design target)
+
+`p(scandal) = 0.001 * |leverage|.sumOver(npcsPlayerHasOffendedThisMonth)`,
+capped at `0.05/week`. *Iron Will* and *Pragmatist* halve this.
+
+### 23.8 Difficulty levels
+
+- **Easy** — PC generation +25%, scandal probability ×0.5, AP +2 starting.
+- **Standard** — values above.
+- **Hard** — PC generation -15%, opposition score +10, autosave only at month start.
+- **Iron Senator** — Hard + no manual saves + permadeath on resign.
+
+---
+
+## 24. SPEECH & PRESS SUBSYSTEM (PRESS ROOM v1)
+
+This expands GDD §15 into a buildable spec. *Target ship: v0.1.1 M3.*
+
+### 24.1 Composition flow
+
+1. Player opens **Press Room** (sidebar).
+2. Picks a **format**: Press Conference, Floor Speech, Town Hall, Op-Ed.
+3. Picks an **opening segment**, 2–4 **body segments**, one **close segment**.
+4. Sees a **predicted outcome**: Charisma check, predicted poll shift per
+   group, PC delta, headline preview.
+5. Pays **AP cost** (3 by default, -1 with `Veteran Orator`) and **PC cost** (varies).
+
+### 24.2 Segment data shape
+
+`src/data/speeches/segments.json`
+
+```json
+{
+  "id": "seg-open-defiant",
+  "kind": "opening",
+  "tone": "defiant",
+  "label": "Set the Record Straight",
+  "body": "Opening text...",
+  "effects": [
+    { "type": "group_happiness", "group": "working-class", "value": 2 },
+    { "type": "group_happiness", "group": "upper-class", "value": -1 },
+    { "type": "resource", "resource": "politicalCapital", "value": -3 }
+  ],
+  "requires": [{ "type": "stat", "stat": "charisma", "operator": "gte", "value": 4 }]
+}
+```
+
+### 24.3 Outcome roll
+
+```
+quality = (charisma * 8) + sum(segment.qualityModifier) + skill[oratory]*5
+roll    = quality + rng.int(0, 30)
+band    = roll < 50 ? "Critical" : roll < 70 ? "Neutral" : roll < 90 ? "Favorable" : "Triumphant"
+```
+
+The band scales the `effects` array on every chosen segment by:
+`Critical 0.5×, Neutral 0.8×, Favorable 1.0×, Triumphant 1.4×`.
+
+### 24.4 Press reaction
+
+A `NewsItem` is pushed by `PressSystem.publish()` with the speech headline,
+the band-coloured severity, and `relatedEntity = { type: 'speech', id }`.
+
+### 24.5 Cooldown
+
+A given format has a 14-day cooldown to prevent spam. Cooldown is shown on
+the Press Room button.
+
+---
+
+## 25. DEFERRED & DURATIONAL EFFECTS (SCHEDULER)
+
+*Built in v0.1.1 M0 — see PR description for current implementation.*
+
+### 25.1 Why we need this
+
+GDD §8.1 specifies an **Implementation phase** for bills (effects land
+*after* the vote). GDD §13.2 says event chains can spawn follow-ups *N days
+later*. Both require a scheduler.
+
+### 25.2 Data shape
+
+```ts
+interface ScheduledEffect {
+  /** Unique id for save migration / cancellation. */
+  id: string;
+  /** The effect to apply when the trigger date is reached. */
+  effect: Effect;
+  /** Game-day epoch (toEpochDays(currentDate)) at which to apply. */
+  applyOnEpochDay: number;
+  /** Optional source for traceability — bill, event, card id. */
+  source?: { kind: 'bill' | 'event' | 'card' | 'speech' | 'system'; id: string };
+}
+```
+
+### 25.3 Lifecycle
+
+- `applyEffect()` with `effect.delayDays > 0` enqueues a `ScheduledEffect`
+  rather than mutating state.
+- `EffectScheduler.processDue(currentDate)` fires from the daily
+  `TimeEngine.onDaily` hook in `GameEngine`.
+- Effects applied are removed from the queue immediately.
+- `duration` is a **future** extension: for `duration > 0`, push a
+  *reverting* effect (negated value) at `applyOnEpochDay + duration`.
+
+### 25.4 Save & migration
+
+The queue is part of `WorldState` and round-trips through save/load. If a
+save predates this field, the loader fills `scheduledEffects: []`.
+
+---
+
+## 26. ONBOARDING & FIRST-RUN UX
+
+### 26.1 First boot
+
+- Splash → Main Menu (no auto-start).
+- "New Game" highlighted by default.
+
+### 26.2 Character Creation tooltips
+
+On first hover of any of these terms, an onboarding tooltip card appears
+once and then dismisses forever:
+
+- *Charisma, Strategy, Connections, Integrity, Wealth, Stamina*
+- *Ideology compass*
+- *Trait pool*
+
+### 26.3 First in-game session
+
+| Trigger | Tooltip |
+|---|---|
+| First view of TopBar | "These are the four numbers you live by." |
+| First time AP changes | "Action Points refresh every game-week." |
+| First time PC changes | "Political Capital is currency for power moves." |
+| First Event modal | "Time pauses on events. Take your time." |
+| First Bill drafted | "A bill takes weeks to move. Pace yourself." |
+| First Vote | "Watch or skip. Your call." |
+
+### 26.4 Settings → Help
+
+A static screen with: keyboard shortcuts, glossary, and a "play the
+tutorial again" button (re-arms the tooltip flags).
+
+---
+
+## 27. ACCESSIBILITY PLAN
+
+The MVP ships with the basics; v0.5 polishes them.
+
+### 27.1 Required for v0.1.1
+
+- All buttons reachable by **Tab** in DOM order.
+- All interactive elements have an **ARIA label**.
+- Focus ring visible (Tailwind `focus-visible:ring-2`).
+- Color contrast ≥ 4.5:1 for body text, ≥ 3:1 for large text.
+- No information conveyed by color alone — every red/green delta also has a
+  +/− sign or icon.
+- "Reduced motion" toggle in Settings → Accessibility halves transition
+  durations and disables the vote-tally animation.
+
+### 27.2 Required for v0.5
+
+- Full screen-reader pass on all panels.
+- Configurable font scale (90% / 100% / 115% / 130%).
+- Dyslexia-friendly font option (OpenDyslexic).
+- Colorblind palette swap (deuteranopia, protanopia, tritanopia).
+- Auto-pause everywhere events occur, configurable.
+
+---
+
+## 28. CONTENT PRODUCTION PIPELINE
+
+How a designer authors new content end-to-end.
+
+### 28.1 Adding an event
+
+1. Open `src/data/events/<scenario>-events.json` (or `global-events.json`).
+2. Append a new entry conforming to `GameEventDefinition`.
+3. Reference NPC ids from the scenario's `legislators.json` (or `*` wildcard).
+4. Run `npm test` — `dataLoader` validates the schema.
+5. Run `npm run dev`; trigger the event from the dev console
+   `EventEngine.queueByIdForDebug('<event-id>')`.
+
+### 28.2 Adding a bill template
+
+Same flow with `legislation/bill-templates.json`. Effects must use the
+`Effect` schema; `delayDays` may be set so the bill takes time to land.
+
+### 28.3 Adding a card
+
+Same flow with `cards/<deck>.json`. PC cost ≤ 25 by convention.
+
+### 28.4 Authoring a scenario (post-v0.2)
+
+A scenario folder under `src/data/scenarios/<id>/` with:
+
+- `scenario.json` — start-state.
+- `legislators.json` — congress seed.
+- `population.json` — 6+ groups.
+- `economy.json` — starting `EconomicState`.
+- (optional) `events.json`, `quests.json`, `bills.json`.
+
+A scenario validator (`npm run validate:scenarios`, post-v0.2) will check
+required keys, internal references, and balance bounds.
+
+---
+
+## 29. SAVE FORMAT (POINTER)
+
+The full spec lives in `docs/guides/SAVE_FORMAT.md`. Short version:
+
+- **Driver:** `electron-store` with one JSON file per slot under
+  `<userData>/saves/`.
+- **Slots:** 5 manual + 1 autosave + 1 quicksave.
+- **Top-level keys:** `version`, `meta`, `gameState`, `worldState`,
+  `characterState`, `settings`, `unlockedAchievements`.
+- **Migrations:** keyed off `version`; each migration is a pure
+  `(state) => state` function in `src/main/store/migrations/<from>-<to>.ts`.
+- **Compression:** none in v0.1; saves are < 200 KB.
+
+---
+
+## 30. LOCALIZATION
+
+- All player-facing strings flow through a `t(key, params)` helper. *(Wired
+  in v0.5; until then, English literals.)*
+- Strings are extracted to `src/i18n/<lang>.json`.
+- Pluralisation via ICU MessageFormat.
+- Numbers, dates, and currency formatted by `Intl.*` for the active locale.
+- v0.5 ships **en-US** + one community language (Spanish target).
+- v1.0 covers en-US + 4 additional languages contingent on community
+  availability.
+
+---
+
+## 31. TELEMETRY (OPT-IN, FUTURE)
+
+- Off by default. Settings → Privacy enables.
+- Anonymous: random install id, no character name, no save contents.
+- Events recorded: scenario starts, deaths, bill outcomes, crash reports.
+- Endpoint: TBD; **never** a third-party tracker.
+
+---
+
+## 32. CHEAT / DEBUG MENU
+
+In dev builds (`import.meta.env.DEV`) `Ctrl+Shift+D` opens a developer
+overlay:
+
+- Force date forward N days
+- Trigger any event by id
+- Set any flag
+- Grant any card / trait
+- Force-pass a bill
+- Force-fail a bill
+- Inspect store snapshots
+
+In production builds the overlay is tree-shaken out.
+
+---
+
+## 33. POST-MVP / v0.2 SYSTEMS — PREVIEW
+
+### 33.1 Election system
+
+- Calendar-driven: every legislator has `term.endsOn`.
+- Player can **declare candidacy** for any open seat at the right level
+  (Senate, House, Governor, eventually President).
+- Declaration moves the game into **Campaign Mode** for the duration of
+  the campaign window:
+  - Main loop suspends. Campaign loop runs at higher speed.
+  - Campaign AP is separate (`campaignActions/week`).
+  - Campaign cash is separate from PC.
+- Outcome is a per-state poll roll resolved on Election Night.
+
+### 33.2 Polling
+
+- Weekly snapshot of head-to-head and approval per demographic.
+- Margin of error tied to scenario-defined `pollingNoise`.
+- Skill *Political Calculus* shrinks the noise.
+
+### 33.3 Judicial
+
+- 9-justice roster.
+- Passed bills carry a `constitutionalRiskScore`. Higher score ⇒ higher
+  weekly probability of cert grant.
+- A struck-down bill is moved to `failedLegislation` with reason
+  `STRUCK_DOWN` and its (still-applied) effects scheduled for removal via
+  the scheduler from §25.
+
+---
+
+*GDD expansion maintained by Lead Director. New chapters appended; old
+chapters reworded only with a Decision Log entry in `docs/BIBLE.md` §16.*
+
