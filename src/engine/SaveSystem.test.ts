@@ -19,6 +19,7 @@ import {
   deleteSave,
   applySavePayload,
   SAVE_SCHEMA_VERSION,
+  isValidSlotId,
 } from './SaveSystem';
 import { useGameStore } from '@/store/gameStore';
 import { useCharacterStore } from '@/store/characterStore';
@@ -91,6 +92,42 @@ describe('SaveSystem', () => {
   it('reports a missing slot without throwing', async () => {
     const res = await readSave('does-not-exist');
     expect(res.ok).toBe(false);
+  });
+
+  it('rejects invalid slot ids for read/write/delete', async () => {
+    expect(isValidSlotId('__proto__')).toBe(false);
+    expect(isValidSlotId('bad/slot')).toBe(false);
+    expect(isValidSlotId('slot_good-01')).toBe(true);
+
+    await expect(writeSave('__proto__', 'bad')).resolves.toBe(false);
+    await expect(readSave('__proto__')).resolves.toEqual({
+      ok: false,
+      reason: 'Invalid save slot id.',
+    });
+    await expect(deleteSave('__proto__')).resolves.toBe(false);
+  });
+
+  it('rejects corrupt payloads that have the right schema but invalid stores', async () => {
+    window.localStorage.setItem(
+      'pa:save:corrupt',
+      JSON.stringify({
+        meta: {
+          schemaVersion: SAVE_SCHEMA_VERSION,
+          savedAt: Date.now(),
+          name: 'corrupt',
+          characterName: 'x',
+          scenarioId: 'modern-america-2024',
+          weekLabel: '2025 · W1',
+          developer: false,
+        },
+        stores: { game: null, character: {}, world: {} },
+      }),
+    );
+    const res = await readSave('corrupt');
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.reason).toMatch(/invalid|corrupt/i);
+    }
   });
 
   it('deletes saves and removes them from the list', async () => {

@@ -40,6 +40,9 @@ const log = createLogger('save');
 
 /** Bumped on any breaking change to the payload shape. */
 export const SAVE_SCHEMA_VERSION = 1;
+/** Defensive slot-id policy shared across runtimes (renderer + Electron IPC). */
+const SLOT_ID_RE = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/;
+const RESERVED_SLOT_IDS = new Set(['__proto__', 'prototype', 'constructor']);
 
 /**
  * Header that travels alongside every save. Kept slim enough to render
@@ -80,6 +83,21 @@ export type LoadResult =
 
 /** localStorage key prefix used in browser/Capacitor builds. */
 const LS_PREFIX = 'pa:save:';
+
+/**
+ * Validate user/code-provided slot ids before they touch persistence.
+ *
+ * Why strict?
+ * - Saves are keyed by user-visible ids and cross process boundaries (IPC).
+ * - Rejecting odd keys up front avoids edge-case corruption and object-key
+ *   prototype traps (`__proto__`, `constructor`, etc.).
+ */
+export function isValidSlotId(slotId: string): boolean {
+  return (
+    SLOT_ID_RE.test(slotId) &&
+    !RESERVED_SLOT_IDS.has(slotId)
+  );
+}
 
 /** True if the Electron preload bridge is present in this runtime. */
 function hasElectronBridge(): boolean {
@@ -159,6 +177,36 @@ function stripFunctions<T>(value: T): T {
   return out as T;
 }
 
+/** Narrow unknown to a plain object (not null, not array). */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/** Runtime-validate metadata so corrupt saves fail cleanly instead of crashing later. */
+function isValidMeta(meta: unknown): meta is SaveMeta {
+  if (!isPlainObject(meta)) return false;
+  return (
+    meta.schemaVersion === SAVE_SCHEMA_VERSION &&
+    typeof meta.savedAt === 'number' &&
+    Number.isFinite(meta.savedAt) &&
+    typeof meta.name === 'string' &&
+    typeof meta.characterName === 'string' &&
+    typeof meta.scenarioId === 'string' &&
+    typeof meta.weekLabel === 'string' &&
+    typeof meta.developer === 'boolean'
+  );
+}
+
+/** Runtime-validate store payload containers before we pass data to Zustand. */
+function isValidStores(stores: unknown): stores is SavePayload['stores'] {
+  if (!isPlainObject(stores)) return false;
+  return (
+    isPlainObject(stores.game) &&
+    isPlainObject(stores.character) &&
+    isPlainObject(stores.world)
+  );
+}
+
 /**
  * Type-guard a payload returned from storage. Returns true only if
  * the shape matches the current schema version. We do not attempt to
@@ -166,13 +214,8 @@ function stripFunctions<T>(value: T): T {
  * have a v2 schema.
  */
 function isValidPayload(p: unknown): p is SavePayload {
-  if (!p || typeof p !== 'object') return false;
-  const meta = (p as { meta?: unknown }).meta;
-  const stores = (p as { stores?: unknown }).stores;
-  if (!meta || typeof meta !== 'object') return false;
-  if (!stores || typeof stores !== 'object') return false;
-  const v = (meta as { schemaVersion?: unknown }).schemaVersion;
-  return v === SAVE_SCHEMA_VERSION;
+  if (!isPlainObject(p)) return false;
+  return isValidMeta(p.meta) && isValidStores(p.stores);
 }
 
 /**
@@ -181,6 +224,10 @@ function isValidPayload(p: unknown): p is SavePayload {
  * (or `"autosave"` for the rolling autosave slot).
  */
 export async function writeSave(slotId: string, name: string): Promise<boolean> {
+  if (!isValidSlotId(slotId)) {
+    log.warn('writeSave rejected invalid slot id', { slotId });
+    return false;
+  }
   const payload = buildSavePayload(name);
   try {
     if (hasElectronBridge()) {
@@ -203,6 +250,9 @@ export async function writeSave(slotId: string, name: string): Promise<boolean> 
  * the same as "corrupt".
  */
 export async function readSave(slotId: string): Promise<LoadResult> {
+  if (!isValidSlotId(slotId)) {
+    return { ok: false, reason: 'Invalid save slot id.' };
+  }
   try {
     let raw: unknown;
     if (hasElectronBridge()) {
@@ -217,10 +267,7 @@ export async function readSave(slotId: string): Promise<LoadResult> {
     }
     if (raw == null) return { ok: false, reason: 'Save not found.' };
     if (!isValidPayload(raw)) {
-      return {
-        ok: false,
-        reason: `Save schema mismatch (expected v${SAVE_SCHEMA_VERSION}).`,
-      };
+      return { ok: false, reason: 'Save payload is invalid or corrupt.' };
     }
     return { ok: true, payload: raw };
   } catch (err) {
@@ -236,7 +283,9 @@ export async function listSaves(): Promise<string[]> {
     const ids: string[] = [];
     for (let i = 0; i < window.localStorage.length; i++) {
       const k = window.localStorage.key(i);
-      if (k && k.startsWith(LS_PREFIX)) ids.push(k.slice(LS_PREFIX.length));
+      if (!k || !k.startsWith(LS_PREFIX)) continue;
+      const id = k.slice(LS_PREFIX.length);
+      if (isValidSlotId(id)) ids.push(id);
     }
     return ids;
   } catch (err) {
@@ -250,6 +299,7 @@ export async function listSaves(): Promise<string[]> {
  * but does not throw — the load UI treats both the same.
  */
 export async function deleteSave(slotId: string): Promise<boolean> {
+  if (!isValidSlotId(slotId)) return false;
   try {
     if (hasElectronBridge()) return await bridge().delete(slotId);
     const key = LS_PREFIX + slotId;
