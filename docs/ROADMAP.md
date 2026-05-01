@@ -110,7 +110,16 @@ the loop so a new player can play their first 30 minutes without confusion.
 - [ ] Persist news ticker, achievements unlocked, and quest history.
 - [ ] Save thumbnail (a small in-game screenshot dataURL).
 
-### M5 — QA + tag `v0.1.1-alpha.4`
+### M5 — Release engineering & CI
+**Branch:** `exp--0.1.1--release-eng`
+
+- [x] **Manual Android APK pre-release workflow** (`workflow_dispatch` from any branch → builds debug APK → publishes a pre-release tagged `apk-v<version>-<YYYYMMDD-HHMM>` with the APK attached). *(shipped in this PR — `.github/workflows/android-apk-prerelease.yml`)*
+- [ ] CI workflow on every PR: `npm ci`, `npm run typecheck`, `npm test`, `npm run lint`.
+- [ ] Nightly Electron build workflow (Windows NSIS + portable) — pre-release on a schedule.
+- [ ] Signed Android **release** APK workflow — gated on `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` repository secrets.
+- [ ] Tag-driven full release workflow (`v*` tag → all platforms → public release).
+
+### M6 — QA + tag `v0.1.1-alpha.4`
 - [ ] Manual play-through of Modern America for 26 simulated weeks without crash.
 - [ ] All Vitest suites green; new tests for scheduler + speech composer.
 - [ ] Update CHANGELOG; tag.
