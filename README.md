@@ -151,6 +151,16 @@ npm run android:release
 
 The signed APK lands in `android/app/build/outputs/apk/release/app-release.apk`.
 
+### CI pre-release APKs (GitHub Actions)
+
+A GitHub Actions workflow now builds and publishes Android **debug APK** pre-releases on pushes to `development` and `experimental`, and on manual dispatch.
+
+1. Open the repository's **Releases** page.
+2. Download the latest pre-release asset: `app-debug.apk`.
+3. Install it on your Android device for quick validation testing.
+
+You can also download the same APK from the workflow run artifacts (`app-debug-apk`).
+
 ### Requirements
 
 - Android SDK Platform **34**
