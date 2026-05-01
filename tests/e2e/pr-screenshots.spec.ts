@@ -84,4 +84,39 @@ test.describe('PR screenshots', () => {
       });
     }
   });
+
+  test('bottom bar progress and card focus modal polish', async ({ page }, testInfo) => {
+    await reachDashboard(page);
+
+    await page.getByRole('button', { name: /^legislation$/i }).click();
+    await page.getByRole('button', { name: /draft new/i }).click();
+    await page.getByTestId(/^draft-quick-/).first().click();
+
+    const progress = page.getByTestId('bottombar-progress');
+    await expect(progress).toBeVisible({ timeout: 4_000 });
+    await expect
+      .poll(() =>
+        page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1),
+      )
+      .toBe(true);
+    await page.getByRole('button', { name: /^dashboard$/i }).click();
+    await progress.click();
+    await expect(page.getByTestId('legislation-session-dashboard')).toBeVisible();
+
+    await page.screenshot({
+      path: `tests/e2e/__screenshots__/ui-polish/bottom-bar-progress-${testInfo.project.name}.png`,
+      fullPage: false,
+    });
+
+    await page.getByRole('button', { name: /^cards$/i }).first().click();
+    const firstCard = page.locator('article[data-card-id]').first();
+    await expect(firstCard).toBeVisible({ timeout: 4_000 });
+    await firstCard.click();
+    await expect(page.getByTestId('card-focus-modal')).toBeVisible();
+
+    await page.screenshot({
+      path: `tests/e2e/__screenshots__/ui-polish/card-focus-modal-${testInfo.project.name}.png`,
+      fullPage: false,
+    });
+  });
 });
