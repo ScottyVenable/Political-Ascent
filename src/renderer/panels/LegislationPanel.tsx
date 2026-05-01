@@ -316,10 +316,12 @@ function PendingBillCard({
   // tick and progress will appear.
   const totalDays =
     bill.stageEnteredOnDay !== undefined && bill.stageEndsOnDay !== undefined
-      ? bill.stageEndsOnDay - bill.stageEnteredOnDay
+      ? Math.max(1, bill.stageEndsOnDay - bill.stageEnteredOnDay)
       : 0;
   const elapsed =
-    bill.stageEnteredOnDay !== undefined ? Math.max(0, today - bill.stageEnteredOnDay) : 0;
+    bill.stageEnteredOnDay !== undefined
+      ? Math.max(0, Math.min(totalDays, today - bill.stageEnteredOnDay))
+      : 0;
   const remaining =
     bill.stageEndsOnDay !== undefined ? Math.max(0, bill.stageEndsOnDay - today) : 0;
 
@@ -334,13 +336,15 @@ function PendingBillCard({
 
       {clocked && totalDays > 0 && (
         <div className="mb-3">
-          <Bar
-            value={elapsed}
-            max={totalDays}
-            tone="gold"
-            label={`${stageLabel(bill.stage)} \u00b7 day ${elapsed} of ${totalDays}`}
-            valueLabel={remaining === 0 ? 'ready' : `${remaining} days left`}
-          />
+            <Bar
+              value={elapsed}
+              max={totalDays}
+              tone="gold"
+              label={`${stageLabel(bill.stage)} \u00b7 ${
+                remaining === 0 ? 'ready to advance' : `day ${elapsed} of ${totalDays}`
+              }`}
+              valueLabel={remaining === 0 ? 'ready' : `${remaining} days left`}
+            />
         </div>
       )}
 

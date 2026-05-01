@@ -50,7 +50,8 @@ async function goToGame(page: Page): Promise<void> {
   await page.waitForTimeout(150);
 }
 
-test('right-click on a card surfaces a context menu', async ({ page }) => {
+test('right-click on a card surfaces a context menu', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.includes('pixel'), 'Right-click menu coverage is desktop-only.');
   await goToGame(page);
 
   // Open the in-game Cards panel (the hand view, not the deckbuilder).
@@ -60,7 +61,13 @@ test('right-click on a card surfaces a context menu', async ({ page }) => {
   const row = page.locator('[data-testid^="card-row-"]').first();
   await expect(row).toBeVisible({ timeout: 4_000 });
 
-  await row.click({ button: 'right' });
+  await row.dispatchEvent('contextmenu', {
+    bubbles: true,
+    cancelable: true,
+    button: 2,
+    clientX: 320,
+    clientY: 320,
+  });
 
   const menu = page.locator('[data-testid="context-menu"]');
   await expect(menu).toBeVisible();

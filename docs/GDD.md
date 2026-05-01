@@ -236,14 +236,14 @@ ANNUAL CYCLE ADDS:
 Displayed as a persistent bottom bar:
 
 ```
-[⏸ PAUSE]  [▶ 1×]  [▶▶ 2×]  [▶▶▶ 4×]  [⏭ SKIP TO EVENT]
+[Speed slider: Pause | 1x | 2x | 4x]  [Active bill/event progress]  [Week/date]  [Save] [Load] [Menu]
 ```
 
 - **Pause** — Full stop; menus and actions still accessible
 - **1×** — Normal speed; one game day per ~3 real seconds
 - **2×** — Fast; good for quiet stretches
 - **4×** — Very fast; auto-pauses on events
-- **Skip to Event** — Jumps to the next scheduled or triggered event
+- **Active progress strip** — Shows the closest in-flight bill deadline from anywhere in the game and jumps back to the Legislation Hub when clicked
 
 ### 7.3 Auto-Pause Settings
 Configurable in Settings → Gameplay:
@@ -420,6 +420,9 @@ Cards are collectible, usable items that represent political maneuvers, resource
 - **Play** — Drag to active zone or right-click → Play
 - **Deck Inspector** — View full collection, filter, sort
 - Card art: placeholder icons initially; illustrated art post-MVP
+- **Readable card faces** — Costs, effect summaries, stats, tags, and flavor text live directly on the card face instead of relying on a full-card tooltip
+- **Focused card modal** — Clicking a card opens a larger reader view with complete rules text, all effects, Play/Discard actions, and glossary-linked terms
+- **Glossary support** — Hypertext remains term-level only; hovering an in-card term can still open the Paradox-style Extended Tooltip
 
 ---
 
@@ -678,7 +681,7 @@ Danger:              #E74C3C
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  [LOGO]  [DATE]  [POLLS]  [PC ⚡]  [AP 🎯]  [ALERTS 🔔]  │  ← TOP BAR
+│  [LOGO]  [DATE]  [POLLS]  [PC]  [AP]  [ALERTS]           │  ← TOP BAR
 ├──────────┬──────────────────────────────────┬───────────┤
 │          │                                  │           │
 │ SIDEBAR  │        MAIN CONTENT AREA         │  CONTEXT  │
@@ -693,7 +696,7 @@ Danger:              #E74C3C
 │ • Cards  │                                  │           │
 │ • Skills │                                  │           │
 ├──────────┴──────────────────────────────────┴───────────┤
-│  [⏸][▶][▶▶][▶▶▶][⏭]    WEEK 3, JAN 2025    [CARD HAND] │  ← BOTTOM BAR
+│ [SPEED SLIDER] [BILL/EVENT PROGRESS] [WEEK] [SAVE/LOAD] │  ← BOTTOM BAR
 └─────────────────────────────────────────────────────────┘
 ```
 

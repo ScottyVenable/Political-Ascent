@@ -430,6 +430,26 @@ The system is engine-agnostic: it never reads game state, only static
 term definitions. This lets us test it without booting the engine and
 keeps it cheap to render.
 
+### 4.z Persistent UI progress surfaces
+
+`src/renderer/components/BottomBar.tsx` owns the persistent command strip at
+the bottom of the game shell. It is intentionally presentational:
+
+- Time controls write through `TimeEngine.setSpeed()` and use the shared
+  `Slider` component so speed changes are accessible while occupying less
+  vertical space than the older four-button cluster.
+- Legislative progress reads `worldStore.pendingLegislation`, derives a
+  clamped progress summary from `stageEnteredOnDay` / `stageEndsOnDay`, and
+  jumps the active panel to the Legislation Hub through `uiStore.setActivePanel`.
+- The rendered footer height and `Game.tsx` grid row are both 72px. Any future
+  bottom-bar redesign must update those together or use a shared CSS variable;
+  otherwise the root document can exceed a fullscreen 1080p viewport.
+
+Cards deliberately do not use full-card dynamic tooltips. `CardFace` renders
+costs, effect summaries, stats, tags, and flavor text inline. Term-level
+glossary links still flow through `TermText`, and `CardsPanel` provides the
+larger click-to-focus modal for detailed reading and Play/Discard actions.
+
 ---
 
 ## 5. DATA FORMAT STANDARDS
