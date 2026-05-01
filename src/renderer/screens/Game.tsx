@@ -243,6 +243,8 @@ function VoteResultModal(): JSX.Element | null {
 
   if (!modal) return null;
 
+  const modalId = modal.id;
+
   const data = modal.payload as VoteResultPayload;
   const { billTitle, passed, yea, nay, breakdown } = data;
   const total = yea + nay;
@@ -261,7 +263,7 @@ function VoteResultModal(): JSX.Element | null {
   };
 
   function dismiss(): void {
-    closeModal(modal.id);
+    closeModal(modalId);
   }
 
   return (
@@ -492,7 +494,7 @@ function CardEffectsModal(): JSX.Element | null {
   const { cardName, effects } = modal.payload as CardEffectsPayload;
   // Cast to Effect[] — the payload was constructed in CardSystem.play()
   // from a typed readonly Effect[] and round-tripped through `unknown`.
-  const typedEffects = effects as Effect[];
+  const typedEffects = effects as unknown as Effect[];
 
   function dismiss(): void {
     closeModal(modal!.id);

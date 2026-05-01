@@ -95,7 +95,9 @@ describe('CardSystem.play — action point gating', () => {
     const inst = useCharacterStore.getState().hand[0];
     const res = CardSystem.play(inst.instanceId);
     expect(res.ok).toBe(false);
-    expect(res.reason).toMatch(/action points/i);
+    if (!res.ok) {
+      expect(res.reason).toMatch(/action points/i);
+    }
     // PC must NOT be deducted on a failed play.
     expect(useGameStore.getState().politicalCapital).toBe(100);
   });
@@ -160,7 +162,9 @@ describe('CardSystem.play — cooldown gating', () => {
     useCharacterStore.setState((s) => ({ ...s, hand: [...s.deck] }));
     const res = CardSystem.play(inst.instanceId);
     expect(res.ok).toBe(false);
-    expect(res.reason).toMatch(/cooldown/i);
+    if (!res.ok) {
+      expect(res.reason).toMatch(/cooldown/i);
+    }
   });
 
   it('allows replay once cooldown has elapsed', () => {
