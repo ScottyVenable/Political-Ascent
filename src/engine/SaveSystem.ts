@@ -218,6 +218,14 @@ function isValidPayload(p: unknown): p is SavePayload {
   return isValidMeta(p.meta) && isValidStores(p.stores);
 }
 
+/** Best-effort read of payload schema version for clearer user-facing errors. */
+function readPayloadSchemaVersion(p: unknown): number | null {
+  if (!isPlainObject(p)) return null;
+  if (!isPlainObject(p.meta)) return null;
+  const version = p.meta.schemaVersion;
+  return typeof version === 'number' && Number.isFinite(version) ? version : null;
+}
+
 /**
  * Persist a save under the given slot id. Returns true on success.
  * Slot ids are arbitrary strings; the caller picks a UUID-like value
@@ -267,6 +275,13 @@ export async function readSave(slotId: string): Promise<LoadResult> {
     }
     if (raw == null) return { ok: false, reason: 'Save not found.' };
     if (!isValidPayload(raw)) {
+      const foundVersion = readPayloadSchemaVersion(raw);
+      if (foundVersion !== null && foundVersion !== SAVE_SCHEMA_VERSION) {
+        return {
+          ok: false,
+          reason: `Save schema mismatch (expected v${SAVE_SCHEMA_VERSION}).`,
+        };
+      }
       return { ok: false, reason: 'Save payload is invalid or corrupt.' };
     }
     return { ok: true, payload: raw };
