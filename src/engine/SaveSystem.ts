@@ -35,14 +35,12 @@ import { useCharacterStore } from '@/store/characterStore';
 import { useWorldStore } from '@/store/worldStore';
 import { useDevStore } from '@/store/devStore';
 import { createLogger } from '@/utils/logger';
+import { isValidSaveSlotId } from '@/utils/saveSlotId';
 
 const log = createLogger('save');
 
 /** Bumped on any breaking change to the payload shape. */
 export const SAVE_SCHEMA_VERSION = 1;
-/** Defensive slot-id policy shared across runtimes (renderer + Electron IPC). */
-const SLOT_ID_RE = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/;
-const RESERVED_SLOT_IDS = new Set(['__proto__', 'prototype', 'constructor']);
 
 /**
  * Header that travels alongside every save. Kept slim enough to render
@@ -83,21 +81,6 @@ export type LoadResult =
 
 /** localStorage key prefix used in browser/Capacitor builds. */
 const LS_PREFIX = 'pa:save:';
-
-/**
- * Validate user/code-provided slot ids before they touch persistence.
- *
- * Why strict?
- * - Saves are keyed by user-visible ids and cross process boundaries (IPC).
- * - Rejecting odd keys up front avoids edge-case corruption and object-key
- *   prototype traps (`__proto__`, `constructor`, etc.).
- */
-export function isValidSlotId(slotId: string): boolean {
-  return (
-    SLOT_ID_RE.test(slotId) &&
-    !RESERVED_SLOT_IDS.has(slotId)
-  );
-}
 
 /** True if the Electron preload bridge is present in this runtime. */
 function hasElectronBridge(): boolean {
@@ -185,6 +168,12 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 /** Runtime-validate metadata so corrupt saves fail cleanly instead of crashing later. */
 function isValidMeta(meta: unknown): meta is SaveMeta {
   if (!isPlainObject(meta)) return false;
+  // String fields intentionally allow empty strings for backwards
+  // compatibility with schema-v1 snapshots captured before scenario selection
+  // (e.g. empty `scenarioId` in early alpha runs). We only enforce type here;
+  // semantic defaults are handled by save creation and render surfaces.
+  // @see buildSavePayload
+  // @see renderer/components/SaveLoadModal
   return (
     meta.schemaVersion === SAVE_SCHEMA_VERSION &&
     typeof meta.savedAt === 'number' &&
@@ -200,6 +189,12 @@ function isValidMeta(meta: unknown): meta is SaveMeta {
 /** Runtime-validate store payload containers before we pass data to Zustand. */
 function isValidStores(stores: unknown): stores is SavePayload['stores'] {
   if (!isPlainObject(stores)) return false;
+  // Intentionally shallow: this gate protects against catastrophic shape
+  // corruption (null/array/primitives). Each store action that consumes data
+  // remains the source of truth for domain-level invariants.
+  // @see store/gameStore.ts
+  // @see store/characterStore.ts
+  // @see store/worldStore.ts
   return (
     isPlainObject(stores.game) &&
     isPlainObject(stores.character) &&
@@ -232,7 +227,7 @@ function readPayloadSchemaVersion(p: unknown): number | null {
  * (or `"autosave"` for the rolling autosave slot).
  */
 export async function writeSave(slotId: string, name: string): Promise<boolean> {
-  if (!isValidSlotId(slotId)) {
+  if (!isValidSaveSlotId(slotId)) {
     log.warn('writeSave rejected invalid slot id', { slotId });
     return false;
   }
@@ -258,7 +253,7 @@ export async function writeSave(slotId: string, name: string): Promise<boolean> 
  * the same as "corrupt".
  */
 export async function readSave(slotId: string): Promise<LoadResult> {
-  if (!isValidSlotId(slotId)) {
+  if (!isValidSaveSlotId(slotId)) {
     return { ok: false, reason: 'Invalid save slot id.' };
   }
   try {
@@ -300,7 +295,7 @@ export async function listSaves(): Promise<string[]> {
       const k = window.localStorage.key(i);
       if (!k || !k.startsWith(LS_PREFIX)) continue;
       const id = k.slice(LS_PREFIX.length);
-      if (isValidSlotId(id)) ids.push(id);
+      if (isValidSaveSlotId(id)) ids.push(id);
     }
     return ids;
   } catch (err) {
@@ -314,7 +309,7 @@ export async function listSaves(): Promise<string[]> {
  * but does not throw — the load UI treats both the same.
  */
 export async function deleteSave(slotId: string): Promise<boolean> {
-  if (!isValidSlotId(slotId)) return false;
+  if (!isValidSaveSlotId(slotId)) return false;
   try {
     if (hasElectronBridge()) return await bridge().delete(slotId);
     const key = LS_PREFIX + slotId;

@@ -19,12 +19,12 @@ import {
   deleteSave,
   applySavePayload,
   SAVE_SCHEMA_VERSION,
-  isValidSlotId,
 } from './SaveSystem';
 import { useGameStore } from '@/store/gameStore';
 import { useCharacterStore } from '@/store/characterStore';
 import { useWorldStore } from '@/store/worldStore';
 import { useDevStore } from '@/store/devStore';
+import { isValidSaveSlotId } from '@/utils/saveSlotId';
 
 beforeEach(() => {
   // Force the localStorage code path so we exercise the schema/parse
@@ -95,9 +95,9 @@ describe('SaveSystem', () => {
   });
 
   it('rejects invalid slot ids for read/write/delete', async () => {
-    expect(isValidSlotId('__proto__')).toBe(false);
-    expect(isValidSlotId('bad/slot')).toBe(false);
-    expect(isValidSlotId('slot_good-01')).toBe(true);
+    expect(isValidSaveSlotId('__proto__')).toBe(false);
+    expect(isValidSaveSlotId('bad/slot')).toBe(false);
+    expect(isValidSaveSlotId('slot_good-01')).toBe(true);
 
     await expect(writeSave('__proto__', 'bad')).resolves.toBe(false);
     await expect(readSave('__proto__')).resolves.toEqual({

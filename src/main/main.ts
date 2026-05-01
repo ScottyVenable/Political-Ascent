@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Store from 'electron-store';
+import { isValidSaveSlotId } from '../utils/saveSlotId';
 
 /**
  * Electron main process entry point.
@@ -36,18 +37,6 @@ const persist = new Store<StoreSchema>({
   name: 'political-ascent',
   defaults: { saves: {}, settings: {} },
 });
-
-/** Keep save slot ids boring/safe so persisted object keys cannot be abused. */
-const SLOT_ID_RE = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/;
-const RESERVED_SLOT_IDS = new Set(['__proto__', 'prototype', 'constructor']);
-
-function isValidSlotId(slotId: unknown): slotId is string {
-  return (
-    typeof slotId === 'string' &&
-    SLOT_ID_RE.test(slotId) &&
-    !RESERVED_SLOT_IDS.has(slotId)
-  );
-}
 
 function createMainWindow(): BrowserWindow {
   // Read persisted settings so we can restore display prefs on launch.
@@ -151,17 +140,19 @@ function buildMenu(): void {
 
 function registerIpc(): void {
   ipcMain.handle('pa:save:list', () => {
-    return Object.keys(persist.get('saves')).filter((slotId) => isValidSlotId(slotId));
+    return Object.keys(persist.get('saves')).filter((slotId) =>
+      isValidSaveSlotId(slotId),
+    );
   });
 
   ipcMain.handle('pa:save:read', (_event, slotId: string) => {
-    if (!isValidSlotId(slotId)) return null;
+    if (!isValidSaveSlotId(slotId)) return null;
     const saves = persist.get('saves');
     return saves[slotId] ?? null;
   });
 
   ipcMain.handle('pa:save:write', (_event, slotId: string, payload: unknown) => {
-    if (!isValidSlotId(slotId)) return false;
+    if (!isValidSaveSlotId(slotId)) return false;
     const saves = persist.get('saves');
     saves[slotId] = { version: 1, savedAt: Date.now(), payload };
     persist.set('saves', saves);
@@ -169,7 +160,7 @@ function registerIpc(): void {
   });
 
   ipcMain.handle('pa:save:delete', (_event, slotId: string) => {
-    if (!isValidSlotId(slotId)) return false;
+    if (!isValidSaveSlotId(slotId)) return false;
     const saves = persist.get('saves');
     if (slotId in saves) {
       delete saves[slotId];
