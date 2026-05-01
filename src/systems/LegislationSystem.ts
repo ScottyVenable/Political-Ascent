@@ -439,8 +439,12 @@ class LegislationSystemImpl implements LegislationSystemAPI {
         const duration = durationFor(template, next);
         const patch: Partial<Bill> = {
           stage: next,
-          stageEnteredOnDay: current.stageEndsOnDay,
-          stageEndsOnDay: current.stageEndsOnDay + duration,
+          // Reset the next stage from "today", not from the stale deadline
+          // that just expired. This gives the player a full, readable stage
+          // timer after an overdue save/load catch-up instead of immediately
+          // showing partially elapsed progress for a stage they never saw.
+          stageEnteredOnDay: today,
+          stageEndsOnDay: today + duration,
         };
         world.updateBill(current.id, patch);
         current = { ...current, ...patch };

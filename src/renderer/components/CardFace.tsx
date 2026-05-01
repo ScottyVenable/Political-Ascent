@@ -94,6 +94,9 @@ function CardFaceImpl({
         ' bg-bg-secondary rounded flex flex-col overflow-hidden ' +
         // Standardised height (todo#3 / todo#33): all cards in a hand row
         // are the same height so the row reads as a uniform deck.
+        // The extra 10–20px versus the old frame size is deliberate: effect
+        // summaries now live on the card face, so the card needs enough fixed
+        // vertical room to avoid hiding costs/flavor behind a tooltip.
         (compact ? 'min-h-[190px] ' : 'min-h-[300px] ') +
         // Hover physics: upward translate + slight rotate simulates
         // lifting a card off the table. Active state is "pressed down".

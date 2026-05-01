@@ -143,12 +143,12 @@ describe('LegislationSystem — pacing', () => {
     expect(useGameStore.getState().politicalCapital).toBe(pcBefore);
   });
 
-  it('dailyUpdate catches up overdue stages instead of leaving impossible day counts', () => {
+  it('dailyUpdate resets an overdue stage from today instead of leaving impossible day counts', () => {
     const bill = LegislationSystem.draftBill(TEMPLATE);
 
-    // Simulate a stale save or backgrounded tab where the calendar is much
-    // later than the committee deadline. One dailyUpdate call should advance
-    // through every expired stage until it reaches the first non-expired one.
+    // Simulate a stale save or backgrounded tab where the calendar is later
+    // than the committee deadline. One dailyUpdate call should advance out of
+    // committee and give the new floor stage a fresh readable timer from today.
     const elapsedDays = STAGE_DURATION_DAYS.committee + STAGE_DURATION_DAYS.floor_debate;
     for (let i = 0; i < elapsedDays; i++) {
       useGameStore.getState().advanceDay();
@@ -159,9 +159,9 @@ describe('LegislationSystem — pacing', () => {
       .getState()
       .pendingLegislation.find((b) => b.id === bill.id);
     const today = toEpochDays(useGameStore.getState().currentDate);
-    expect(updated?.stage).toBe('vote');
+    expect(updated?.stage).toBe('floor_debate');
     expect(updated?.stageEnteredOnDay).toBe(today);
-    expect(updated?.stageEndsOnDay).toBe(today + STAGE_DURATION_DAYS.vote);
+    expect(updated?.stageEndsOnDay).toBe(today + STAGE_DURATION_DAYS.floor_debate);
   });
 
   it('expediteStage charges PC and jumps immediately to the next stage', () => {
