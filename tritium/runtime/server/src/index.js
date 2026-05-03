@@ -176,7 +176,16 @@ const server = http.createServer(async (req, res) => {
     fs.createReadStream(file).pipe(res);
   } catch (err) {
     console.error('[server]', err);
-    if (!res.headersSent) sendJson(res, 500, { error: String(err.message ?? err) });
+    // Validation-style errors (statusCode set explicitly) get their message
+    // surfaced; unexpected errors return an opaque 500 to avoid leaking
+    // internals (file paths, library stack frames, etc.).
+    if (!res.headersSent) {
+      if (err && Number.isInteger(err.statusCode) && err.statusCode >= 400 && err.statusCode < 500) {
+        sendJson(res, err.statusCode, { error: String(err.message ?? 'bad request') });
+      } else {
+        sendJson(res, 500, { error: 'internal server error' });
+      }
+    }
   }
 });
 

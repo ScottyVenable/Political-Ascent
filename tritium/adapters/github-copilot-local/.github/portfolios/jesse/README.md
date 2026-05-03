@@ -1,7 +1,7 @@
 # Jesse — Portfolio
 
 Working drafts and pre-promotion artifacts. Files here are **not canonical**.
-When a draft is ready, Jesse (or Jesse) promotes it to the appropriate
+When a draft is ready, Jesse (or another authorized agent) promotes it to the appropriate
 canonical location (see `team/TEAM.md`).
 
 ## Conventions
