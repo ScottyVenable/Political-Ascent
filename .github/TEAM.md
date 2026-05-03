@@ -36,6 +36,8 @@ Owner: **Jesse**. Update this file when adding, removing, or renaming agents.
 
 ## Portfolios & Storage
 
+Portfolios are for agent-owned artifacts and pre-promotion drafts. Shared team-level correspondence, thinking, interaction records, and formal handoff packets live under [.github/team/](team/).
+
 | Agent | Working dir | Images / assets | Promoted output |
 |---|---|---|---|
 | Bridge | `.github/portfolios/bridge/` (routing logs, decision records) | _n/a_ | Inline summaries to user |
@@ -51,6 +53,12 @@ Owner: **Jesse**. Update this file when adding, removing, or renaming agents.
 - `/memories/repo/` — repo-scoped facts (branch model, taxonomy, conventions). Shared by all agents.
 - `/memories/session/` — per-conversation working notes.
 - `/memories/` (user scope) — cross-workspace preferences.
+
+**Team docs**:
+- `.github/team/correspondence/` — durable inter-agent correspondence and async notes.
+- `.github/team/thoughts/` — reflections, rationale, open questions, and non-binding thinking.
+- `.github/team/interactions/` — structured cross-agent workflow records and decision traces.
+- `.github/team/handoffs/` — formal handoff packets between agents.
 
 ---
 
@@ -135,6 +143,10 @@ Jesse (issue) → Robert (investigation) → requesting agent (consume findings)
 | `.github/portfolios/<agent>/` | Agent working drafts | research reports, style guides, briefs |
 | `.github/portfolios/<agent>/images/` | Reference images & exports | mood boards, palettes, screenshots |
 | `.github/portfolios/<agent>/README.md` | Index & subfolder map | required for each agent with a portfolio |
+| `.github/team/correspondence/` | Durable team-level correspondence | inter-agent request / response notes |
+| `.github/team/thoughts/` | Durable non-binding team thinking | rationale, reflections, open questions |
+| `.github/team/interactions/` | Cross-agent workflow records | decision traces, collaboration sequences |
+| `.github/team/handoffs/` | Formal transfer packets | sender, recipient, readiness, next actions |
 | `docs/research/` | Promoted research (from Robert) | competitor analyses, design references |
 | `docs/design/` | Promoted design specs (from Lux/Vex/Nova) | visual style guides, UX flows, systems specs |
 | `docs/design/systems/` | Promoted systems specs (from Nova) | core loop, progression, economy, balance models |
@@ -143,4 +155,4 @@ File naming inside portfolios: `[topic]-[descriptor].[ext]` for assets; `[YYYY-M
 
 ---
 
-_Last updated: 2026-05-02 (Nova integration + portfolio rollout). Maintained by Jesse._
+_Last updated: 2026-05-02 (Nova integration + team documentation workspace). Maintained by Jesse._
