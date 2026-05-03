@@ -85,3 +85,209 @@ export const DialogueSystem: DialogueSystemAPI = {
     return { ok: true, nextNodeId: opt.nextNodeId };
   },
 };
+
+/**
+ * Singleton runtime handle for the store-aware dialogue system.
+ * Import this to drive Zustand-coupled dialogue from any game subsystem.
+ *
+ * TODO(OQ-1): track active tree + node in a runtime context object
+ * TODO(OQ-2): support interruptible dialogue (faction events mid-tree)
+ * TODO(OQ-3): wire NPC portrait/name resolution
+ * TODO(OQ-4): persist open-dialogue state across saves
+ */
+export const dialogueRuntime = DialogueSystem;
+
+// M2 scaffold: independent lightweight interpreter for upcoming narrative flow.
+export type DialogueRuntimeId = string;
+
+export interface DialogueRuntimeEffect {
+  /**
+   * Effect kinds:
+   * - 'flag': key=flagName, value=boolean
+   * - 'resource': key='politicalCapital'|'actionPoints'|'xp', value=number delta
+   * - 'relationship': key=npcId, value=number delta
+   * - 'ideology': key='economic'|'social', value=number delta
+   * - 'faction-standing': key=factionId, value=number delta (clamped [-100,100] by FactionSystem)
+   * - 'end-dialogue': marks the session resolved; key and value are unused
+   */
+  kind: 'flag' | 'resource' | 'relationship' | 'ideology' | 'faction-standing' | 'end-dialogue';
+  key: string;
+  value: number | boolean | string;
+}
+
+export interface DialogueRuntimeChoice {
+  id: DialogueRuntimeId;
+  text: string;
+  nextNodeId?: DialogueRuntimeId;
+  effects?: DialogueRuntimeEffect[];
+}
+
+export interface DialogueRuntimeNode {
+  id: DialogueRuntimeId;
+  text: string;
+  speakerId?: string;
+  onEnterEffects?: DialogueRuntimeEffect[];
+  nextNodeId?: DialogueRuntimeId;
+  choices: DialogueRuntimeChoice[];
+}
+
+export interface DialogueRuntimeTree {
+  id: string;
+  startNodeId: DialogueRuntimeId;
+  nodes: Record<DialogueRuntimeId, DialogueRuntimeNode>;
+}
+
+export interface DialogueRuntimeState {
+  treeId: string;
+  currentNodeId: DialogueRuntimeId;
+  resolved: boolean;
+  visitedNodeIds: DialogueRuntimeId[];
+  flags: Record<string, boolean>;
+  appliedEffects: DialogueRuntimeEffect[];
+}
+
+export interface DialogueInterpreterHooks {
+  applyEffects?: (effects: readonly DialogueRuntimeEffect[], state: DialogueRuntimeState) => void;
+}
+
+export interface DialogueInterpreterAPI {
+  loadTree(tree: DialogueRuntimeTree): DialogueRuntimeState;
+  advance(state: DialogueRuntimeState): DialogueRuntimeState;
+  choose(state: DialogueRuntimeState, choiceId: DialogueRuntimeId): DialogueRuntimeState;
+}
+
+export function createDialogueInterpreter(hooks: DialogueInterpreterHooks = {}): DialogueInterpreterAPI {
+  const applyEffectsHook = hooks.applyEffects ?? (() => {});
+
+  let tree: DialogueRuntimeTree | null = null;
+
+  const applyRuntimeEffects = (
+    state: DialogueRuntimeState,
+    effects: readonly DialogueRuntimeEffect[],
+  ): DialogueRuntimeState => {
+    let nextFlags = state.flags;
+    // end-dialogue is detected in a first pass so all other effects commit first.
+    let shouldEndDialogue = false;
+
+    for (const effect of effects) {
+      if (effect.kind === 'flag' && typeof effect.value === 'boolean') {
+        nextFlags = {
+          ...nextFlags,
+          [effect.key]: effect.value,
+        };
+      } else if (effect.kind === 'end-dialogue') {
+        shouldEndDialogue = true;
+      }
+      // 'faction-standing', 'resource', 'relationship', 'ideology' are handled
+      // by the applyEffectsHook (store-aware layer) below.
+    }
+
+    const nextState: DialogueRuntimeState = {
+      ...state,
+      flags: nextFlags,
+      appliedEffects: [...state.appliedEffects, ...effects],
+      // resolved is set AFTER flags are committed so set-flag always persists.
+      ...(shouldEndDialogue ? { resolved: true } : {}),
+    };
+
+    if (effects.length > 0) {
+      applyEffectsHook(effects, nextState);
+    }
+
+    return nextState;
+  };
+
+  const getNode = (state: DialogueRuntimeState): DialogueRuntimeNode => {
+    if (!tree) {
+      throw new Error('Dialogue tree has not been loaded');
+    }
+    const node = tree.nodes[state.currentNodeId];
+    if (!node) {
+      throw new Error(`Unknown dialogue node: ${state.currentNodeId}`);
+    }
+    return node;
+  };
+
+  const markVisited = (state: DialogueRuntimeState, nodeId: DialogueRuntimeId): DialogueRuntimeState => {
+    if (state.visitedNodeIds.includes(nodeId)) {
+      return state;
+    }
+    return { ...state, visitedNodeIds: [...state.visitedNodeIds, nodeId] };
+  };
+
+  const transitionToNode = (
+    state: DialogueRuntimeState,
+    nextNodeId: DialogueRuntimeId,
+    preNodeEffects: readonly DialogueRuntimeEffect[] = [],
+  ): DialogueRuntimeState => {
+    let nextState = state;
+
+    if (preNodeEffects.length > 0) {
+      nextState = applyRuntimeEffects(nextState, preNodeEffects);
+    }
+
+    nextState = markVisited({ ...nextState, currentNodeId: nextNodeId }, nextNodeId);
+    const nextNode = getNode(nextState);
+
+    if (nextNode.onEnterEffects?.length) {
+      // TODO(OQ): confirm onEnter ordering relative to branching side-effects and telemetry.
+      nextState = applyRuntimeEffects(nextState, nextNode.onEnterEffects);
+    }
+
+    return nextState;
+  };
+
+  return {
+    loadTree(nextTree) {
+      tree = nextTree;
+      let initial: DialogueRuntimeState = {
+        treeId: nextTree.id,
+        currentNodeId: nextTree.startNodeId,
+        resolved: false,
+        visitedNodeIds: [nextTree.startNodeId],
+        flags: {},
+        appliedEffects: [],
+      };
+
+      const startNode = nextTree.nodes[nextTree.startNodeId];
+      if (!startNode) {
+        throw new Error(`Missing start node: ${nextTree.startNodeId}`);
+      }
+      // TODO(OQ): finalize speaker resolution order (node speaker, scene speaker, fallback narrator).
+      if (startNode.onEnterEffects?.length) {
+        // TODO(OQ): confirm onEnter ordering relative to UI reveal and VO playback.
+        initial = applyRuntimeEffects(initial, startNode.onEnterEffects);
+      }
+      return initial;
+    },
+
+    advance(state) {
+      const node = getNode(state);
+      if (node.choices.length > 0) {
+        return state;
+      }
+      if (node.nextNodeId) {
+        return transitionToNode(state, node.nextNodeId);
+      }
+      return { ...state, resolved: true };
+    },
+
+    choose(state, choiceId) {
+      const node = getNode(state);
+      const choice = node.choices.find((c) => c.id === choiceId);
+      if (!choice) {
+        throw new Error(`Unknown dialogue choice: ${choiceId}`);
+      }
+
+      if (!choice.nextNodeId) {
+        const resolvedState = choice.effects?.length
+          ? applyRuntimeEffects(state, choice.effects)
+          : state;
+        return { ...resolvedState, resolved: true };
+      }
+
+      // TODO(OQ): lock ideology drift breakdown (short-term mood vs long-term worldview deltas).
+      return transitionToNode(state, choice.nextNodeId, choice.effects ?? []);
+    },
+  };
+}
