@@ -118,7 +118,7 @@ jobs:
         run: npx playwright install-deps chromium
       - name: Run Playwright (PR — chromium-1280x720 only)
         if: github.event_name == 'pull_request'
-        run: npx playwright test --project=chromium-1280x720
+        run: npx playwright test --project=chromium-1280x720 --update-snapshots=missing
       - name: Run Playwright (push to development — full matrix)
         if: github.event_name == 'push'
         run: |
@@ -172,11 +172,11 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Build Electron (linux dir target only on development push)
-        run: npx --no-install electron-builder --linux --dir
+        run: npm run build:electron:ci
       - name: Upload electron dir
         uses: actions/upload-artifact@v7
         with:
           name: electron-linux-dir
-          path: dist-electron-build/
+          path: bin/
           if-no-files-found: ignore
           retention-days: 7
