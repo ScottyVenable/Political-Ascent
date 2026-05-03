@@ -134,7 +134,7 @@ jobs:
           header: wiki-ci
           message: |
             <!-- wiki-ci -->
-            **Wiki CI** ([spec](.github/wiki-ci-spec.md))
+            **Wiki CI** ([spec](.github/specs/wiki-ci-spec.md))
             - Broken intra-wiki links: **${{ steps.run.outputs.broken }}**
             - Pages missing GDD status block: **${{ steps.run.outputs.missing }}**
             - Orphan pages (warning only): **${{ steps.run.outputs.orphans }}**
