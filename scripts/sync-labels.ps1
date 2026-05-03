@@ -85,9 +85,9 @@ $labels = @(
     @{ n="status:review";        c="6f42c1"; d="In code review." }
     @{ n="status:qa";            c="fef2c0"; d="In QA / verification." }
     # stream:*
-    @{ n="stream:development";   c="bfd4f2"; d="Targets development branch." }
-    @{ n="stream:experimental";  c="79b8ff"; d="Targets experimental branch." }
-    @{ n="stream:stable";        c="0366d6"; d="Targets stable lane." }
+    @{ n="stream:development";   c="bfd4f2"; d="Development stream. Targets development branch." }
+    @{ n="stream:experimental";  c="79b8ff"; d="Experimental stream. Targets alpha branch." }
+    @{ n="stream:stable";        c="0366d6"; d="Stable stream. Targets stable branch." }
     # meta
     @{ n="good-first-issue";     c="7057ff"; d="Beginner-friendly." }
     @{ n="help-wanted";          c="008672"; d="Outside contributors welcome." }

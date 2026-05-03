@@ -10,15 +10,17 @@ This page summarises what has shipped and points you to the canonical records. I
 
 ## How the Release Streams Work
 
-Political Ascent ships through three streams. Each has its own stability bar and audience.
+Political Ascent ships through three streams. Each has its own stability bar and audience, and each is hosted on a long-lived GitHub branch.
 
-| Stream | Who it is for | Where to find notes |
-|---|---|---|
-| **development** | Internal contributors; automated nightly builds | `docs/changelogs/development/` in the repository |
-| **experimental** | Opt-in playtesters; pre-release tags (e.g. `v0.2.0-exp.YYYYMMDD`) | `docs/changelogs/experimental/` in the repository |
-| **stable** | Public players; milestone-aligned releases | [`docs/about/CHANGELOG.md`](https://github.com/ScottyVenable/Political-Ascent/blob/development/docs/about/CHANGELOG.md) — canonical user-facing record |
+| Stream | Branch | Who it is for | Where to find notes |
+|---|---|---|---|
+| **development** | `development` | Internal contributors; automated nightly builds | `docs/changelogs/development/` in the repository |
+| **experimental** | `alpha` | Opt-in playtesters; pre-release tags (e.g. `v0.2.0-exp.YYYYMMDD`) | `docs/changelogs/experimental/` in the repository |
+| **stable** | `stable` | Public players; milestone-aligned releases | [`docs/about/CHANGELOG.md`](https://github.com/ScottyVenable/Political-Ascent/blob/development/docs/about/CHANGELOG.md) — canonical user-facing record |
 
 A feature must flow **development → experimental → stable**. It cannot skip a stream.
+
+> The *stream* names (development/experimental/stable) are the canonical identifiers used in label namespaces, changelog folders, and the in-game Patch Notes tabs. The *branch* names (development/alpha/stable) are the GitHub refs that host each stream. The two are deliberately decoupled — changelog folder names are stable identifiers and do not change with branch renames.
 
 ---
 
@@ -29,7 +31,8 @@ A feature must flow **development → experimental → stable**. It cannot skip 
 | Last development tag | `v0.1.0-alpha.1` (2026-04-24) |
 | Most recent experimental | `v0.1.0-alpha.1-exp.20260429` (Android APK) |
 | Stable releases | None yet — pre-alpha. First stable target: `1.0.0-rc.1` at M8. |
-| Active branch | `exp--legislative-overhaul` (M1 Cloakroom) |
+| Default branch | `development` |
+| Active feature branch | `exp--legislative-overhaul` (M1 Cloakroom) → PR’d into `development` |
 
 ---
 

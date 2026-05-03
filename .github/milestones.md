@@ -47,7 +47,7 @@ Owner: **Jesse**. Mirrors [docs/ROADMAP.md](../docs/ROADMAP.md) §4.
 ### M6 — Telemetry — `0.7.0-alpha.1`
 - **Theme:** Make performance a tracked artefact, not a vibe.
 - **Suggested due:** +32 weeks
-- **Exit criteria:** `bench/` exists with 1w / 13w / 52w / 5y fixtures; perf hard-gates block PRs; nightly-soak posts green/red status; branch protection enabled on `experimental` and `stable`. Gates: both columns of §13.7.1 runnable in CI.
+- **Exit criteria:** `bench/` exists with 1w / 13w / 52w / 5y fixtures; perf hard-gates block PRs; nightly-soak posts green/red status; branch protection enabled on `alpha` and `stable`. Gates: both columns of §13.7.1 runnable in CI.
 - **Depends on:** M4, M5.
 
 ### M7 — Second Front — `0.8.0-alpha.1`

@@ -2,7 +2,7 @@
 
 **Status:** v0.4-DRAFT (aligned with [GDD.md](GDD.md) v0.4-DRAFT)
 **Current version pin:** `0.1.0-alpha.1-exp.20260429` (see [package.json](../package.json))
-**Active branch:** `exp--legislative-overhaul`
+**Default branch:** `development` (active feature branch: `exp--legislative-overhaul`, PR'd into `development` for the M1 Cloakroom milestone)
 **Companion docs:** [GDD.md](GDD.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [SCENARIO_PLAN.md](SCENARIO_PLAN.md) · [about/CHANGELOG.md](about/CHANGELOG.md)
 
 > The previous milestone-by-feature roadmap is archived as `ROADMAP.md.bak` for history. This rewrite reframes work around versioned milestones derived from the GDD system inventory (§4) and the Phase 4 backlog gaps reported by Sol/Vex/Rook in §13/§14.
@@ -15,11 +15,13 @@ Political Ascent ships through three release streams. Each stream maps to a long
 
 | Stream | Branch | Audience | Stability bar | Cadence |
 |---|---|---|---|---|
-| **development** | `development` | Internal devs, automated nightly | Permitted to be temporarily red. Promotion gate is "compiles + boots". | Continuous. Feature branches `exp--<slug>` merge here first. |
-| **experimental** | `experimental` | Opt-in playtesters, pre-release tags | Green required gates per §13.7.1. May contain partial systems behind flags. | Per-feature pre-release tag (e.g. `v0.2.0-exp.YYYYMMDD`). |
-| **stable** | `release` (or `stable`) | Public players | All §13.7.1 gates green, including the experimental→stable column. | Milestone-aligned (see §4). No fixed wall-clock cadence. |
+| **development** | `development` | Internal devs, automated nightly | Permitted to be temporarily red. Promotion gate is "compiles + boots". | Continuous. Feature branches (`feat/*`, `fix/*`, `chore/*`, `docs/*`, legacy `exp--*`) merge here first, then are deleted. |
+| **experimental** | `alpha` | Opt-in playtesters, pre-release tags | Green required gates per §13.7.1. May contain partial systems behind flags. | Per-feature pre-release tag (e.g. `v0.2.0-exp.YYYYMMDD`). Promoted from `development` via maintainer PR. |
+| **stable** | `stable` | Public players | All §13.7.1 gates green, including the experimental→stable column. | Milestone-aligned (see §4). No fixed wall-clock cadence. Promoted from `alpha` via maintainer PR. |
 
 A feature flows **development → experimental → stable**. It cannot skip a stream.
+
+> **Stream name vs branch name:** the *stream* names (`development` / `experimental` / `stable`) are the canonical identifiers used in label namespaces (`stream:*`), changelog folders (`docs/changelogs/<stream>/`), and the in-game Patch Notes tabs. The *branch* names (`development` / `alpha` / `stable`) are the GitHub long-lived refs that host each stream. Folder names under `docs/changelogs/` intentionally retain the stream identifiers and do **not** change with the branch rename.
 
 ---
 
@@ -52,8 +54,9 @@ Promotion gates are defined in GDD §13.7.1. The two columns (development→expe
 | Field | Value |
 |---|---|
 | Last shipped tag | `v0.1.0-alpha.1` (development stream, 2026-04-24) |
-| Most recent pre-release | `v0.1.0-alpha.1-exp.20260429` (experimental, Android APK) |
-| In-flight branch | `exp--legislative-overhaul` (M1 below) |
+| Most recent pre-release | `v0.1.0-alpha.1-exp.20260429` (experimental stream / `alpha` branch, Android APK) |
+| In-flight branch | `exp--legislative-overhaul` → PR → `development` (M1 below) |
+| Default branch | `development` (integration target). `alpha` and `stable` branches host the experimental and stable streams. |
 | Stable releases | None — pre-alpha. First stable target: `1.0.0-rc.1` (M8). |
 
 **Shipped systems (per GDD §4.0):** LegislationSystem, CongressSystem, EconomySystem, PopulationSystem, EventEngine, CardSystem, CharacterSystem, QuestSystem, AchievementEngine, InfluenceSystem, SkillSystem (partial), DialogueSystem (scaffolded, no UI). Save schema v1.

@@ -1,6 +1,8 @@
 <!--
 Pull Request template — Political Ascent
 Cite GDD sections by §-number; do not paste GDD content here.
+
+Branch model: PRs from feature branches (`feat/*`, `fix/*`, `chore/*`, `docs/*`, legacy `exp--*`) target `development`. Promotion `development` → `alpha` (experimental stream) and `alpha` → `stable` (stable stream) is via maintainer-only PRs.
 -->
 
 ## Summary

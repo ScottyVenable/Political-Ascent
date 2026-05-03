@@ -8,6 +8,8 @@ Player-facing milestone overview. No fixed dates — the game ships when it is r
 
 Full technical roadmap (dependency graph, exit criteria, risk register): [`docs/ROADMAP.md`](https://github.com/ScottyVenable/Political-Ascent/blob/development/docs/ROADMAP.md).
 
+> **Stream → branch mapping:** the development stream lives on the `development` branch (default), the experimental stream on `alpha`, and the stable stream on `stable`. Folder names under `docs/changelogs/` keep the stream identifiers and do not track branch renames.
+
 ---
 
 ## Milestone Ladder

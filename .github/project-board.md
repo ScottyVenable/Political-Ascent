@@ -13,7 +13,7 @@ Owner: **Jesse**. Source of truth for the structure of
 |---|---|---|
 | **Status** | Single-select | `Backlog`, `Triaged`, `Ready`, `In Progress`, `In Review`, `QA`, `Done` |
 | **Milestone** | Single-select | `M1 Cloakroom`, `M2 Floor Manager`, `M3 Stump`, `M4 Ironclad`, `M5 Lectern`, `M6 Telemetry`, `M7 Second Front`, `M8 Quorum`, `Unscheduled` |
-| **Stream** | Single-select | `development`, `experimental`, `stable` |
+| **Stream** | Single-select | `development`, `experimental`, `stable` (stream names; map to branches `development`, `alpha`, `stable` respectively — see [labels.md](labels.md) `stream:*`) |
 | **Priority** | Single-select | `P0 Critical`, `P1 High`, `P2 Normal`, `P3 Low` |
 | **Estimate** | Single-select | `XS (≤ ½ day)`, `S (1–2 days)`, `M (3–5 days)`, `L (1–2 weeks)`, `XL (> 2 weeks)` |
 | **System** | Multi-select (text labels) | mirrors the `system:*` label taxonomy (legislation, congress, economy, population, events, cards, character, quests, achievements, influence, faction, dialogue, speech, time, save) |

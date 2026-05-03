@@ -111,11 +111,13 @@ Apply via [`scripts/sync-labels.ps1`](../scripts/sync-labels.ps1). Do **not** cr
 
 ## stream:* — release stream target
 
+Stream names are independent of GitHub branch names. The folder structure under `docs/changelogs/` retains the stream identifiers; the branch names (`development` / `alpha` / `stable`) host the streams.
+
 | Label | Hex | Description |
 |---|---|---|
-| `stream:development` | `#bfd4f2` | Targets `development` branch. |
-| `stream:experimental` | `#79b8ff` | Targets `experimental` branch. |
-| `stream:stable` | `#0366d6` | Targets `release` / stable lane. |
+| `stream:development` | `#bfd4f2` | Development stream. Targets `development` branch. |
+| `stream:experimental` | `#79b8ff` | Experimental stream. Targets `alpha` branch. |
+| `stream:stable` | `#0366d6` | Stable stream. Targets `stable` branch. |
 
 ## meta — discoverability and PR signals
 

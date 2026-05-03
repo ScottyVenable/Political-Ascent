@@ -29,7 +29,7 @@ $milestones = @(
     @{ t="M3 — Stump — 0.4.0-alpha.1";         w=14; d="Speech Composer + audience segments. See ROADMAP.md §4 M3." }
     @{ t="M4 — Ironclad — 0.5.0-alpha.1";      w=20; d="A11y + security + test/lint hardening. Closes Rook §13 gaps. See ROADMAP.md §4 M4." }
     @{ t="M5 — Lectern — 0.6.0-alpha.1";       w=26; d="Trait JSON + card flavour + i18n scaffolding. See ROADMAP.md §4 M5." }
-    @{ t="M6 — Telemetry — 0.7.0-alpha.1";     w=32; d="Perf gates + CI maturity. Branch protection on experimental/stable. See ROADMAP.md §4 M6." }
+    @{ t="M6 — Telemetry — 0.7.0-alpha.1";     w=32; d="Perf gates + CI maturity. Branch protection on alpha/stable. See ROADMAP.md §4 M6." }
     @{ t="M7 — Second Front — 0.8.0-alpha.1";  w=40; d="Cold War scenario. See ROADMAP.md §4 M7." }
     @{ t="M8 — Quorum — 1.0.0-rc.1";           w=48; d="First stable RC. Both columns of §13.7.1 fully green. See ROADMAP.md §4 M8." }
 )

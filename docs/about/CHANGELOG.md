@@ -4,6 +4,16 @@ All notable changes to Political Ascent are recorded here.
 
 This file follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) and the project's three-stream release model (see [docs/ROADMAP.md §1](../ROADMAP.md)).
 
+> **Stream → branch mapping**
+>
+> The three streams are hosted on three long-lived GitHub branches. The folder names under `docs/changelogs/` retain the *stream* identifiers and intentionally do **not** track the branch rename.
+>
+> | Stream | Branch | Folder |
+> |---|---|---|
+> | development | `development` | [`docs/changelogs/development/`](../changelogs/development/) |
+> | experimental | `alpha` | [`docs/changelogs/experimental/`](../changelogs/experimental/) |
+> | stable | `stable` | [`docs/changelogs/stable/`](../changelogs/stable/) |
+
 > **Layered changelog model**
 >
 > | File / folder | Purpose |
