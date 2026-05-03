@@ -1,0 +1,167 @@
+{
+  "$schemaVersion": 1,
+  "id": "intro-aide-greeting",
+  "npcId": "petra-solis",
+  "voiceTag": "shadow-power",
+  "arcId": "quest-first-bill",
+  "rootNodeId": "open",
+  "resumable": false,
+  "notes": "Tutorial-adjacent Personal Arc beat. Fires on first week — Petra Solis (aide to Majority Whip Audrey Vance) approaches the player to 'orient' them. Real purpose: the Whip is taking the measure of the new senator before committing any calendar or political resource. Two choice points: (1) how the player reads the subtext of the opening — tests tone archetype (diplomatic / aggressive / naive / savvy); (2) how the player signals their faction lean when pressed. Faction IDs 'reform-bloc' and 'establishment-wing' are authoring placeholders — TODO(vex): align faction IDs with Nova's FactionSystem spec (M2). Effect kind 'faction-standing' is a proposed new DialogueEffect kind not yet in the §3.4 union — TODO(vex): Sol to confirm implementation path before this tree ships; see intro-aide-dialogue-notes.md OQ-A. NPC 'petra-solis' is a new character not present in the §12.3.4 named seed list; needs a character entry in docs/wiki/ and scenario legislators data. See intro-aide-dialogue-notes.md for full authoring rationale, faction delta intent, and schema questions.",
+  "nodes": {
+    "open": {
+      "id": "open",
+      "speaker": "npc",
+      "voiceTag": "shadow-power",
+      "text": "Senator {pc.name}. Petra Solis — I'm with the Majority Whip's office.",
+      "autoAdvance": "open-b",
+      "onEnter": [
+        { "kind": "advance-quest", "questId": "quest-first-bill", "stage": "setup" }
+      ]
+    },
+    "open-b": {
+      "id": "open-b",
+      "speaker": "npc",
+      "voiceTag": "shadow-power",
+      "text": "She asked me to orient new arrivals. That's the explanation she'd give anyone.",
+      "options": [
+        {
+          "id": "opt-direct",
+          "label": "And the explanation you'd give?",
+          "nextNodeId": "read-room"
+        },
+        {
+          "id": "opt-push",
+          "label": "The Whip doesn't do courtesy calls. What does she want?",
+          "nextNodeId": "read-room-guarded"
+        },
+        {
+          "id": "opt-defer",
+          "label": "I appreciate it. Still finding my footing.",
+          "nextNodeId": "read-room-soft"
+        },
+        {
+          "id": "opt-savvy",
+          "label": "You're her field reader, not her scheduler. I've done my homework.",
+          "requirements": [
+            { "kind": "stat", "stat": "connections", "op": "gte", "value": 3 }
+          ],
+          "failureHint": "Requires Connections 3. You haven't mapped the Capitol yet.",
+          "isHidden": false,
+          "nextNodeId": "read-room-impressed"
+        }
+      ]
+    },
+    "read-room": {
+      "id": "read-room",
+      "speaker": "npc",
+      "voiceTag": "shadow-power",
+      "text": "The unofficial reason is the Whip likes to know who's navigable before she needs them to be.",
+      "autoAdvance": "faction-reveal"
+    },
+    "read-room-guarded": {
+      "id": "read-room-guarded",
+      "speaker": "npc",
+      "voiceTag": "shadow-power",
+      "text": "She wants to know if you're useful or expensive. Most freshmen are both.",
+      "autoAdvance": "faction-reveal"
+    },
+    "read-room-soft": {
+      "id": "read-room-soft",
+      "speaker": "npc",
+      "voiceTag": "shadow-power",
+      "text": "You'll find it. I'd work quickly — the first month sets the terms everyone forgets they set.",
+      "autoAdvance": "faction-reveal"
+    },
+    "read-room-impressed": {
+      "id": "read-room-impressed",
+      "speaker": "npc",
+      "voiceTag": "shadow-power",
+      "text": "My file says you've been talking to people. That's either smart or a tell. I haven't decided which.",
+      "autoAdvance": "faction-reveal"
+    },
+    "faction-reveal": {
+      "id": "faction-reveal",
+      "speaker": "npc",
+      "voiceTag": "shadow-power",
+      "text": "The Reform Bloc and the Establishment Wing aren't at war. They're deciding whether to be.",
+      "autoAdvance": "faction-choice"
+    },
+    "faction-choice": {
+      "id": "faction-choice",
+      "speaker": "npc",
+      "voiceTag": "shadow-power",
+      "text": "You're new enough that neither side has claimed you. The Whip wants to know which way you're leaning.",
+      "options": [
+        {
+          "id": "opt-reform",
+          "label": "Tell her I'm interested in what the Reform Bloc is building.",
+          "effects": [
+            { "kind": "faction-standing", "factionId": "reform-bloc", "delta": 8 },
+            { "kind": "advance-quest", "questId": "quest-first-bill", "stage": "faction-signal" },
+            { "kind": "push-news", "template": "dialogue.intro-aide-greeting.reform-lean" }
+          ],
+          "nextNodeId": "petra-align-reform"
+        },
+        {
+          "id": "opt-neutral",
+          "label": "Tell her I don't lean until I know the terrain.",
+          "effects": [
+            { "kind": "advance-quest", "questId": "quest-first-bill", "stage": "faction-signal" }
+          ],
+          "nextNodeId": "petra-neutral"
+        },
+        {
+          "id": "opt-established",
+          "label": "I've already spoken with Elbe. The Whip can draw her own conclusions.",
+          "requirements": [
+            { "kind": "faction-standing", "factionId": "reform-bloc", "op": "gte", "value": 20 }
+          ],
+          "failureHint": "The Reform Bloc doesn't know you well enough for this to land.",
+          "isHidden": false,
+          "effects": [
+            { "kind": "faction-standing", "factionId": "reform-bloc", "delta": 12 },
+            { "kind": "update-relationship", "npcId": "petra-solis", "delta": -3 },
+            { "kind": "set-flag", "flag": "aide-intro-flagged-reform", "value": true },
+            { "kind": "advance-quest", "questId": "quest-first-bill", "stage": "faction-signal" },
+            { "kind": "push-news", "template": "dialogue.intro-aide-greeting.elbe-named" }
+          ],
+          "nextNodeId": "petra-align-bloc-warned"
+        }
+      ]
+    },
+    "petra-align-reform": {
+      "id": "petra-align-reform",
+      "speaker": "npc",
+      "voiceTag": "shadow-power",
+      "text": "I'll pass that along. The Bloc is organized and it remembers favors. It also remembers the absence of them.",
+      "autoAdvance": "exit"
+    },
+    "petra-neutral": {
+      "id": "petra-neutral",
+      "speaker": "npc",
+      "voiceTag": "shadow-power",
+      "text": "Then read the terrain fast. The undecided don't stay valuable for long.",
+      "autoAdvance": "exit-cold"
+    },
+    "petra-align-bloc-warned": {
+      "id": "petra-align-bloc-warned",
+      "speaker": "npc",
+      "voiceTag": "shadow-power",
+      "text": "Senator Elbe. You're leading with that name in front of me. That's a choice.",
+      "autoAdvance": "exit-cold"
+    },
+    "exit-cold": {
+      "id": "exit-cold",
+      "speaker": "npc",
+      "voiceTag": "shadow-power",
+      "text": "We'll be in touch, Senator. Everyone is.",
+      "autoAdvance": "exit"
+    },
+    "exit": {
+      "id": "exit",
+      "speaker": "narrator",
+      "text": "Petra Solis disappears into the corridor traffic.",
+      "onEnter": [{ "kind": "end-dialogue" }]
+    }
+  }
+}

@@ -32,7 +32,7 @@ test.describe('Graph renderer polish', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test('Economy trends use the new sparkline (area + last dot)', async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(process.env.CI ? 210_000 : 120_000);
     await bootNewGame(page);
 
     // Engine accumulates monthly history snapshots; advance the sim a
@@ -41,8 +41,9 @@ test.describe('Graph renderer polish', () => {
     await page.locator('[data-testid="bottombar-speed-4"]').click();
     // Engine snapshots EconomySystem history monthly; need ≥2 months
     // of sim time so the trends card renders sparklines with at least
-    // 2 data points.
-    await page.waitForTimeout(35_000);
+    // 2 data points. CI runners are slower; allow more warmup time.
+    const historyWarmupMs = process.env.CI ? 60_000 : 35_000;
+    await page.waitForTimeout(historyWarmupMs);
     await page.locator('[data-testid="bottombar-speed-0"]').click();
     await page.waitForTimeout(150);
 
