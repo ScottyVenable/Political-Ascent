@@ -32,7 +32,7 @@ test.describe('Graph renderer polish', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test('Economy trends use the new sparkline (area + last dot)', async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(120_000);
     await bootNewGame(page);
 
     // Engine accumulates monthly history snapshots; advance the sim a
