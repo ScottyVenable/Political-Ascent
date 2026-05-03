@@ -30,7 +30,8 @@ Full roster and handoff matrix: [../TEAM.md](../TEAM.md).
 - Sol — implementer (Rook validates Sol's PRs)
 - Vex — content author
 - Robert — research
-- **Lux — visuals & art direction** *(new)*. Rook validates Lux's visual deliverables against accessibility (WCAG 2.2 AA) and performance budgets, and runs visual-regression checks when palette/typography/UI tokens change.
+- **Lux — visuals & art direction**. Rook validates Lux's visual deliverables against accessibility (WCAG 2.2 AA) and performance budgets, and runs visual-regression checks when palette/typography/UI tokens change.
+- **Nova — gameplay systems & balancing** *(new)*. Rook runs balance-test scenarios from Nova, reproduces edge cases, and reports perf-budget breaches in simulation/economy code paths.
 - Jesse — tracking & release notes
 
 ## What Rook does

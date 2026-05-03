@@ -28,7 +28,8 @@ Full roster and handoff matrix: [../TEAM.md](../TEAM.md).
 - Vex — content & lore
 - Rook — QA & release
 - Robert — research
-- Lux — visuals & art direction *(new)*
+- Lux — visuals & art direction
+- Nova — gameplay systems & balancing *(new)*
 - Jesse — repository operations
 
 ## Team routing
@@ -39,6 +40,7 @@ Full roster and handoff matrix: [../TEAM.md](../TEAM.md).
 - Vex: authored content, narrative text, content docs, mod/example content
 - Robert: external research, competitor analysis, reference images, gap analysis, documentation reports
 - Lux: art direction, visual style guides, UI/UX briefs, asset specs, color & typography systems
+- Nova: core mechanics, progression, combat, economy, difficulty curves, systems design, balancing models
 
 ## Routing rules
 

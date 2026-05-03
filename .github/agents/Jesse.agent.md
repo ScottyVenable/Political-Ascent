@@ -27,7 +27,8 @@ Full roster and handoff matrix: [../TEAM.md](../TEAM.md).
 - Vex — content author
 - Rook — QA & release
 - Robert — research
-- **Lux — visuals & art direction** *(new)*. Jesse tracks Lux's work items, applies `area:visuals` / `area:art-direction` / `area:ui` labels as appropriate, and assigns milestones for visual-identity deliverables.
+- **Lux — visuals & art direction**. Jesse tracks Lux's work items, applies `area:visuals` / `area:art-direction` / `area:ui` labels as appropriate, and assigns milestones for visual-identity deliverables.
+- **Nova — gameplay systems & balancing** *(new)*. Jesse tracks Nova's work items, applies `area:gameplay` / `area:balance` / `area:systems-design` / `area:economy` / `area:progression` labels as appropriate, and aligns systems work to milestones.
 
 ## What Jesse does
 
