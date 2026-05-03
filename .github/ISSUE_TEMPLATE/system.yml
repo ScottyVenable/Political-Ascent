@@ -1,0 +1,96 @@
+name: System
+description: New engine/system module (e.g. FactionSystem, SpeechSystem, VotingSystem)
+title: "[SYSTEM] "
+labels: ["type:system", "area:engine", "status:needs-design"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for new modules under `src/systems/` or `src/engine/`.
+        For player-facing features that consume an existing system, use **Feature**.
+  - type: input
+    id: system-name
+    attributes:
+      label: System name
+      placeholder: FactionSystem
+    validations:
+      required: true
+  - type: input
+    id: gdd-section
+    attributes:
+      label: GDD §4.x reference
+      placeholder: "docs/GDD.md §4.11"
+    validations:
+      required: true
+  - type: textarea
+    id: io
+    attributes:
+      label: Inputs / Outputs
+      description: What stores / events does this read? What stores / events does it write?
+      value: |
+        **Reads:**
+        -
+
+        **Writes:**
+        -
+    validations:
+      required: true
+  - type: textarea
+    id: data-shape
+    attributes:
+      label: Data shape
+      description: TypeScript type sketch or pointer to the type file under `src/types/`.
+    validations:
+      required: true
+  - type: dropdown
+    id: cadence
+    attributes:
+      label: Tick cadence
+      options:
+        - per-frame (renderer)
+        - per-tick (game loop)
+        - per-day
+        - per-week
+        - event-driven only
+        - on-demand (no recurring tick)
+    validations:
+      required: true
+  - type: textarea
+    id: deps
+    attributes:
+      label: Dependencies on other systems
+      description: List the systems this depends on and why.
+    validations:
+      required: true
+  - type: dropdown
+    id: schema-impact
+    attributes:
+      label: Save schema version impact
+      options:
+        - None — no persisted state
+        - Additive — new optional fields, no migration needed
+        - Bump required — migration ladder entry per §13.3.3
+    validations:
+      required: true
+  - type: dropdown
+    id: test-layer
+    attributes:
+      label: Primary test layer (per §13.1)
+      options:
+        - L1 unit (pure)
+        - L2 system integration
+        - L3 store integration
+        - L4 renderer / e2e
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ] Module exists at `src/systems/<Name>.ts`
+        - [ ] Test file at `src/systems/<Name>.test.ts` (≥80% line coverage if L1/L2)
+        - [ ] Documented in `docs/ARCHITECTURE.md`
+        - [ ] No `Math.random` / `Date.now` (cite §13.2)
+    validations:
+      required: true

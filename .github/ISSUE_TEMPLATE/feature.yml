@@ -1,0 +1,72 @@
+name: Feature
+description: New player-facing feature or system addition
+title: "[FEATURE] "
+labels: ["type:feature", "status:needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for any user-visible feature, panel, or content surface.
+        For new engine modules use the **System** template instead.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph description of the feature.
+    validations:
+      required: true
+  - type: input
+    id: gdd-section
+    attributes:
+      label: GDD section reference
+      description: Cite the GDD section this feature implements (e.g. `docs/GDD.md §4.2`).
+      placeholder: "docs/GDD.md §4.x"
+    validations:
+      required: true
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Milestone target
+      options:
+        - M1 — Cloakroom (0.2.0)
+        - M2 — Floor Manager (0.3.0)
+        - M3 — Stump (0.4.0)
+        - M4 — Ironclad (0.5.0)
+        - M5 — Lectern (0.6.0)
+        - M6 — Telemetry (0.7.0)
+        - M7 — Second Front (0.8.0)
+        - M8 — Quorum (1.0.0-rc.1)
+        - Unscheduled
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope checklist
+      description: What is and is not in scope for this feature.
+      value: |
+        - [ ] In scope:
+        - [ ] Out of scope:
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: Design notes
+      description: UX intent, data shape, interaction grammar (cite renderer tokens / convention list where relevant).
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Player-observable outcomes that must be true to close this issue.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Other issues, milestones, or systems this depends on.

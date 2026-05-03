@@ -1,53 +1,74 @@
+<!--
+Pull Request template — Political Ascent
+Cite GDD sections by §-number; do not paste GDD content here.
+-->
+
 ## Summary
 
-<!-- What changes, and why. One or two sentences. -->
+<!-- One paragraph. What changes and why. -->
 
-## Linked issues
+## Linked issue
 
-<!-- "Closes #12" to auto-close; "Refs #34" for tracking. -->
+Closes #
 
-## Testing evidence
+## GDD section(s)
 
-- [ ] `npm run lint`
-- [ ] `npm run typecheck`
-- [ ] `npm test`
-- [ ] `npm run test:e2e` (for UI changes)
+<!-- e.g. docs/GDD.md §4.2, §13.1.1 -->
 
-### Screenshots
+## Type of change
 
-<!-- Required for UI changes. Drop screenshots captured by Playwright or attach new ones. Include viewport size. -->
+- [ ] Feature (new user-visible surface)
+- [ ] System (engine module added/changed)
+- [ ] Content (narrative / data authoring)
+- [ ] Bug fix
+- [ ] Tech debt / refactor (no behaviour change)
+- [ ] A11y
+- [ ] Security
+- [ ] Chore (tooling / CI / config)
+- [ ] Docs only
 
-### Agent analysis
+## Screenshots / recordings
 
-<!-- If you are an AI agent: what did you observe in the screenshots? What could be improved or should be tracked as follow-up issues? -->
+<!-- For renderer changes. Required for UI work. -->
 
-## Docs updated
+## Test plan
 
-<!-- Tick all that apply or explain why none apply. -->
+<!-- Cite the test layers from GDD §13.1: L1 unit / L2 system / L3 store / L4 e2e. -->
 
-- [ ] GDD (`docs/GDD.md`)
-- [ ] Architecture (`docs/ARCHITECTURE.md`)
-- [ ] Roadmap (`docs/ROADMAP.md`)
-- [ ] Changelog (`docs/about/CHANGELOG.md`)
-- [ ] Contributing (`docs/guides/CONTRIBUTING.md`)
-- [ ] Modding (`docs/guides/MODDING.md`)
-- [ ] Save format (`docs/guides/SAVE_FORMAT.md`)
-- [ ] Icons & Assets (`docs/guides/ICONS_AND_ASSETS.md`)
-- [ ] Credits (`docs/about/CREDITS.md`)
-- [ ] Research (`docs/research/…`)
-- [ ] Wiki pages (list them)
-- [ ] No doc change needed because: <!-- reason -->
+- L1 unit:
+- L2 system integration:
+- L3 store integration:
+- L4 renderer / e2e:
 
-## Risks / rollback
+## Determinism note
 
-<!-- How risky is this change? How would we roll back if it broke something? -->
+<!-- Per GDD §13.2 — no Date.now, no Math.random outside seeded RNG. -->
 
-## Checklist
+- [ ] No new `Date.now()` calls in engine/system code
+- [ ] No new `Math.random()` outside the seeded RNG
+- [ ] Tick logic is pure given identical input state
 
-- [ ] Branch name follows `exp--<feature-kebab>` (no version prefix).
-- [ ] Base branch is `experimental/`.
-- [ ] No emoji in shipped game content (`src/**/*.tsx`, `src/data/**/*.json`).
-- [ ] No `Math.random()` in engine/systems/stores.
-- [ ] No `any` introduced.
-- [ ] JSDoc on every new exported symbol.
-- [ ] Project board card moved to **In Review**.
+## Save compatibility note
+
+<!-- Per GDD §13.3. -->
+
+- [ ] No persisted-state shape change
+- [ ] Persisted-state shape changed → migration ladder entry added (§13.3.3)
+- [ ] Save fixture corpus updated (`src/test/fixtures/saves/`) if applicable
+
+## Changelog
+
+<!-- Per docs/about/CHANGELOG.md (Keep-a-Changelog 1.1.0) and docs/changelogs/<stream>/. -->
+
+- [ ] `[Unreleased]` updated in `docs/about/CHANGELOG.md`
+- [ ] Per-stream entry added under `docs/changelogs/<stream>/` (filename pattern `YYYY-MM-DD-<version>-<slug>.md`)
+- [ ] N/A — docs-only PR
+
+## Pre-merge checklist
+
+- [ ] `npm run lint` clean
+- [ ] `npm run typecheck` clean
+- [ ] `npm test` (unit) green
+- [ ] `npm run test:e2e` green (if renderer touched)
+- [ ] `npm run build` green
+- [ ] No `console.log` left in production paths

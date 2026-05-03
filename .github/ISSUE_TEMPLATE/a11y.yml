@@ -1,0 +1,57 @@
+name: Accessibility
+description: Accessibility (WCAG 2.2 AA) issue or improvement
+title: "[A11Y] "
+labels: ["type:a11y", "area:renderer", "status:needs-triage"]
+body:
+  - type: input
+    id: wcag
+    attributes:
+      label: WCAG criterion
+      placeholder: "1.4.3 Contrast (Minimum) / 2.1.1 Keyboard"
+    validations:
+      required: true
+  - type: input
+    id: surface
+    attributes:
+      label: Page or component
+      placeholder: "DraftLegislationScreen / src/renderer/components/..."
+    validations:
+      required: true
+  - type: dropdown
+    id: at
+    attributes:
+      label: Assistive technology used
+      options:
+        - keyboard only
+        - screen reader (NVDA)
+        - screen reader (VoiceOver)
+        - screen reader (TalkBack)
+        - high-contrast / forced colors
+        - zoom 200%+
+        - reduced motion
+        - axe automated scan
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour (per §13.4)
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behaviour
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical — blocks all users of the AT
+        - Serious — blocks a major task
+        - Moderate — inconvenient workaround exists
+        - Minor — polish
+    validations:
+      required: true

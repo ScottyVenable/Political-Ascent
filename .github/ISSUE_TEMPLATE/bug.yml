@@ -1,0 +1,80 @@
+name: Bug
+description: Defect or regression
+title: "[BUG] "
+labels: ["type:bug", "status:needs-triage"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - web (vite dev)
+        - web (built)
+        - electron (windows)
+        - electron (macos)
+        - electron (linux)
+        - capacitor android
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Build / version
+      description: Output of `package.json` version pin or git short SHA.
+      placeholder: "0.1.0-alpha.1-exp.20260429 / sha abc1234"
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - S1 — Crash, data loss, save corruption, or block release
+        - S2 — Major feature broken, no workaround
+        - S3 — Minor feature broken, workaround exists
+        - S4 — Cosmetic / polish
+    validations:
+      required: true
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Regression
+      options:
+        - "No"
+        - "Yes — last known good version in description"
+        - "Unknown"
+    validations:
+      required: true
+  - type: textarea
+    id: save
+    attributes:
+      label: Save attached
+      description: Drag a `.pa-save.json` into this comment if reproduction needs save state. Note schema version.
