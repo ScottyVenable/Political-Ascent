@@ -1,0 +1,140 @@
+# wiki-ci.yml
+# Per .github/wiki-ci-spec.md and .github/wiki-push-checklist.md §(b).
+# Read-only validation: broken intra-wiki links, missing GDD status blocks, orphans.
+
+name: wiki-ci
+
+on:
+  pull_request:
+    paths:
+      - 'docs/wiki/**'
+      - '.github/wiki-push-checklist.md'
+      - '.github/wiki-ci-spec.md'
+      - 'scripts/validate-wiki.ps1'
+      - '.github/workflows/wiki-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: wiki-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wiki-validate:
+    name: wiki-validate
+    runs-on: ubuntu-latest
+    outputs:
+      broken: ${{ steps.run.outputs.broken }}
+      missing: ${{ steps.run.outputs.missing }}
+      orphans: ${{ steps.run.outputs.orphans }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run wiki validation
+        id: run
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $wikiDir = 'docs/wiki'
+          if (-not (Test-Path $wikiDir)) {
+            Write-Host "No docs/wiki directory; nothing to validate."
+            "broken=0"  | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            "missing=0" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            "orphans=0" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            exit 0
+          }
+
+          $pages     = Get-ChildItem -Path $wikiDir -Filter '*.md' -File
+          $pageNames = $pages.BaseName
+          Write-Host "==> Wiki pages: $($pages.Count)"
+
+          # 1. Intra-wiki links: [[Target]] or [[Label|Target]]
+          $linkPattern = '\[\[(?:[^\]\|]+\|)?([^\]\|]+)\]\]'
+          $brokenLinks = @()
+          foreach ($p in $pages) {
+            $content = Get-Content -Raw -LiteralPath $p.FullName
+            $found = [regex]::Matches($content, $linkPattern)
+            foreach ($m in $found) {
+              $target = $m.Groups[1].Value.Trim()
+              if ($pageNames -notcontains $target) {
+                $brokenLinks += [pscustomobject]@{ Page = $p.Name; Target = $target }
+              }
+            }
+          }
+
+          # 2. GDD status block presence
+          $skip = @('_Sidebar', '_Footer')
+          $missingStatus = $pages |
+            Where-Object { $skip -notcontains $_.BaseName } |
+            Where-Object {
+              -not (Select-String -Path $_.FullName -Pattern '> \*\*GDD reference:\*\*' -SimpleMatch -Quiet)
+            }
+
+          # 3. Orphans not in _Sidebar.md
+          $sidebarPath = Join-Path $wikiDir '_Sidebar.md'
+          if (Test-Path $sidebarPath) {
+            $sidebar = Get-Content -Raw -LiteralPath $sidebarPath
+            $orphans = $pages |
+              Where-Object { $skip -notcontains $_.BaseName } |
+              Where-Object { $sidebar -notmatch [regex]::Escape($_.BaseName) }
+          } else {
+            $orphans = @()
+          }
+
+          $brokenCount  = ($brokenLinks | Measure-Object).Count
+          $missingCount = ($missingStatus | Measure-Object).Count
+          $orphanCount  = ($orphans | Measure-Object).Count
+
+          "broken=$brokenCount"   | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "missing=$missingCount" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "orphans=$orphanCount"  | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+          $summary = @()
+          $summary += "## Wiki CI"
+          $summary += ""
+          $summary += "| Check | Count |"
+          $summary += "|---|---|"
+          $summary += "| Broken intra-wiki links | $brokenCount |"
+          $summary += "| Pages missing GDD status block | $missingCount |"
+          $summary += "| Orphan pages (not in `_Sidebar.md`) | $orphanCount |"
+          $summary += ""
+          if ($brokenCount -gt 0) {
+            $summary += "### Broken links (first 20)"
+            $summary += ($brokenLinks | Select-Object -First 20 | ForEach-Object { "- ``$($_.Page)`` → ``[[ $($_.Target) ]]``" })
+            $summary += ""
+          }
+          if ($missingCount -gt 0) {
+            $summary += "### Missing GDD status block"
+            $summary += ($missingStatus | Select-Object -First 20 | ForEach-Object { "- ``$($_.Name)``" })
+            $summary += ""
+          }
+          if ($orphanCount -gt 0) {
+            $summary += "### Orphan pages (warning, not failing)"
+            $summary += ($orphans | Select-Object -First 20 | ForEach-Object { "- ``$($_.Name)``" })
+            $summary += ""
+          }
+          $summary -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+          if ($brokenCount -gt 0 -or $missingCount -gt 0) {
+            Write-Host "FAIL: broken=$brokenCount missing=$missingCount" -ForegroundColor Red
+            exit 1
+          }
+          Write-Host "OK: wiki validation passed (orphans=$orphanCount, warning only)" -ForegroundColor Green
+
+      - name: Sticky PR comment
+        if: github.event_name == 'pull_request' && always()
+        uses: marocchino/sticky-pull-request-comment@v2
+        continue-on-error: true
+        with:
+          header: wiki-ci
+          message: |
+            <!-- wiki-ci -->
+            **Wiki CI** ([spec](.github/wiki-ci-spec.md))
+            - Broken intra-wiki links: **${{ steps.run.outputs.broken }}**
+            - Pages missing GDD status block: **${{ steps.run.outputs.missing }}**
+            - Orphan pages (warning only): **${{ steps.run.outputs.orphans }}**
