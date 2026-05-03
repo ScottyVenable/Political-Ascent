@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "dev:electron": "cross-env VITE_TARGET=electron NODE_ENV=development vite",
+    "build": "npm run build:web",
     "build:web": "tsc -p tsconfig.web.json && vite build",
     "build:electron": "cross-env VITE_TARGET=electron tsc -p tsconfig.electron.json && cross-env VITE_TARGET=electron vite build && electron-builder",
     "build:win": "cross-env VITE_TARGET=electron tsc -p tsconfig.electron.json && cross-env VITE_TARGET=electron vite build && electron-builder --win",
@@ -27,6 +28,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:update": "playwright test --update-snapshots"
+  },
+  "engines": {
+    "node": ">=20.0.0 <21"
   },
   "dependencies": {
     "@capacitor/android": "^6.1.2",

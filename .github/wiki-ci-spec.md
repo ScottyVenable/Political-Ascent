@@ -2,9 +2,12 @@
 
 Owner: Jesse. Engineering reviewer: Rook. Content owner: Vex.
 
-This is a **specification only**. It does not include a `.yml` workflow file.
-The workflow will be authored in a follow-up once the open questions in §5
-are resolved by Rook and the dependencies in §6 are unblocked by Sol.
+> **Status:** Implemented in [`.github/workflows/wiki-ci.yml`](workflows/wiki-ci.yml)
+> as of `chore/ci-pipelines`. The workflow inlines the validation snippet from
+> [`.github/wiki-push-checklist.md`](wiki-push-checklist.md) §(b) and posts a
+> sticky PR comment. Open questions in §5 were resolved as the
+> "default proposal" of each item: ubuntu-latest + pwsh, informational for
+> the first two weeks, orphans = warning only.
 
 ---
 
