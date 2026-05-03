@@ -1,0 +1,153 @@
+{
+  "$schemaVersion": 1,
+  "id": "media-scrum-reaction",
+  "npcId": "jordan-cross",
+  "voiceTag": "media-operator",
+  "arcId": "press-interactions",
+  "rootNodeId": "open",
+  "resumable": false,
+  "notes": "Press interaction beat. Fires after a significant floor vote. Speaker: Jordan Cross (TV correspondent) — Media Operator archetype. Purpose: introduce the post-vote press dynamic; the player must manage a journalist who has a sourced count figure that may or may not match the official line. Two choice points: (1) how the player handles the opening question — direct answer / pivot / no comment / prepared deflection (flag-gated on media_training_complete); (2) how the player responds to the sourced gotcha — deny / partial acknowledgment / own the count with correction (Integrity ≥ 5 gate). Branch-specific flags (media-count-denied, media-count-partial, media-count-confirmed) are observable by future press events and reputation tracking. No faction effects authored. 'jordan-cross' is a new character not in GDD §12.3.4 named seed list — TODO(vex): Jesse to create wiki entry. 'press-interactions' arcId is a placeholder — TODO(vex): confirm arc namespace for press beats with Sol (OQ-W3-A). 'media_training_complete' flag prerequisite implies an offscreen media training event not yet authored — TODO(vex): author media-training beat or confirm flag source. Integrity ≥ 5 gate on opt-own-it is authoring intent; confirm threshold with balance pass (OQ-W3-B). See intro-aide-dialogue-notes.md Content wave 3 for all open questions.",
+  "nodes": {
+    "open": {
+      "id": "open",
+      "speaker": "narrator",
+      "text": "A half-dozen cameras swing toward you as you clear the chamber door. Jordan Cross is already at the front.",
+      "autoAdvance": "first-question"
+    },
+    "first-question": {
+      "id": "first-question",
+      "speaker": "jordan-cross",
+      "voiceTag": "media-operator",
+      "text": "Senator — the vote was closer than your office projected. What does that tell you about your coalition?",
+      "options": [
+        {
+          "id": "opt-direct",
+          "label": "The coalition held where it needed to.",
+          "nextNodeId": "response-direct"
+        },
+        {
+          "id": "opt-pivot",
+          "label": "What matters now is what comes next, not the margin.",
+          "nextNodeId": "response-pivot"
+        },
+        {
+          "id": "opt-no-comment",
+          "label": "I'm not taking questions right now.",
+          "nextNodeId": "response-stonewalled"
+        },
+        {
+          "id": "opt-prepared",
+          "label": "We ran this scenario three weeks ago. Today was plan A.",
+          "requirements": [
+            { "kind": "flag", "flag": "media_training_complete", "op": "eq", "value": true }
+          ],
+          "failureHint": "You haven't done the media prep to deliver this cleanly.",
+          "isHidden": true,
+          "nextNodeId": "response-controlled"
+        }
+      ]
+    },
+    "response-direct": {
+      "id": "response-direct",
+      "speaker": "jordan-cross",
+      "voiceTag": "media-operator",
+      "text": "Held where it needed to — that's twelve votes short of comfortable. You're reading from a different script.",
+      "autoAdvance": "gotcha-setup"
+    },
+    "response-pivot": {
+      "id": "response-pivot",
+      "speaker": "jordan-cross",
+      "voiceTag": "media-operator",
+      "text": "Next is a conference committee your bloc doesn't control. Is 'what comes next' a strategy or a hope?",
+      "autoAdvance": "gotcha-setup"
+    },
+    "response-stonewalled": {
+      "id": "response-stonewalled",
+      "speaker": "jordan-cross",
+      "voiceTag": "media-operator",
+      "text": "Three of your colleagues made statements at that door today. You don't have one?",
+      "autoAdvance": "gotcha-setup"
+    },
+    "response-controlled": {
+      "id": "response-controlled",
+      "speaker": "jordan-cross",
+      "voiceTag": "media-operator",
+      "text": "Three weeks is longer than our pre-vote story projected. Who told you to expect this result?",
+      "autoAdvance": "gotcha-setup"
+    },
+    "gotcha-setup": {
+      "id": "gotcha-setup",
+      "speaker": "jordan-cross",
+      "voiceTag": "media-operator",
+      "text": "Before you walk — our assignment desk picked something up this morning.",
+      "autoAdvance": "gotcha"
+    },
+    "gotcha": {
+      "id": "gotcha",
+      "speaker": "jordan-cross",
+      "voiceTag": "media-operator",
+      "text": "We're hearing from two sources the whip's office ran a count that had you down by six this morning. Is that accurate?",
+      "options": [
+        {
+          "id": "opt-deny",
+          "label": "That number isn't one I recognize.",
+          "effects": [
+            { "kind": "set-flag", "flag": "media-count-denied", "value": true }
+          ],
+          "nextNodeId": "exit-hostile"
+        },
+        {
+          "id": "opt-partial",
+          "label": "We knew the count was tight. That's why we worked the weekend.",
+          "effects": [
+            { "kind": "set-flag", "flag": "media-count-partial", "value": true }
+          ],
+          "nextNodeId": "exit-mixed"
+        },
+        {
+          "id": "opt-own-it",
+          "label": "We were down by five, not six. The last vote moved Thursday night.",
+          "requirements": [
+            { "kind": "stat", "stat": "integrity", "op": "gte", "value": 5 }
+          ],
+          "failureHint": "Requires Integrity 5. Correcting the record on the record takes a clean history.",
+          "isHidden": false,
+          "effects": [
+            { "kind": "set-flag", "flag": "media-count-confirmed", "value": true }
+          ],
+          "nextNodeId": "exit-clean"
+        }
+      ]
+    },
+    "exit-hostile": {
+      "id": "exit-hostile",
+      "speaker": "jordan-cross",
+      "voiceTag": "media-operator",
+      "text": "The whip's office is fifty feet away. We'll have their comment before the segment closes.",
+      "autoAdvance": "exit"
+    },
+    "exit-mixed": {
+      "id": "exit-mixed",
+      "speaker": "jordan-cross",
+      "voiceTag": "media-operator",
+      "text": "Working the weekend. Is that the strategy going into conference committee?",
+      "autoAdvance": "exit"
+    },
+    "exit-clean": {
+      "id": "exit-clean",
+      "speaker": "jordan-cross",
+      "voiceTag": "media-operator",
+      "text": "That's on the record. I'm going to need to verify — but that's on the record.",
+      "autoAdvance": "exit"
+    },
+    "exit": {
+      "id": "exit",
+      "speaker": "narrator",
+      "text": "You're moving before she can follow up. The scrum collapses behind you into cables and argument.",
+      "onEnter": [
+        { "kind": "set-flag", "flag": "media-scrum-complete", "value": true },
+        { "kind": "end-dialogue" }
+      ]
+    }
+  }
+}

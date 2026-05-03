@@ -1,0 +1,130 @@
+{
+  "$schemaVersion": 1,
+  "id": "whip-count-warning",
+  "npcId": "petra-solis",
+  "voiceTag": "shadow-power",
+  "arcId": "quest-first-bill",
+  "rootNodeId": "open",
+  "resumable": false,
+  "notes": "Pre-vote intelligence beat. Fires when the player's bill is approaching a floor vote and the whip's count is soft. Speaker: Petra Solis — Shadow Power archetype, recurring (established in intro-aide-dialogue.json). Purpose: introduce the whip-count mechanic; give the player advance intelligence that their coalition is fragile and force a stance decision before the vote locks. Two choice points: (1) how the player receives the count intelligence — absorb without question, challenge the count, or probe for the specific defector (Connections ≥ 3 gate); (2) the player's declared plan — work the room themselves, ask the Whip to intervene directly, or dismiss the count as routine fluctuation. Branch-specific flags (whip-warned-working, whip-warned-escalated, whip-warned-dismissed) are observable by the floor-vote outcome event. Universal completion flag: whip-count-warning-complete. No faction effects authored — defers to OQ-A (faction-standing kind) pending Sol resolution. 'senator-lim' referenced in petra-partial is a new named NPC placeholder — not in GDD §12.3.4 seed list — TODO(vex): confirm whether Lim should be a recurring NPC or remain a name-drop placeholder (OQ-W4-A). 'thursday' deadline referenced in plan-ask is a procedural text placeholder — TODO(vex): confirm whether dialogue trees should reference relative time markers or game-calendar tokens (OQ-W4-B). See intro-aide-dialogue-notes.md Content wave 4 for all open questions."
+  ,
+  "nodes": {
+    "open": {
+      "id": "open",
+      "speaker": "narrator",
+      "text": "Petra Solis materializes in the hallway between committee hearings. No appointment. She has a folder. She doesn't hand it to you.",
+      "autoAdvance": "opening-line"
+    },
+    "opening-line": {
+      "id": "opening-line",
+      "speaker": "petra-solis",
+      "voiceTag": "shadow-power",
+      "text": "Your count is wrong. The Whip asked me to tell you before the floor schedule locks.",
+      "autoAdvance": "count-detail"
+    },
+    "count-detail": {
+      "id": "count-detail",
+      "speaker": "petra-solis",
+      "voiceTag": "shadow-power",
+      "text": "You're four votes soft. Three of those are firm flips — contacted and answered. The fourth we're still reading.",
+      "options": [
+        {
+          "id": "opt-absorb",
+          "label": "Understood. I'll work from your numbers.",
+          "nextNodeId": "plan-ask"
+        },
+        {
+          "id": "opt-challenge",
+          "label": "Your count and mine don't match. Show me the gap.",
+          "nextNodeId": "petra-stands-firm"
+        },
+        {
+          "id": "opt-source",
+          "label": "Which of the three has already committed the other direction?",
+          "requirements": [
+            { "kind": "stat", "stat": "connections", "op": "gte", "value": 3 }
+          ],
+          "failureHint": "Requires Connections 3. You haven't been in Washington long enough to know who talks to whom.",
+          "isHidden": false,
+          "nextNodeId": "petra-partial"
+        }
+      ]
+    },
+    "petra-stands-firm": {
+      "id": "petra-stands-firm",
+      "speaker": "petra-solis",
+      "voiceTag": "shadow-power",
+      "text": "My count is current as of this morning. Yours isn't. That's why we're having this conversation.",
+      "autoAdvance": "plan-ask"
+    },
+    "petra-partial": {
+      "id": "petra-partial",
+      "speaker": "petra-solis",
+      "voiceTag": "shadow-power",
+      "text": "Senator Lim. She told two people. We know one of them. Now you do too.",
+      "autoAdvance": "plan-ask"
+    },
+    "plan-ask": {
+      "id": "plan-ask",
+      "speaker": "petra-solis",
+      "voiceTag": "shadow-power",
+      "text": "The Whip wants to know what you're doing about the four before Thursday.",
+      "options": [
+        {
+          "id": "opt-work-room",
+          "label": "I'm making calls tonight. My count will be back before the morning brief.",
+          "effects": [
+            { "kind": "set-flag", "flag": "whip-warned-working", "value": true }
+          ],
+          "nextNodeId": "exit-working"
+        },
+        {
+          "id": "opt-escalate",
+          "label": "Ask Vance to apply direct pressure on the firm flips. She can close this faster.",
+          "effects": [
+            { "kind": "set-flag", "flag": "whip-warned-escalated", "value": true }
+          ],
+          "nextNodeId": "exit-escalated"
+        },
+        {
+          "id": "opt-dismiss",
+          "label": "Four votes is movement, not a deficit. The count will settle.",
+          "effects": [
+            { "kind": "set-flag", "flag": "whip-warned-dismissed", "value": true }
+          ],
+          "nextNodeId": "exit-cold"
+        }
+      ]
+    },
+    "exit-working": {
+      "id": "exit-working",
+      "speaker": "petra-solis",
+      "voiceTag": "shadow-power",
+      "text": "I'll tell the Whip you're on it.",
+      "autoAdvance": "exit"
+    },
+    "exit-escalated": {
+      "id": "exit-escalated",
+      "speaker": "petra-solis",
+      "voiceTag": "shadow-power",
+      "text": "I'll pass that back. She'll want to know what you're asking her to spend.",
+      "autoAdvance": "exit"
+    },
+    "exit-cold": {
+      "id": "exit-cold",
+      "speaker": "petra-solis",
+      "voiceTag": "shadow-power",
+      "text": "Every count moves until the roll call. That's when it's final.",
+      "autoAdvance": "exit"
+    },
+    "exit": {
+      "id": "exit",
+      "speaker": "narrator",
+      "text": "She's gone before the folder changes hands.",
+      "onEnter": [
+        { "kind": "set-flag", "flag": "whip-count-warning-complete", "value": true },
+        { "kind": "end-dialogue" }
+      ]
+    }
+  }
+}
