@@ -131,9 +131,8 @@ export function Game(): JSX.Element {
     // applied via CSS env() variables so the top bar isn't clipped and
     // the bottom bar isn't pushed under the home indicator.
     <div
-      className="bg-bg-primary text-text-primary grid"
+      className="pa-game-shell bg-bg-primary text-text-primary grid"
       style={{
-        gridTemplateRows: '48px minmax(0, 1fr) 72px',
         height: '100dvh',
         minHeight: 0,
         overflow: 'hidden',

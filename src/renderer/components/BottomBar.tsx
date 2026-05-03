@@ -112,14 +112,11 @@ function BottomBarImpl(): JSX.Element {
 
   return (
     <footer
-      className="h-[72px] bg-bg-secondary border-t border-rule px-3 sm:px-4 grid items-center gap-3"
-      style={{
-        gridTemplateColumns: 'minmax(10rem, 0.9fr) minmax(14rem, 1.4fr) minmax(12rem, 1fr)',
-      }}
+      className="pa-bottombar h-[72px] bg-bg-secondary border-t border-rule px-3 sm:px-4 grid items-center gap-3"
       data-testid="bottombar"
     >
       {/* ─── LEFT: Slider speed controls ─────────────────────────── */}
-      <div className="min-w-0" data-testid="bottombar-speed">
+      <div className="pa-bottombar-speed min-w-0" data-testid="bottombar-speed">
         <div className="flex items-center justify-between gap-2 mb-1">
           <span className="flex items-center gap-1.5 font-mono text-[0.625rem] uppercase tracking-widest text-text-muted">
             <Icon name={speedOption.value === 0 ? 'pause' : 'play'} size={12} aria-hidden />
@@ -144,7 +141,7 @@ function BottomBarImpl(): JSX.Element {
       {activeBill ? (
         <button
           type="button"
-          className="min-w-0 rounded-sm border border-rule bg-bg-tertiary/30 px-3 py-2 text-left hover:border-accent-gold hover:bg-bg-tertiary/55 transition-colors"
+          className="pa-bottombar-progress min-w-0 w-full rounded-sm border border-rule bg-bg-tertiary/30 px-3 py-2 text-left hover:border-accent-gold hover:bg-bg-tertiary/55 transition-colors"
           onClick={() => setActivePanel('legislation')}
           data-testid="bottombar-progress"
           aria-label={`Open Legislation. ${activeBill.bill.title} is in ${activeBill.stageLabel}.`}
@@ -180,7 +177,7 @@ function BottomBarImpl(): JSX.Element {
       ) : (
         <button
           type="button"
-          className="min-w-0 rounded-sm border border-rule bg-bg-tertiary/20 px-3 py-2 text-left hover:border-accent-gold/60 transition-colors"
+          className="pa-bottombar-progress min-w-0 w-full rounded-sm border border-rule bg-bg-tertiary/20 px-3 py-2 text-left hover:border-accent-gold/60 transition-colors"
           onClick={() => setActivePanel(activeEvents.length > 0 ? 'news' : 'legislation')}
           data-testid="bottombar-progress-empty"
         >
@@ -199,7 +196,7 @@ function BottomBarImpl(): JSX.Element {
       )}
 
       {/* ─── RIGHT: Compact date + game-management buttons ───────── */}
-      <div className="min-w-0 flex items-center justify-end gap-1 sm:gap-2">
+      <div className="pa-bottombar-actions min-w-0 flex items-center justify-end gap-1 sm:gap-2">
         <div className="hidden md:flex flex-col items-end rounded-sm border border-rule bg-bg-tertiary/30 px-2.5 py-1.5 leading-none" data-testid="bottombar-week">
           <span className="font-mono text-xs text-text-primary tabular-nums">W{week}</span>
           <span className="mt-1 font-mono text-[0.5625rem] uppercase tracking-widest text-text-muted">
