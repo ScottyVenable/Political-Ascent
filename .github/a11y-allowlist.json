@@ -1,0 +1,11 @@
+{
+  "_comment": "Allowlist for axe-core findings that are accepted as known issues. Each entry suppresses one (ruleId, selector) pair on one or more routes. Critical-severity findings cannot be allowlisted — fix or revert. See docs/GDD.md §13.4.2.",
+  "_schema": {
+    "ruleId": "axe rule id, e.g. 'color-contrast'",
+    "selector": "CSS selector matched by the violation",
+    "routes": ["string[] of e2e route names; '*' for all"],
+    "reason": "human explanation",
+    "expiresOn": "ISO date; CI fails when expired"
+  },
+  "entries": []
+}

@@ -1,0 +1,268 @@
+# release.yml
+# Per docs/GDD.md §13.7 + §13.8. Triggered by semver tags on alpha/stable branches.
+# Signing notes:
+#   - Electron Win/macOS code-signing certs and Apple notarisation are user-supplied secrets.
+#   - Android signing reads keystore.properties when present; otherwise produces unsigned APK with a warning.
+#   - Stub steps fail soft until secrets are configured.
+
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Tag to release (e.g. v0.2.0). Must already exist on alpha or stable.'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  validate-tag:
+    name: validate-tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      prerelease: ${{ steps.resolve.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Resolve tag
+        id: resolve
+        shell: bash
+        run: |
+          set -e
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.version }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          # Confirm the tag exists.
+          git fetch --tags --force
+          if ! git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG does not exist."
+            exit 1
+          fi
+          # Confirm tag commit is reachable from alpha or stable.
+          SHA=$(git rev-list -n 1 "refs/tags/$TAG")
+          ON_ALPHA=$(git branch -r --contains "$SHA" | grep -E '^\s+origin/alpha$' || true)
+          ON_STABLE=$(git branch -r --contains "$SHA" | grep -E '^\s+origin/stable$' || true)
+          if [ -z "$ON_ALPHA" ] && [ -z "$ON_STABLE" ]; then
+            echo "::error::Tag $TAG is not on origin/alpha or origin/stable. Refusing to release from feature/development branches."
+            exit 1
+          fi
+          # Pre-release if tag has a hyphen suffix (e.g. v0.2.0-alpha.1, v0.2.0-rc.1).
+          if [[ "$TAG" =~ -(alpha|beta|rc) ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-web:
+    name: build-web
+    needs: validate-tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-tag.outputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-web
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+  build-electron:
+    name: build-electron
+    needs: validate-tag
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-tag.outputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build Electron
+        env:
+          # User-supplied secrets — empty defaults so the workflow runs without them
+          # and electron-builder skips signing/notarisation gracefully.
+          CSC_LINK: ${{ secrets.CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD || '' }}
+          APPLE_ID: ${{ secrets.APPLE_ID || '' }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD || '' }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID || '' }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          if [ -z "$CSC_LINK" ] && [ "$RUNNER_OS" != "Linux" ]; then
+            echo "::warning::No code-signing cert configured for $RUNNER_OS — producing unsigned binary."
+          fi
+          npm run build:electron
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-electron-${{ matrix.os }}
+          path: |
+            bin/**/*.exe
+            bin/**/*.dmg
+            bin/**/*.AppImage
+            bin/**/*.deb
+            bin/**/*.zip
+            bin/**/*.blockmap
+            bin/**/latest*.yml
+          if-no-files-found: warn
+          retention-days: 30
+
+  build-android:
+    name: build-android
+    needs: validate-tag
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_PLATFORM: 'android-34'
+      ANDROID_BUILD_TOOLS: '34.0.0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-tag.outputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager "platform-tools" "platforms;${ANDROID_PLATFORM}" "build-tools;${ANDROID_BUILD_TOOLS}"
+      - run: npm ci
+      - run: npm run build:web
+      - run: npm run cap:sync
+      - name: Configure signing if keystore present
+        id: sign
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || '' }}
+          ANDROID_KEYSTORE_PROPERTIES: ${{ secrets.ANDROID_KEYSTORE_PROPERTIES || '' }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PROPERTIES" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/release.keystore
+            printf '%s' "$ANDROID_KEYSTORE_PROPERTIES" > android/keystore.properties
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Android signing secrets not configured — producing unsigned APK."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Assemble APK
+        shell: bash
+        run: |
+          chmod +x android/gradlew
+          cd android
+          if [ "${{ needs.validate-tag.outputs.prerelease }}" = "false" ] && [ "${{ steps.sign.outputs.signed }}" = "true" ]; then
+            ./gradlew assembleRelease
+          else
+            ./gradlew assembleDebug
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-android
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+          retention-days: 30
+
+  release-notes:
+    name: release-notes
+    needs: validate-tag
+    runs-on: ubuntu-latest
+    outputs:
+      body-path: release-body.md
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-tag.outputs.tag }}
+      - name: Extract changelog entry
+        shell: bash
+        env:
+          TAG: ${{ needs.validate-tag.outputs.tag }}
+        run: |
+          set -e
+          CHANGELOG=docs/about/CHANGELOG.md
+          OUT=release-body.md
+          if [ ! -f "$CHANGELOG" ]; then
+            echo "Release $TAG" > "$OUT"
+            echo "" >> "$OUT"
+            echo "_No CHANGELOG.md found at expected path; release body is a stub._" >> "$OUT"
+            exit 0
+          fi
+          # Match section starting with the tag (with or without leading 'v').
+          VER="${TAG#v}"
+          awk -v ver="$VER" '
+            BEGIN { found=0 }
+            /^##[[:space:]]+/ {
+              if (found) exit
+              if (index($0, ver) > 0) { found=1; print; next }
+            }
+            { if (found) print }
+          ' "$CHANGELOG" > "$OUT"
+          if [ ! -s "$OUT" ]; then
+            echo "Release $TAG" > "$OUT"
+            echo "" >> "$OUT"
+            echo "_No matching CHANGELOG.md section for \`$TAG\`._" >> "$OUT"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-body
+          path: release-body.md
+          retention-days: 30
+
+  gh-release:
+    name: gh-release
+    needs: [validate-tag, build-web, build-electron, build-android, release-notes]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Flatten artifacts
+        shell: bash
+        run: |
+          mkdir -p release-files
+          find artifacts -type f \( -name '*.exe' -o -name '*.dmg' -o -name '*.AppImage' -o -name '*.deb' -o -name '*.zip' -o -name '*.apk' -o -name 'latest*.yml' -o -name '*.blockmap' \) -exec cp {} release-files/ \;
+          ls -la release-files/ || true
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate-tag.outputs.tag }}
+          name: ${{ needs.validate-tag.outputs.tag }}
+          body_path: artifacts/release-body/release-body.md
+          prerelease: ${{ needs.validate-tag.outputs.prerelease }}
+          files: release-files/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,5 +1,5 @@
 # wiki-ci.yml
-# Per .github/wiki-ci-spec.md and .github/wiki-push-checklist.md §(b).
+# Per .github/specs/wiki-ci-spec.md and .github/specs/wiki-push-checklist.md §(b).
 # Read-only validation: broken intra-wiki links, missing GDD status blocks, orphans.
 
 name: wiki-ci
@@ -8,8 +8,8 @@ on:
   pull_request:
     paths:
       - 'docs/wiki/**'
-      - '.github/wiki-push-checklist.md'
-      - '.github/wiki-ci-spec.md'
+      - '.github/specs/wiki-push-checklist.md'
+      - '.github/specs/wiki-ci-spec.md'
       - 'scripts/validate-wiki.ps1'
       - '.github/workflows/wiki-ci.yml'
   workflow_dispatch:
@@ -105,7 +105,7 @@ jobs:
           $summary += ""
           if ($brokenCount -gt 0) {
             $summary += "### Broken links (first 20)"
-            $summary += ($brokenLinks | Select-Object -First 20 | ForEach-Object { "- ``$($_.Page)`` → ``[[ $($_.Target) ]]``" })
+            $summary += ($brokenLinks | Select-Object -First 20 | ForEach-Object { "- ``$($_.Page)`` \u2192 ``[[ $($_.Target) ]]``" })
             $summary += ""
           }
           if ($missingCount -gt 0) {
