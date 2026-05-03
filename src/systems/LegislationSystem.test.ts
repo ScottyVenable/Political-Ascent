@@ -233,10 +233,12 @@ describe('LegislationSystem — pacing', () => {
     // and the sponsor/description shape.
     expect(useWorldStore.getState().pendingLegislation.length).toBe(0);
 
-    useGameStore.setState((s) => {
-      s.currentDate.day = 14;
-    });
-    LegislationSystem.dailyUpdate();
+    // Advance two in-game weeks using the same tick path as runtime. Even on
+    // a cadence boundary, dailyUpdate should not auto-introduce NPC bills yet.
+    for (let i = 0; i < 14; i++) {
+      useGameStore.getState().advanceDay();
+      LegislationSystem.dailyUpdate();
+    }
 
     // No NPC bills introduced yet — dailyUpdate only advances existing bills.
     expect(useWorldStore.getState().pendingLegislation.length).toBe(0);
