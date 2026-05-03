@@ -1,0 +1,9 @@
+{
+  "_comment": "Baseline hash of a deterministic 52-week scenario replay. Populated by nightly-soak.yml on first successful run when no baseline exists. Subsequent runs assert equality. To rebaseline (after an intentional rules change), delete this file and let the next nightly run regenerate it, or commit a new value here. See docs/GDD.md §13.2.",
+  "version": 0,
+  "scenarioId": null,
+  "weeks": 52,
+  "stateHash": null,
+  "establishedAtUtc": null,
+  "establishedByRunId": null
+}

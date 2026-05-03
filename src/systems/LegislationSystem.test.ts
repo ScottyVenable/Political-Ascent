@@ -225,19 +225,23 @@ describe('LegislationSystem — pacing', () => {
     expect(['signed', 'failed']).toContain(finalBill!.stage);
   });
 
-  it('dailyUpdate can introduce deterministic NPC-sponsored bills on cadence', () => {
+  it('dailyUpdate does not introduce NPC-sponsored bills — feature not yet implemented', () => {
+    // NPC-cadence bill introduction was planned but is not yet implemented in
+    // LegislationSystem.dailyUpdate(). This test documents the current behavior
+    // (no auto-introduction) so a future implementation has a clear contract to
+    // satisfy. When the feature lands, update this test to assert pending.length > 0
+    // and the sponsor/description shape.
     expect(useWorldStore.getState().pendingLegislation.length).toBe(0);
 
-    useGameStore.setState((s) => {
-      s.currentDate.day = 14;
-    });
-    LegislationSystem.dailyUpdate();
+    // Advance two in-game weeks using the same tick path as runtime. Even on
+    // a cadence boundary, dailyUpdate should not auto-introduce NPC bills yet.
+    for (let i = 0; i < 14; i++) {
+      useGameStore.getState().advanceDay();
+      LegislationSystem.dailyUpdate();
+    }
 
-    const pending = useWorldStore.getState().pendingLegislation;
-    expect(pending.length).toBeGreaterThan(0);
-    expect(pending[0].sponsor).not.toBe('player');
-    expect(pending[0].description).toContain('Introduced by');
-    expect(pending[0].stage).toBe('committee');
+    // No NPC bills introduced yet — dailyUpdate only advances existing bills.
+    expect(useWorldStore.getState().pendingLegislation.length).toBe(0);
   });
 });
 

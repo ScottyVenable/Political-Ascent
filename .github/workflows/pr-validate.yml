@@ -1,0 +1,182 @@
+# pr-validate.yml
+# Phase 1 PR gate per docs/GDD.md §13.8.
+# - Lint, typecheck, unit (Vitest + coverage), e2e (Playwright), build.
+# - Heavier jobs (full Playwright matrix, electron build) only run on push to development.
+# - Coverage gate is currently SOFT (warn). Hard 80% line gate on src/engine and src/systems
+#   activates in M6 Telemetry — see TODO marker in `unit` job.
+
+name: pr-validate
+
+on:
+  pull_request:
+    branches: [development, alpha, stable]
+  push:
+    branches: [development]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-validate-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  unit:
+    name: unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Vitest with coverage
+        run: npm run test:coverage
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
+          retention-days: 14
+      # TODO M6: hard-gate < 80% line coverage on src/engine/** and src/systems/**.
+      # Until then this is a soft check; failure here logs a warning only.
+      - name: Coverage soft gate (engine + systems ≥ 80% lines)
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo "::warning::coverage-summary.json not found; ensure vitest config emits json-summary reporter."
+            exit 0
+          fi
+          node -e "
+            const s = require('./coverage/coverage-summary.json');
+            const fail = [];
+            for (const [k,v] of Object.entries(s)) {
+              if (k === 'total') continue;
+              if (!/(\\\\|\\/)src(\\\\|\\/)(engine|systems)(\\\\|\\/)/.test(k)) continue;
+              const pct = v.lines && v.lines.pct;
+              if (typeof pct === 'number' && pct < 80) fail.push([k, pct]);
+            }
+            if (fail.length) {
+              console.log('::warning::Soft coverage gate (M6 will hard-gate):');
+              for (const [k,p] of fail) console.log('  ' + k + ' = ' + p + '%');
+            } else {
+              console.log('Coverage soft gate: OK');
+            }
+          "
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browsers
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install browser deps when cached
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - name: Run Playwright (PR — chromium-1280x720 only)
+        if: github.event_name == 'pull_request'
+        run: npx playwright test --project=chromium-1280x720 --update-snapshots=missing
+      - name: Run Playwright (push to development — full matrix)
+        if: github.event_name == 'push'
+        run: |
+          # Full matrix: install all browsers first.
+          npx playwright install --with-deps
+          npx playwright test
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+      - name: Upload test-results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-test-results
+          path: test-results/
+          retention-days: 7
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Upload web bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-web
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  build-electron:
+    name: build-electron
+    # Heavy: only on push to development. PRs skip this.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build Electron (linux dir target only on development push)
+        run: npm run build:electron:ci
+      - name: Upload electron dir
+        uses: actions/upload-artifact@v7
+        with:
+          name: electron-linux-dir
+          path: bin/
+          if-no-files-found: ignore
+          retention-days: 7

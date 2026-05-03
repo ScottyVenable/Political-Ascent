@@ -1,0 +1,5 @@
+# Political Ascent CODEOWNERS
+# Single-maintainer baseline. Tighten/split by area as contributors arrive.
+# Reference: see .github/wiki-ci-spec.md and docs/GDD.md §13.8.
+
+* @ScottyVenable

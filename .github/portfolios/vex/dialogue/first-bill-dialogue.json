@@ -1,0 +1,66 @@
+{
+  "$schemaVersion": 1,
+  "id": "first-bill-dialogue",
+  "npcId": "floor-aide",
+  "arcId": "quest-first-bill",
+  "rootNodeId": "open",
+  "resumable": false,
+  "notes": "Tutorial-adjacent procedural beat. Fires when the player submits their first bill. Speaker: generic floor aide (unnamed, bureaucratic, slightly nervous — they are responsible for the paperwork and acutely aware of the clock). Purpose: orient the player to the committee process and introduce time pressure as a recurring game mechanic. One choice point: fast-track (Political Capital cost, accelerated timeline) vs patient route (no cost, full committee cycle). No faction effects. No ideology effects. Ends with 'first_bill_introduced' flag. voiceTag omitted — floor-aide has no archetype assignment yet. TODO(vex/OQ-F): Sol to confirm whether generic NPCs like 'floor-aide' require a voiceTag or whether the field is fully optional for non-seed characters. 'floor-aide' is a procedural NPC class, not a named character; no wiki entry needed. PC cost on fast-track option is an authoring placeholder — TODO(vex/OQ-G): confirm PC cost calibration with Sol once PC economy is balanced for M2."
+  ,
+  "nodes": {
+    "open": {
+      "id": "open",
+      "speaker": "floor-aide",
+      "text": "Senator — sorry, do you have a moment? Your bill submission just went through. There are a few things I'm supposed to walk you through.",
+      "autoAdvance": "committee-intro"
+    },
+    "committee-intro": {
+      "id": "committee-intro",
+      "speaker": "floor-aide",
+      "text": "It goes to the relevant committee first. They schedule a markup session, amend it if they want to, then vote it to the floor — or they don't. That last part is more common than you'd think.",
+      "autoAdvance": "time-pressure"
+    },
+    "time-pressure": {
+      "id": "time-pressure",
+      "speaker": "floor-aide",
+      "text": "The calendar is the problem. The committee chair has sixteen other bills ahead of yours. Standard process takes three to five weeks. The session window closes in eight.",
+      "options": [
+        {
+          "id": "opt-fast-track",
+          "label": "Fast-track it. I'll call in what I need to.",
+          "costs": { "pc": 20 },
+          "effects": [
+            { "kind": "set-flag", "flag": "first_bill_fast_tracked", "value": true }
+          ],
+          "nextNodeId": "fast-track-path"
+        },
+        {
+          "id": "opt-patient",
+          "label": "Standard process. Give it the full committee cycle.",
+          "nextNodeId": "patient-path"
+        }
+      ]
+    },
+    "fast-track-path": {
+      "id": "fast-track-path",
+      "speaker": "floor-aide",
+      "text": "Understood. I'll — yes. I'll flag it as priority routing. The committee staff will notice. Some of them will have opinions about that.",
+      "autoAdvance": "exit"
+    },
+    "patient-path": {
+      "id": "patient-path",
+      "speaker": "floor-aide",
+      "text": "That's — yes, that's the correct answer, technically. I'll make sure the paperwork is complete. A clean submission helps with the committee staff.",
+      "autoAdvance": "exit"
+    },
+    "exit": {
+      "id": "exit",
+      "speaker": "narrator",
+      "text": "The aide retreats into the hallway with the folder, already moving toward the next door.",
+      "onEnter": [
+        { "kind": "set-flag", "flag": "first_bill_introduced", "value": true },
+        { "kind": "end-dialogue" }
+      ]
+    }
+  }
+}

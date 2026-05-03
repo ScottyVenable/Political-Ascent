@@ -51,6 +51,14 @@ Apply via [`scripts/sync-labels.ps1`](../scripts/sync-labels.ps1). Do **not** cr
 | `area:modding` | `#a371f7` | Mod loader and modding surface. |
 | `area:i18n` | `#bfd4f2` | Localisation / locale bundles. |
 | `area:audio` | `#cccccc` | Audio (MVP-deferred per §1.2; reserved). |
+| `area:visuals` | `#0052cc` | Visual identity, art-direction work, asset briefs, color/typography systems. Owned by Lux. |
+| `area:art-direction` | `#003a8c` | Art-direction decisions and style-guide changes. Owned by Lux. |
+| `area:ui-ux` | `#4c8bf5` | UI/UX flow, layout, and interaction-pattern work that spans `area:ui` + `area:renderer`. Owned by Lux for spec, Sol for implementation. |
+| `area:gameplay` | `#1d76db` | Core gameplay mechanics and player-facing system behaviour. Owned by Nova for spec, Sol for implementation. |
+| `area:balance` | `#0366d6` | Mathematical balancing, tuning curves, and difficulty pacing. Owned by Nova. |
+| `area:systems-design` | `#005cc5` | Cross-system design: state machines, feedback loops, mechanical interactions. Owned by Nova. |
+| `area:economy` | `#044289` | Economy models, resource sinks/sources, reward schedules. Owned by Nova. |
+| `area:progression` | `#032f62` | Progression trees, meta-progression, long-term retention curves. Owned by Nova. |
 
 ## system:* — which game system
 
@@ -136,11 +144,11 @@ Stream names are independent of GitHub branch names. The folder structure under 
 | Category | Count |
 |---|---|
 | `type:*` | 11 |
-| `area:*` | 12 |
+| `area:*` | 20 |
 | `system:*` | 15 |
 | `milestone:*` | 8 |
 | `priority:*` | 4 |
 | `status:*` | 8 |
 | `stream:*` | 3 |
 | meta | 5 |
-| **Total** | **66** |
+| **Total** | **74** |

@@ -59,9 +59,9 @@ function TopBarImpl(): JSX.Element {
   // file carries a bad value.
   const monthAbbrev = MONTH_ABBREV[Math.max(0, Math.min(11, date.month - 1))];
 
-  return (
+    return (
     <header
-      className="h-12 bg-bg-secondary border-b border-rule px-2 sm:px-5 grid items-center gap-2"
+      className="pa-topbar h-12 bg-bg-secondary border-b border-rule px-2 sm:px-5 grid items-center gap-2"
       style={{ gridTemplateColumns: '1fr auto 1fr' }}
     >
       {/* ─── LEFT: Identity (and mobile hamburger) ──────────── */}
@@ -81,33 +81,33 @@ function TopBarImpl(): JSX.Element {
           <Icon name="menu" size={20} aria-hidden />
         </button>
         <div className="flex items-baseline gap-2 sm:gap-3 min-w-0">
-          <span className="font-headline text-sm text-accent-gold truncate">
+          <span className="pa-topbar-name font-headline text-sm text-accent-gold truncate">
             {name || 'Senator'}
           </span>
           {/* LV/XP is a tertiary readout — we keep it visible at all
               widths but tighten the gap on phones so it doesn't push
               the date readout out of the centre slot. */}
-          <span className="hidden sm:inline font-mono text-label text-text-muted shrink-0">
+          <span className="pa-topbar-level hidden sm:inline font-mono text-label text-text-muted shrink-0">
             LV {level} · {xp} XP
           </span>
-          <span className="sm:hidden font-mono text-label text-text-muted shrink-0">
+          <span className="pa-topbar-level sm:hidden font-mono text-label text-text-muted shrink-0">
             LV {level}
           </span>
         </div>
       </div>
 
       {/* ─── CENTER: Date ────────────────────────────────────── */}
-      <div className="flex flex-col items-center leading-none">
-        <span className="font-mono text-sm text-text-primary tracking-wider">
+      <div className="pa-topbar-date-wrap flex flex-col items-center leading-none">
+        <span className="pa-topbar-date font-mono text-sm text-text-primary tracking-wider">
           {monthAbbrev} {date.year}
         </span>
-        <span className="font-mono text-[0.625rem] text-text-muted tracking-widest mt-0.5">
+        <span className="pa-topbar-day font-mono text-[0.625rem] text-text-muted tracking-widest mt-0.5">
           DAY {String(date.day).padStart(2, '0')}
         </span>
       </div>
 
       {/* ─── RIGHT: Resources ────────────────────────────────── */}
-      <div className="flex items-center justify-end gap-2 sm:gap-5 min-w-0">
+      <div className="pa-topbar-resources flex items-center justify-end gap-2 sm:gap-5 min-w-0">
         <ExtendedTooltip term="political-capital">
           <div tabIndex={0} className="flex items-baseline gap-1.5 cursor-help focus:outline-none focus:ring-1 focus:ring-accent-gold rounded-sm">
             <span className="font-mono text-data text-accent-gold tabular-nums">

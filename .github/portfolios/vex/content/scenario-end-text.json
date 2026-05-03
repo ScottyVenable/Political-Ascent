@@ -1,0 +1,18 @@
+[
+  {
+    "scenarioId": "modern-america-2024",
+    "_schemaNote": "victoryText and lossText are new fields per M2 (Floor Manager) exit criteria. Shape matches GDD §12 / ROADMAP.md M2 deliverables. victoryTextVariants and lossTextVariants are proposed optional fields — see scenario-end-text-notes.md for authoring rationale and Sol schema question.",
+    "victoryText": "You came in as a freshman senator in a divided capital. You leave having passed legislation that will outlast the administration it was born under. The headlines have already moved on — they always do. But somewhere in the Senate record, your name is attached to something real.",
+    "lossText": "Washington has a long memory for failure and a short one for everything else. Your term ends here — the floor votes, the caucus meetings, the compromises you're still second-guessing. The work isn't finished. But the next senator from your state starts where you left off, if they're paying attention.",
+    "victoryTextVariants": {
+      "vc-10-bills": "Ten bills signed into law. Each one was a negotiation, a favor, a cost you absorbed or deferred. The Whip told you in your first week that body count is how you keep score — she wasn't wrong. The legislation is on the books. The costs are still settling.",
+      "vc-approval-60": "Sixty percent approval for a full year in a country that agrees on nothing — historians will debate whether you earned it or inherited the moment. You know the answer lives in a ledger of decisions that each felt like a gamble. The country doesn't hand out standing ovations. It hands out numbers."
+    },
+    "lossTextVariants": {
+      "loss-election": "The district spoke, and it wasn't in your favor. A margin is not a verdict on a career — but it is the verdict that matters right now. You'll find the work continues in other forms. What the work means without the seat is the question you didn't expect to be answering this soon.",
+      "loss-scandal": "The story ran for three weeks and then became a footnote. That is not the comfort it sounds like. You had the room for a moment — the chance to do something with it was real. What went wrong is a question worth sitting with before you decide what comes next.",
+      "loss-expulsion": "The party didn't lose faith in you overnight. You can trace the votes, the statements, the small moments when the gap widened. A caucus is a coalition of competing futures and yours diverged from theirs. Whether that divergence was the right call made at the wrong time is a question only the record can answer.",
+      "loss-censure": "The censure vote was sixty-three to thirty-seven. You counted differently going in. Influence without a committee seat is a different kind of work — slower, harder to measure, occasionally more honest. The chamber still needs senators who remember what the stripping felt like."
+    }
+  }
+]

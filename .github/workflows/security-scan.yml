@@ -1,0 +1,134 @@
+# security-scan.yml
+# Per docs/GDD.md §13.5 + §13.8.
+# Branch-protection note: this workflow is INFORMATIONAL on PRs until pipelines stabilise.
+# Promote individual jobs to required after they have produced two clean weeks of results.
+# CSP-presence cutover: warn-only until 2026-05-16, then hard-fail (Sol F-13).
+
+name: security-scan
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/main/**'
+      - 'capacitor.config.ts'
+      - 'index.html'
+      - '.github/workflows/security-scan.yml'
+  push:
+    branches: [development]
+  schedule:
+    # Weekly Monday 08:00 UTC.
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: read
+
+concurrency:
+  group: security-scan-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  npm-audit:
+    name: npm-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Audit (high — blocking, prod deps only)
+        id: audit-high
+        run: npm audit --audit-level=high --omit=dev
+      - name: Audit (moderate — informational, all deps)
+        if: always()
+        continue-on-error: true
+        run: |
+          {
+            echo "## npm audit (informational, moderate+, all deps)"
+            echo ""
+            echo '```'
+            npm audit --audit-level=moderate || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  codeql:
+    name: codeql
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/autobuild@v4
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:javascript-typescript"
+
+  dependency-review:
+    name: dependency-review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  csp-presence:
+    name: csp-presence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check for Content-Security-Policy presence (Sol F-13)
+        shell: bash
+        env:
+          # After this date the step hard-fails when CSP is missing. Currently warn-only.
+          HARD_FAIL_AFTER: '2026-05-16'
+        run: |
+          set -e
+          missing=0
+          if ! grep -q -i 'Content-Security-Policy' index.html; then
+            echo "::warning file=index.html::No Content-Security-Policy meta tag found in index.html"
+            missing=1
+          else
+            echo "index.html: CSP meta tag present"
+          fi
+          if ! grep -q -i 'Content-Security-Policy' capacitor.config.ts; then
+            echo "::warning file=capacitor.config.ts::No Content-Security-Policy reference found in capacitor.config.ts"
+            # capacitor CSP is via WebView; this is a softer signal — not counted.
+          else
+            echo "capacitor.config.ts: CSP reference present"
+          fi
+          today=$(date -u +%Y-%m-%d)
+          if [ "$missing" -gt 0 ]; then
+            if [ "$today" \> "$HARD_FAIL_AFTER" ]; then
+              echo "::error::CSP missing past cutover date $HARD_FAIL_AFTER. Failing."
+              exit 1
+            else
+              echo "CSP missing — warning only until $HARD_FAIL_AFTER (Sol F-13)."
+            fi
+          fi
+
+  secret-scan:
+    name: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITLEAKS_LICENSE only needed for orgs; personal repos work without it.
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE || '' }}
