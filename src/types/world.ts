@@ -63,6 +63,11 @@ export interface GameState {
   year: number;
   isGameOver: boolean;
   gameOverReason?: string;
+  /**
+   * Faction standing values, mirrored from FactionSystem for UI reactivity.
+   * Keys are faction ids; values are clamped integers in [-100, 100].
+   */
+  factionStandings: Record<string, number>;
 }
 
 /** The live simulated world. */

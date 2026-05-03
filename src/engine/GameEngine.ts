@@ -27,6 +27,7 @@ import { InfluenceSystem } from '@/systems/InfluenceSystem';
 import { PopulationSystem } from '@/systems/PopulationSystem';
 import { EconomySystem } from '@/systems/EconomySystem';
 import { LegislationSystem } from '@/systems/LegislationSystem';
+import { FactionSystem } from '@/systems/FactionSystem';
 
 import { hashString, SeededRNG } from '@/utils/random';
 import { createLogger } from '@/utils/logger';
@@ -194,6 +195,10 @@ class GameEngineImpl implements GameEngineAPI {
       scenario.startingConditions.politicalCapital,
       scenario.startingConditions.actionPointsMax,
     );
+
+    // Reset faction standings for the new game.
+    // TODO(M3): load faction definitions from bundle/scenario and pass them here.
+    FactionSystem.registerFactions([]);
 
     // Wire TimeEngine hooks.
     this.teardown();

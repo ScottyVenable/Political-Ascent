@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import type { GameState, GameSpeed, ScenarioId } from '@/types';
 import { addDays } from '@/utils/date';
+import { FactionSystem } from '@/systems/FactionSystem';
 
 /**
  * Master game state: time, speed, resources, meta flags.
@@ -21,6 +22,11 @@ interface GameStoreActions {
   setMaxAP: (max: number) => void;
   endGame: (reason: string) => void;
   initializeFromScenario: (scenarioId: ScenarioId, startingPC: number, maxAP: number) => void;
+  /**
+   * Apply a standing delta to one faction, delegating clamping to FactionSystem.
+   * Keeps store state in sync with the FactionSystem singleton.
+   */
+  updateFactionStanding: (factionId: string, delta: number) => void;
   reset: () => void;
 }
 
@@ -40,6 +46,7 @@ const DEFAULT_STATE: GameState = {
   month: 1,
   year: 2025,
   isGameOver: false,
+  factionStandings: {},
 };
 
 export const useGameStore = create<Store>()(
@@ -127,6 +134,13 @@ export const useGameStore = create<Store>()(
         s.isGameOver = false;
         s.gameOverReason = undefined;
         s.gameId = `game-${Date.now()}`;
+      }),
+
+    updateFactionStanding: (factionId, delta) =>
+      set((s) => {
+        const current = s.factionStandings[factionId] ?? 0;
+        FactionSystem.setStanding(factionId, current + delta);
+        s.factionStandings[factionId] = FactionSystem.getState().standings[factionId] ?? current;
       }),
 
     reset: () => set(() => ({ ...DEFAULT_STATE })),

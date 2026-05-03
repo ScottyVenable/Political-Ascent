@@ -86,6 +86,17 @@ export const DialogueSystem: DialogueSystemAPI = {
   },
 };
 
+/**
+ * Singleton runtime handle for the store-aware dialogue system.
+ * Import this to drive Zustand-coupled dialogue from any game subsystem.
+ *
+ * TODO(OQ-1): track active tree + node in a runtime context object
+ * TODO(OQ-2): support interruptible dialogue (faction events mid-tree)
+ * TODO(OQ-3): wire NPC portrait/name resolution
+ * TODO(OQ-4): persist open-dialogue state across saves
+ */
+export const dialogueRuntime = DialogueSystem;
+
 // M2 scaffold: independent lightweight interpreter for upcoming narrative flow.
 export type DialogueRuntimeId = string;
 
