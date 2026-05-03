@@ -85,3 +85,130 @@ export const DialogueSystem: DialogueSystemAPI = {
     return { ok: true, nextNodeId: opt.nextNodeId };
   },
 };
+
+// M2 scaffold: independent lightweight interpreter for upcoming narrative flow.
+export type DialogueRuntimeId = string;
+
+export interface DialogueRuntimeEffect {
+  kind: 'flag' | 'resource' | 'relationship' | 'ideology';
+  key: string;
+  value: number | boolean | string;
+}
+
+export interface DialogueRuntimeChoice {
+  id: DialogueRuntimeId;
+  text: string;
+  nextNodeId?: DialogueRuntimeId;
+  effects?: DialogueRuntimeEffect[];
+}
+
+export interface DialogueRuntimeNode {
+  id: DialogueRuntimeId;
+  text: string;
+  speakerId?: string;
+  onEnterEffects?: DialogueRuntimeEffect[];
+  choices: DialogueRuntimeChoice[];
+}
+
+export interface DialogueRuntimeTree {
+  id: string;
+  startNodeId: DialogueRuntimeId;
+  nodes: Record<DialogueRuntimeId, DialogueRuntimeNode>;
+}
+
+export interface DialogueRuntimeState {
+  treeId: string;
+  currentNodeId: DialogueRuntimeId;
+  resolved: boolean;
+  visitedNodeIds: DialogueRuntimeId[];
+}
+
+export interface DialogueInterpreterHooks {
+  applyEffects?: (effects: readonly DialogueRuntimeEffect[], state: DialogueRuntimeState) => void;
+}
+
+export interface DialogueInterpreterAPI {
+  loadTree(tree: DialogueRuntimeTree): DialogueRuntimeState;
+  advance(state: DialogueRuntimeState): DialogueRuntimeState;
+  choose(state: DialogueRuntimeState, choiceId: DialogueRuntimeId): DialogueRuntimeState;
+}
+
+export function createDialogueInterpreter(hooks: DialogueInterpreterHooks = {}): DialogueInterpreterAPI {
+  const applyEffectsHook = hooks.applyEffects ?? (() => {});
+
+  let tree: DialogueRuntimeTree | null = null;
+
+  const getNode = (state: DialogueRuntimeState): DialogueRuntimeNode => {
+    if (!tree) {
+      throw new Error('Dialogue tree has not been loaded');
+    }
+    const node = tree.nodes[state.currentNodeId];
+    if (!node) {
+      throw new Error(`Unknown dialogue node: ${state.currentNodeId}`);
+    }
+    return node;
+  };
+
+  const markVisited = (state: DialogueRuntimeState, nodeId: DialogueRuntimeId): DialogueRuntimeState => {
+    if (state.visitedNodeIds.includes(nodeId)) {
+      return state;
+    }
+    return { ...state, visitedNodeIds: [...state.visitedNodeIds, nodeId] };
+  };
+
+  return {
+    loadTree(nextTree) {
+      tree = nextTree;
+      const initial: DialogueRuntimeState = {
+        treeId: nextTree.id,
+        currentNodeId: nextTree.startNodeId,
+        resolved: false,
+        visitedNodeIds: [nextTree.startNodeId],
+      };
+
+      const startNode = nextTree.nodes[nextTree.startNodeId];
+      if (!startNode) {
+        throw new Error(`Missing start node: ${nextTree.startNodeId}`);
+      }
+      // TODO(OQ): finalize speaker resolution order (node speaker, scene speaker, fallback narrator).
+      if (startNode.onEnterEffects?.length) {
+        // TODO(OQ): confirm onEnter ordering relative to UI reveal and VO playback.
+        applyEffectsHook(startNode.onEnterEffects, initial);
+      }
+      return initial;
+    },
+
+    advance(state) {
+      const node = getNode(state);
+      if (node.choices.length > 0) {
+        return state;
+      }
+      return { ...state, resolved: true };
+    },
+
+    choose(state, choiceId) {
+      const node = getNode(state);
+      const choice = node.choices.find((c) => c.id === choiceId);
+      if (!choice) {
+        throw new Error(`Unknown dialogue choice: ${choiceId}`);
+      }
+
+      if (choice.effects?.length) {
+        // TODO(OQ): lock ideology drift breakdown (short-term mood vs long-term worldview deltas).
+        applyEffectsHook(choice.effects, state);
+      }
+
+      if (!choice.nextNodeId) {
+        return { ...state, resolved: true };
+      }
+
+      const nextState = markVisited({ ...state, currentNodeId: choice.nextNodeId }, choice.nextNodeId);
+      const nextNode = getNode(nextState);
+      if (nextNode.onEnterEffects?.length) {
+        // TODO(OQ): confirm onEnter ordering relative to branching side-effects and telemetry.
+        applyEffectsHook(nextNode.onEnterEffects, nextState);
+      }
+      return nextState;
+    },
+  };
+}
