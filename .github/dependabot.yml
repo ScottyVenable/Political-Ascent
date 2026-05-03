@@ -1,0 +1,54 @@
+# Dependabot config. Weekly cadence, grouped to reduce PR noise.
+# Note: Dependabot may have already opened PRs (e.g. #116) prior to this file
+# being committed. Once this lands, future updates follow the grouping below.
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 10
+    target-branch: "development"
+    labels:
+      - "area:ci"
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      runtime:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      dev:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      types:
+        patterns:
+          - "@types/*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    target-branch: "development"
+    labels:
+      - "area:ci"
+      - "dependencies"
+    commit-message:
+      prefix: "chore(actions)"
+    groups:
+      gh-actions:
+        patterns:
+          - "*"
