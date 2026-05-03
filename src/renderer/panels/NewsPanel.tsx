@@ -23,6 +23,7 @@ import { useUIStore, type PanelId } from '@/store/uiStore';
 import { Card } from '../components/Card';
 import { Icon } from '../components/Icon';
 import type { NewsItem } from '@/types';
+import { formatDateShort } from '@/utils/format';
 
 // ─────────────────────────────────────────────────────────────
 // SEVERITY STYLES
@@ -58,9 +59,9 @@ const SEV_LABEL: Record<NewsItem['severity'], string> = {
 // Converts a GameDate (week/year integers) to a readable string.
 // ─────────────────────────────────────────────────────────────
 
-/** Format a `GameDate` as e.g. "Wk 14, 2025". */
-function formatDate(date: { week: number; year: number }): string {
-  return `Wk ${date.week}, ${date.year}`;
+/** Format a `GameDate` as e.g. "Jan 6 2025". */
+function formatDate(date: import('@/types').GameDate): string {
+  return formatDateShort(date);
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -66,11 +66,40 @@ test.describe('draft legislation', () => {
     // Bill preview reflects the rider phrase.
     await expect(page.getByTestId('bill-preview')).toContainText(/expires five years/i);
 
-    // Submit. Modal closes and we land on the In Flight tab.
+    // Move to the Mechanical Breakdown step. The submit affordance is now
+    // gated on this confirmation panel — see DraftLegislationScreen wizard.
     const beforeCount = await page.getByRole('button', { name: /in flight/i }).textContent();
-    await page.getByTestId('draft-submit').click();
+    await page.getByTestId('draft-review').click();
+    await expect(page.getByTestId('breakdown-step')).toBeVisible();
+    await expect(page.getByTestId('breakdown-pass-column')).toBeVisible();
+    await expect(page.getByTestId('breakdown-fail-column')).toBeVisible();
+    await page.getByTestId('breakdown-confirm').click();
     await expect(screen).toBeHidden();
     const afterCount = await page.getByRole('button', { name: /in flight/i }).textContent();
     expect(afterCount).not.toBe(beforeCount);
+  });
+
+  test('bill type selector changes opposition and aide advisory updates', async ({ page }) => {
+    await reachDashboard(page);
+    await page.getByRole('button', { name: /^legislation$/i }).click();
+    await page.getByRole('button', { name: /draft new/i }).click();
+    await page.getByTestId(/^draft-customize-/).first().click();
+    await expect(page.getByTestId('draft-legislation-screen')).toBeVisible();
+
+    // Bill-type segmented control is present and Act is selected by default.
+    await expect(page.getByTestId('bill-type-selector')).toBeVisible();
+    await expect(page.getByTestId('bill-type-act')).toHaveAttribute('data-active', 'true');
+
+    // Switching to Constitutional Amendment should fire the
+    // amendment-low-coalition aide advisory once opposition crosses the
+    // threshold (amendment adds +30 opposition, base templates start
+    // around 30–60).
+    await page.getByTestId('bill-type-amendment').click();
+    await expect(page.getByTestId('bill-type-amendment')).toHaveAttribute('data-active', 'true');
+    await expect(page.getByTestId('aide-advisory')).toBeVisible();
+
+    // Switch to Resolution — opposition drops, the warning may disappear.
+    await page.getByTestId('bill-type-resolution').click();
+    await expect(page.getByTestId('bill-type-resolution')).toHaveAttribute('data-active', 'true');
   });
 });

@@ -72,6 +72,17 @@ async function goToGame(page: Page): Promise<void> {
 }
 
 test.describe('mobile portrait', () => {
+  // This suite asserts behaviour that only exists below the Tailwind `md`
+  // breakpoint (the hamburger drawer, abbreviated TopBar/BottomBar). Skip
+  // on the desktop viewport projects so they do not block CI on selectors
+  // that are intentionally `md:hidden` outside of phones.
+  test.beforeEach(({}, testInfo) => {
+    test.skip(
+      !testInfo.project.name.includes('pixel-portrait'),
+      'Mobile-portrait specs only run on the chromium-pixel-portrait project.',
+    );
+  });
+
   test('sidebar is hidden by default and toggled via the hamburger', async ({ page }) => {
     await goToGame(page);
 

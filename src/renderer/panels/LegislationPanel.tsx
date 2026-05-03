@@ -10,6 +10,7 @@ import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
 import { toEpochDays } from '@/utils/date';
 import { formatTag } from '@/utils/format';
+import { billTypeLabel } from '@/utils/billType';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Bar } from '../components/Bar';
@@ -307,6 +308,11 @@ export function LegislationPanel(): JSX.Element {
         <div className="grid md:grid-cols-2 gap-3">
           {passed.map((b) => (
             <Card key={b.id} title={b.title} subtitle="Passed" accent="gold">
+              {b.type && b.type !== 'act' && (
+                <span className="inline-block px-1.5 py-0.5 rounded font-mono text-[0.625rem] uppercase tracking-wider bg-bg-tertiary text-text-muted mb-1">
+                  {billTypeLabel(b.type)}
+                </span>
+              )}
               <p className="text-xs text-text-muted">
                 Yea {b.supportVotes} &ndash; Nay {b.opposeVotes}
               </p>
@@ -314,6 +320,11 @@ export function LegislationPanel(): JSX.Element {
           ))}
           {failed.map((b) => (
             <Card key={b.id} title={b.title} subtitle="Failed" accent="red">
+              {b.type && b.type !== 'act' && (
+                <span className="inline-block px-1.5 py-0.5 rounded font-mono text-[0.625rem] uppercase tracking-wider bg-bg-tertiary text-text-muted mb-1">
+                  {billTypeLabel(b.type)}
+                </span>
+              )}
               <p className="text-xs text-text-muted">
                 Yea {b.supportVotes} &ndash; Nay {b.opposeVotes}
               </p>
@@ -369,10 +380,12 @@ function PendingBillCard({
   // tick and progress will appear.
   const totalDays =
     bill.stageEnteredOnDay !== undefined && bill.stageEndsOnDay !== undefined
-      ? bill.stageEndsOnDay - bill.stageEnteredOnDay
+      ? Math.max(1, bill.stageEndsOnDay - bill.stageEnteredOnDay)
       : 0;
   const elapsed =
-    bill.stageEnteredOnDay !== undefined ? Math.max(0, today - bill.stageEnteredOnDay) : 0;
+    bill.stageEnteredOnDay !== undefined
+      ? Math.max(0, Math.min(totalDays, today - bill.stageEnteredOnDay))
+      : 0;
   const remaining =
     bill.stageEndsOnDay !== undefined ? Math.max(0, bill.stageEndsOnDay - today) : 0;
 
@@ -404,13 +417,15 @@ function PendingBillCard({
 
       {clocked && totalDays > 0 && (
         <div className="mb-3">
-          <Bar
-            value={elapsed}
-            max={totalDays}
-            tone="gold"
-            label={`${stageLabel(bill.stage)} \u00b7 day ${elapsed} of ${totalDays}`}
-            valueLabel={remaining === 0 ? 'ready' : `${remaining} days left`}
-          />
+            <Bar
+              value={elapsed}
+              max={totalDays}
+              tone="gold"
+              label={`${stageLabel(bill.stage)} \u00b7 ${
+                remaining === 0 ? 'ready to advance' : `day ${elapsed} of ${totalDays}`
+              }`}
+              valueLabel={remaining === 0 ? 'ready' : `${remaining} days left`}
+            />
         </div>
       )}
 
@@ -418,6 +433,11 @@ function PendingBillCard({
         <span className={`px-2 py-0.5 rounded font-mono ${chanceToneClass(forecast)}`}>
           Forecast: {Math.round(forecast * 100)}%
         </span>
+        {bill.type && bill.type !== 'act' && (
+          <span className="px-2 py-0.5 rounded font-mono bg-bg-tertiary text-text-secondary">
+            {billTypeLabel(bill.type)}
+          </span>
+        )}
         <span>Opposition: {bill.opposition}</span>
         <span>PC invested: {bill.pcInvested}</span>
       </div>

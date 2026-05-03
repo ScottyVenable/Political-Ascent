@@ -31,18 +31,18 @@ async function reachDashboard(page: Page): Promise<void> {
 
 async function openGlossary(page: Page): Promise<void> {
   await reachDashboard(page);
-  await page.getByRole('button', { name: /^glossary$/i }).click();
+  await page.getByRole('button', { name: /knowledge base/i }).click();
   await page.waitForSelector('[data-testid="glossary-panel"]', { timeout: 4_000 });
 }
 
 test.describe('glossary panel', () => {
   test('sidebar exposes a Glossary nav entry that opens the panel', async ({ page }) => {
     await reachDashboard(page);
-    const navBtn = page.getByRole('button', { name: /^glossary$/i });
+    const navBtn = page.getByRole('button', { name: /knowledge base/i });
     await expect(navBtn).toBeVisible();
     await navBtn.click();
     await expect(page.getByTestId('glossary-panel')).toBeVisible();
-    await expect(page.getByRole('heading', { name: /^glossary$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /knowledge base/i })).toBeVisible();
   });
 
   test('search filters the term list', async ({ page }) => {

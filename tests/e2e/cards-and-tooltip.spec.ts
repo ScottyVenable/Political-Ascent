@@ -50,6 +50,7 @@ async function goToGame(page: Page): Promise<void> {
 
 test.describe('cards & tooltip', () => {
   test('Collection screen shows pack store and rarity grid', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.includes('pixel'), 'Desktop card tooltip specs use the fixed sidebar layout.');
     await goToGame(page);
     await page.getByRole('button', { name: 'Collection', exact: true }).click();
     await page.waitForTimeout(300);
@@ -65,6 +66,7 @@ test.describe('cards & tooltip', () => {
   });
 
   test('Extended tooltip opens on Political Capital hover', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.includes('pixel'), 'Desktop card tooltip specs use the fixed sidebar layout.');
     await goToGame(page);
 
     const pcPill = page.locator('text=PC').first();
@@ -82,6 +84,7 @@ test.describe('cards & tooltip', () => {
   });
 
   test('Opening a starter pack reveals five cards', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.includes('pixel'), 'Desktop card tooltip specs use the fixed sidebar layout.');
     await goToGame(page);
     await page.getByRole('button', { name: 'Collection', exact: true }).click();
     await page.waitForTimeout(300);
@@ -90,11 +93,35 @@ test.describe('cards & tooltip', () => {
 
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible({ timeout: 2000 });
+    await dialog.getByRole('button', { name: /view all cards/i }).click({ timeout: 6_000 });
     await expect(dialog.getByRole('button', { name: /done/i })).toBeVisible({ timeout: 6000 });
 
     await expect(page).toHaveScreenshot(`pack-open-${testInfo.project.name}.png`, {
       fullPage: false,
       animations: 'disabled',
     });
+  });
+
+  test('Hand cards use click-to-focus instead of full-card hover tooltips', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.includes('pixel'), 'Desktop card tooltip specs use the fixed sidebar layout.');
+    await goToGame(page);
+    await page.getByRole('button', { name: /^cards$/i }).first().click();
+    await page.waitForTimeout(300);
+
+    const firstCard = page.locator('article[data-card-id]').first();
+    await expect(firstCard).toBeVisible({ timeout: 4_000 });
+
+    // Hovering the card body used to open a large dynamic ExtendedTooltip.
+    // Card details now live on the face and in the focus modal, so a plain
+    // card hover should not create any tooltip portal.
+    await firstCard.hover({ position: { x: 20, y: 20 } });
+    await page.waitForTimeout(700);
+    await expect(page.getByRole('tooltip')).toHaveCount(0);
+
+    await firstCard.click();
+    const modal = page.getByTestId('card-focus-modal');
+    await expect(modal).toBeVisible();
+    await expect(modal.getByText(/effects/i).first()).toBeVisible();
+    await expect(modal.getByRole('button', { name: /^play$/i })).toBeVisible();
   });
 });

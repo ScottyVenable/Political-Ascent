@@ -123,10 +123,9 @@ export function Game(): JSX.Element {
   return (
     // Three-row grid: the top and bottom rows have fixed pixel heights
     // (48px shell + 72px command strip) so the middle row inherits
-    // `1fr` and can scroll internally. `100dvh` (with a `100vh`
-    // fallback baked in by Tailwind's `h-screen` if needed) handles the
-    // dynamic viewport on mobile so the bottom bar isn't hidden by the
-    // browser/system chrome on Android Chrome / iOS Safari.
+    // `minmax(0, 1fr)` and can scroll internally. The rendered BottomBar
+    // is also 72px; keeping those numbers aligned prevents the root
+    // document from becoming taller than a fullscreen 1920×1080 viewport.
     //
     // Safe-area insets (Pixel notch, Dynamic Island, gesture bars) are
     // applied via CSS env() variables so the top bar isn't clipped and
@@ -134,9 +133,11 @@ export function Game(): JSX.Element {
     <div
       className="bg-bg-primary text-text-primary grid"
       style={{
-        gridTemplateRows: '48px 1fr 72px',
+        gridTemplateRows: '48px minmax(0, 1fr) 72px',
         height: '100dvh',
-        minHeight: '100vh',
+        minHeight: 0,
+        overflow: 'hidden',
+        boxSizing: 'border-box',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         paddingLeft: 'env(safe-area-inset-left)',
@@ -243,6 +244,8 @@ function VoteResultModal(): JSX.Element | null {
 
   if (!modal) return null;
 
+  const modalId = modal.id;
+
   const data = modal.payload as VoteResultPayload;
   const { billTitle, passed, yea, nay, breakdown } = data;
   const total = yea + nay;
@@ -261,7 +264,7 @@ function VoteResultModal(): JSX.Element | null {
   };
 
   function dismiss(): void {
-    closeModal(modal.id);
+    closeModal(modalId);
   }
 
   return (
@@ -492,7 +495,7 @@ function CardEffectsModal(): JSX.Element | null {
   const { cardName, effects } = modal.payload as CardEffectsPayload;
   // Cast to Effect[] — the payload was constructed in CardSystem.play()
   // from a typed readonly Effect[] and round-tripped through `unknown`.
-  const typedEffects = effects as Effect[];
+  const typedEffects = effects as unknown as Effect[];
 
   function dismiss(): void {
     closeModal(modal!.id);

@@ -65,11 +65,9 @@ test.describe('cards ux hardening', () => {
     const backdrop = page.getByTestId('pack-opening-backdrop');
     await expect(backdrop).toBeVisible({ timeout: 4_000 });
 
-    // Wait for the reveal state machine to reach 'settled' — shake (600ms)
-    // + burst (350ms) + revealing (5 cards × 220ms) + buffer.
-    await page.waitForTimeout(2_500);
-
-    // Done button is the proof we've reached settled.
+    // Skip the carousel to the overview grid; the Done button is the proof the
+    // reveal has reached a dismissible state.
+    await page.getByRole('button', { name: /view all cards/i }).click({ timeout: 6_000 });
     await expect(page.getByRole('button', { name: /^done$/i })).toBeVisible({
       timeout: 3_000,
     });

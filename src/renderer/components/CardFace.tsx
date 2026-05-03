@@ -13,11 +13,18 @@
  *
  * @module renderer/components/CardFace
  */
-import { memo } from 'react';
-import type { CardDefinition, CardRarity, CardType } from '@/types';
+import { memo, type MouseEventHandler } from 'react';
+import type { CardDefinition, CardRarity, CardType, Effect } from '@/types';
 import { formatTag } from '@/utils/format';
+import {
+  humaniseCohortId,
+  humaniseEconomyMetric,
+  humaniseId,
+  humaniseResource,
+  humaniseStat,
+} from '@/utils/humanize';
 import { Icon, type IconName } from './Icon';
-import { ExtendedTooltip, TermText, type TooltipContent } from './tooltip';
+import { TermText } from './tooltip';
 
 export interface CardFaceProps {
   def: CardDefinition;
@@ -32,6 +39,7 @@ export interface CardFaceProps {
   /** Compact mode shrinks padding & hides flavor text. */
   compact?: boolean;
   onClick?: () => void;
+  onContextMenu?: MouseEventHandler<HTMLElement>;
 }
 
 /** Map card types to a sensible default icon. */
@@ -71,81 +79,38 @@ function CardFaceImpl({
   hideRarityBadge,
   compact,
   onClick,
+  onContextMenu,
 }: CardFaceProps): JSX.Element {
   const iconName: IconName = (def.icon as IconName | undefined) ?? TYPE_ICON[def.type];
   const stats = def.stats;
 
-  // Build an inline tooltip describing the card. We keep this inline
-  // rather than registering it because cards are dynamic content.
-  const tooltipContent: TooltipContent = {
-    id: `card-${def.id}`,
-    title: def.name,
-    subtitle: `${RARITY_LABEL[def.rarity]} · ${def.type}`,
-    icon: iconName,
-    summary: def.description,
-    sections: [
-      {
-        kind: 'breakdown',
-        heading: 'Costs',
-        showTotal: false,
-        rows: [
-          { label: 'Political Capital', value: -def.cost, term: 'political-capital' },
-          ...(def.apCost
-            ? [{ label: 'Action Points', value: -def.apCost, term: 'action-points' as const }]
-            : []),
-        ],
-      },
-      ...(stats
-        ? [
-            {
-              kind: 'breakdown' as const,
-              heading: 'Stats',
-              showTotal: false,
-              rows: [
-                ...(stats.power != null ? [{ label: 'Power', value: stats.power, tone: 'neutral' as const }] : []),
-                ...(stats.cooldownWeeks != null
-                  ? [{ label: 'Cooldown (weeks)', value: stats.cooldownWeeks, tone: 'neutral' as const }]
-                  : []),
-                ...(stats.usesPerGame != null
-                  ? [{ label: 'Uses per game', value: stats.usesPerGame, tone: 'neutral' as const }]
-                  : []),
-              ],
-            },
-          ]
-        : []),
-      ...(def.tags.length > 0
-        ? [{ kind: 'tag-row' as const, tags: def.tags }]
-        : []),
-      ...(def.flavorText
-        ? [{ kind: 'paragraph' as const, text: def.flavorText }]
-        : []),
-    ],
-  };
-
   return (
-    <ExtendedTooltip content={tooltipContent} openDelay={500}>
-      <article
-        onClick={onClick}
-        className={
-          'rarity-frame rarity-' +
-          def.rarity +
-          ' bg-bg-secondary rounded flex flex-col overflow-hidden ' +
-          // Standardised height (todo#3 / todo#33): all cards in a hand row
-          // are the same height so the row reads as a uniform deck.
-          (compact ? 'min-h-[180px] ' : 'min-h-[280px] ') +
-          // Hover physics: upward translate + slight rotate simulates
-          // lifting a card off the table. Active state is "pressed down".
-          'transition-transform duration-150 ease-arrive ' +
-          'hover:-translate-y-1 hover:rotate-[-0.4deg] ' +
-          'active:translate-y-0 active:rotate-0 ' +
-          (state === 'locked' ? 'opacity-50 grayscale ' : '') +
-          (state === 'revealing' ? 'animate-card-reveal ' : '') +
-          (onClick ? 'cursor-pointer ' : '')
-        }
-        data-card-id={def.id}
-        data-rarity={def.rarity}
-        aria-label={`${def.name}, ${RARITY_LABEL[def.rarity]} ${def.type} card`}
-      >
+    <article
+      onClick={onClick}
+      onContextMenu={onContextMenu}
+      className={
+        'rarity-frame rarity-' +
+        def.rarity +
+        ' bg-bg-secondary rounded flex flex-col overflow-hidden ' +
+        // Standardised height (todo#3 / todo#33): all cards in a hand row
+        // are the same height so the row reads as a uniform deck.
+        // The extra 10–20px versus the old frame size is deliberate: effect
+        // summaries now live on the card face, so the card needs enough fixed
+        // vertical room to avoid hiding costs/flavor behind a tooltip.
+        (compact ? 'min-h-[190px] ' : 'min-h-[300px] ') +
+        // Hover physics: upward translate + slight rotate simulates
+        // lifting a card off the table. Active state is "pressed down".
+        'transition-transform duration-150 ease-arrive ' +
+        'hover:-translate-y-1 hover:rotate-[-0.4deg] ' +
+        'active:translate-y-0 active:rotate-0 ' +
+        (state === 'locked' ? 'opacity-50 grayscale ' : '') +
+        (state === 'revealing' ? 'animate-card-reveal ' : '') +
+        (onClick ? 'cursor-pointer ' : '')
+      }
+      data-card-id={def.id}
+      data-rarity={def.rarity}
+      aria-label={`${def.name}, ${RARITY_LABEL[def.rarity]} ${def.type} card`}
+    >
         {/*
           todo#33: Art banner — a gradient zone below the header that
           gives each card type a distinct visual identity, like the card
@@ -247,6 +212,11 @@ function CardFaceImpl({
             </div>
           )}
 
+          {/* Effects are first-class card text now, not hidden in a large
+              full-card tooltip. Compact cards show the first two effects; the
+              focused modal uses the same component with a higher limit. */}
+          <EffectSummary effects={def.effects} compact={compact} limit={compact ? 2 : 4} />
+
           {/* Flavor text — italic at bottom, separated by a rule */}
           {def.flavorText && !compact && (
             <p className="text-[0.6375rem] italic text-text-muted font-flavor border-t border-rule pt-1.5 mt-auto">
@@ -268,8 +238,7 @@ function CardFaceImpl({
             </div>
           )}
         </div>
-      </article>
-    </ExtendedTooltip>
+    </article>
   );
 }
 
@@ -282,6 +251,80 @@ function StatPill({ label, value }: { label: string; value: number | string }): 
       </div>
     </div>
   );
+}
+
+export interface EffectSummaryProps {
+  effects: readonly Effect[];
+  compact?: boolean;
+  limit?: number;
+}
+
+/**
+ * Renders player-readable card effects directly on the card face.
+ *
+ * @param effects Static effects from the card definition.
+ * @param compact Whether to use the tight hand-card treatment.
+ * @param limit Maximum number of effect rows before summarising the remainder.
+ * @returns A compact list of concrete effects the player can evaluate without
+ * opening an extended tooltip.
+ */
+export function EffectSummary({ effects, compact, limit = 4 }: EffectSummaryProps): JSX.Element | null {
+  if (effects.length === 0) return null;
+  const visible = effects.slice(0, limit);
+  const overflow = effects.length - visible.length;
+  return (
+    <div className={compact ? 'space-y-1 mt-1' : 'space-y-1 mt-1.5'}>
+      {visible.map((effect, index) => (
+        <div
+          key={`${effect.type}-${index}`}
+          className={
+            'rounded-sm bg-bg-tertiary/70 border border-rule/40 ' +
+            (compact ? 'px-1.5 py-0.5 text-[0.625rem]' : 'px-2 py-1 text-[0.6875rem]') +
+            ' text-text-secondary leading-snug'
+          }
+        >
+          {effectLabel(effect)}
+        </div>
+      ))}
+      {overflow > 0 && (
+        <div className="text-[0.625rem] text-text-muted font-mono uppercase tracking-wider">
+          +{overflow} more effect{overflow === 1 ? '' : 's'}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Format an effect delta with an explicit plus sign for positive values. */
+function signed(value: number): string {
+  return value > 0 ? `+${value}` : String(value);
+}
+
+function effectLabel(effect: Effect): string {
+  switch (effect.type) {
+    case 'resource':
+      return `${signed(effect.value)} ${humaniseResource(effect.resource)}`;
+    case 'stat':
+      return `${signed(effect.value)} ${humaniseStat(effect.target)}`;
+    case 'group_happiness':
+      return `${signed(effect.value)} ${humaniseCohortId(effect.group)} happiness`;
+    case 'group_loyalty':
+      return `${signed(effect.value)} ${humaniseCohortId(effect.group)} loyalty`;
+    case 'relationship':
+      return `${signed(effect.value)} relationship with ${humaniseId(effect.npcId)}`;
+    case 'economy':
+      return `${signed(effect.value)} ${humaniseEconomyMetric(effect.metric)}`;
+    case 'flag':
+      return effect.value ? `Sets ${humaniseId(effect.flag)}` : `Clears ${humaniseId(effect.flag)}`;
+    case 'grant_card':
+      return `Grants ${humaniseId(effect.cardId)}`;
+    case 'trigger_quest':
+      return `Starts ${humaniseId(effect.questId)}`;
+    default: {
+      const exhaustive: never = effect;
+      return exhaustive;
+    }
+  }
 }
 
 export const CardFace = memo(CardFaceImpl);
