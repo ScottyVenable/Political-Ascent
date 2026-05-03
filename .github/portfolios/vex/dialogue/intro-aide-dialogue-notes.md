@@ -376,3 +376,73 @@ The "own the count" option in `media-scrum-reaction.json` is gated at Integrity 
 ---
 
 - Vex
+
+---
+
+## Content Wave 4 — 2026-05-03
+
+### What was authored
+
+**`whip-count-warning.json`** — Petra Solis (aide to Majority Whip Audrey Vance). 10 nodes, 2 choice points.
+
+| Node range | Description |
+|---|---|
+| `open` | Narrator establishes the scene: ambush corridor meeting, no appointment |
+| `opening-line` | Petra delivers the intelligence cold: the player's count is wrong |
+| `count-detail` + Choice Point 1 | Petra breaks down the soft count (4 votes, 3 firm flips); player reacts: absorb the intelligence (`plan-ask`), challenge the count (`petra-stands-firm` → `plan-ask`), or probe for the specific defector (`petra-partial` → `plan-ask`, Connections ≥ 3 gate) |
+| `petra-stands-firm` | Petra does not move: her count is current, theirs isn't |
+| `petra-partial` | Petra names one senator (Lim) as proof of the Whip's intelligence quality |
+| `plan-ask` + Choice Point 2 | Petra relays the Whip's question: what is the player doing about the four before Thursday? Player declares: work the room themselves (`exit-working`), ask the Whip to apply direct pressure (`exit-escalated`), or dismiss it as fluctuation (`exit-cold`) |
+| `exit-working` / `exit-escalated` / `exit-cold` | Petra's three-register close (cooperative / conditional / neutral) |
+| `exit` | Narrator close; `whip-count-warning-complete` flag set; `end-dialogue` |
+
+**Structural decisions:**
+- No faction effects. Branch-specific flags only: `whip-warned-working`, `whip-warned-escalated`, `whip-warned-dismissed`. Universal completion flag: `whip-count-warning-complete`.
+- All three branch flags are set via `effects` on the option, not on the destination node `onEnter` — consistent with the flag placement pattern in `committee-chair-pressure.json`.
+- `opt-source` (Connections ≥ 3) is `isHidden: false` — visible-greyed, consistent with all stat-gated options in the authored tree set. Only flag-gated options use `isHidden: true`.
+- Choice Point 1 is a characterization beat (all three paths converge at `plan-ask` with no mechanical delta). Choice Point 2 is the consequential decision (flags are observable by downstream floor-vote event).
+- Petra's voice is held consistent with `intro-aide-dialogue.json`: short declarative sentences, professional opacity, controls the rhythm of the meeting.
+- `senator-lim` in `petra-partial` is a new placeholder NPC, same class as `senator-harlow` in OQ-W3-C. Raises OQ-W4-A (below).
+- `"thursday"` in `plan-ask` text is a procedural time placeholder. Raises OQ-W4-B (below).
+- `arcId: "quest-first-bill"` carried forward from `committee-chair-pressure.json`. Same unresolved arc-staging assumption applies (see OQ-D in Wave 1 section).
+
+---
+
+### Unresolved assumptions (Wave 4)
+
+#### OQ-W4-A — `senator-lim` placeholder NPC (coordination with Jesse)
+
+`whip-count-warning.json` `petra-partial` node names "Senator Lim" as the identified defector. This is a display-text placeholder, same class as `senator-harlow` in OQ-W3-C.
+
+**Question:** Should Lim become a full named NPC entry (recurring), a one-line character stub, or a swappable generic resolved at runtime from a "wavering senator" pool?
+
+**Blocks shipping:** No — name-drop is non-functional at runtime. A runtime pool would improve replayability.
+
+---
+
+#### OQ-W4-B — Relative time references in dialogue text (coordination with Sol)
+
+`plan-ask` text reads: "The Whip wants to know what you're doing about the four **before Thursday**." This hardcodes a day-of-week reference that may be wrong depending on where in the session calendar this beat fires.
+
+**Options:**
+1. Replace with a game-calendar token (e.g., `{session.next_vote_day}`) if the engine supports dialogue string interpolation beyond `{pc.name}`.
+2. Replace with a session-relative phrase ("before the floor schedule locks") that is always accurate — this phrase already appears in `opening-line` and is tonally consistent with Petra's voice.
+3. Keep "Thursday" as a flavour placeholder and accept the occasional inaccuracy.
+
+**Recommendation:** Option 2. Consistent with Petra's voice; correct on all trigger conditions.
+
+**Blocks shipping:** No — "Thursday" degrades to a slightly wrong day-reference at worst.
+
+---
+
+#### OQ-W4-C — `whip-warned-*` flags consumer (coordination with Sol / Nova)
+
+The three branch flags (`whip-warned-working`, `whip-warned-escalated`, `whip-warned-dismissed`) are authored with the intent that a floor-vote outcome event reads them to shade the result (e.g., `whip-warned-dismissed` may carry a negative modifier). If no such event exists yet, the flags are inert.
+
+**Question:** Is a floor-vote outcome event or whip-count resolution beat planned for M2? Which stance should produce a mechanical delta, and should `whip-warned-dismissed` carry a negative outcome modifier?
+
+**Blocks shipping:** No — flags set silently; no runtime error if no consumer exists yet.
+
+---
+
+- Vex
