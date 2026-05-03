@@ -116,9 +116,9 @@ jobs:
       - name: Install browser deps when cached
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
-      - name: Run Playwright (PR — chromium-desktop only)
+      - name: Run Playwright (PR — chromium-1280x720 only)
         if: github.event_name == 'pull_request'
-        run: npx playwright test --project=chromium-desktop
+        run: npx playwright test --project=chromium-1280x720
       - name: Run Playwright (push to development — full matrix)
         if: github.event_name == 'push'
         run: |

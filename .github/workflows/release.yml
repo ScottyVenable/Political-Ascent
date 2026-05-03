@@ -126,13 +126,13 @@ jobs:
         with:
           name: release-electron-${{ matrix.os }}
           path: |
-            dist-electron-build/**/*.exe
-            dist-electron-build/**/*.dmg
-            dist-electron-build/**/*.AppImage
-            dist-electron-build/**/*.deb
-            dist-electron-build/**/*.zip
-            dist-electron-build/**/*.blockmap
-            dist-electron-build/**/latest*.yml
+            bin/**/*.exe
+            bin/**/*.dmg
+            bin/**/*.AppImage
+            bin/**/*.deb
+            bin/**/*.zip
+            bin/**/*.blockmap
+            bin/**/latest*.yml
           if-no-files-found: warn
           retention-days: 30
 

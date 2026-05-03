@@ -50,8 +50,7 @@ jobs:
         run: npx playwright install-deps chromium
 
       - name: Run existing accessibility spec
-        run: npx playwright test --project=chromium-desktop tests/e2e/accessibility.spec.ts || true
-        continue-on-error: true
+        run: npx playwright test --project=chromium-1280x720 tests/e2e/accessibility.spec.ts
 
       - name: Detect @axe-core/playwright availability
         id: axe-detect
