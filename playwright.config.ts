@@ -28,7 +28,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: [
     ["list"],
-    ["html", { outputFolder: "test-results/playwright-report", open: "never" }],
+    ["html", { outputFolder: "playwright-report", open: "never" }],
   ],
   // Always record the full trace on first retry so PR authors can replay
   // failures locally without having to reproduce them manually.
