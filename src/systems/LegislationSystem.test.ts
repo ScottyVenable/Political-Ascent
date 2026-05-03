@@ -115,6 +115,47 @@ describe('LegislationSystem — pacing', () => {
     expect(updated?.stageEndsOnDay).toBe(today + STAGE_DURATION_DAYS.floor_debate);
   });
 
+  it('dailyUpdate auto-advances floor debate after the 14-day floor clock expires', () => {
+    const bill = LegislationSystem.draftBill(TEMPLATE);
+    LegislationSystem.expediteStage(bill.id); // committee → floor_debate
+
+    const pcBefore = useGameStore.getState().politicalCapital;
+    for (let i = 0; i < STAGE_DURATION_DAYS.floor_debate; i++) {
+      useGameStore.getState().advanceDay();
+    }
+    LegislationSystem.dailyUpdate();
+
+    const updated = useWorldStore
+      .getState()
+      .pendingLegislation.find((b) => b.id === bill.id);
+    const today = toEpochDays(useGameStore.getState().currentDate);
+    expect(updated?.stage).toBe('vote');
+    expect(updated?.stageEnteredOnDay).toBe(today);
+    expect(updated?.stageEndsOnDay).toBe(today + STAGE_DURATION_DAYS.vote);
+    expect(useGameStore.getState().politicalCapital).toBe(pcBefore);
+  });
+
+  it('dailyUpdate resets an overdue stage from today instead of leaving impossible day counts', () => {
+    const bill = LegislationSystem.draftBill(TEMPLATE);
+
+    // Simulate a stale save or backgrounded tab where the calendar is later
+    // than the committee deadline. One dailyUpdate call should advance out of
+    // committee and give the new floor stage a fresh readable timer from today.
+    const elapsedDays = STAGE_DURATION_DAYS.committee + STAGE_DURATION_DAYS.floor_debate;
+    for (let i = 0; i < elapsedDays; i++) {
+      useGameStore.getState().advanceDay();
+    }
+    LegislationSystem.dailyUpdate();
+
+    const updated = useWorldStore
+      .getState()
+      .pendingLegislation.find((b) => b.id === bill.id);
+    const today = toEpochDays(useGameStore.getState().currentDate);
+    expect(updated?.stage).toBe('floor_debate');
+    expect(updated?.stageEnteredOnDay).toBe(today);
+    expect(updated?.stageEndsOnDay).toBe(today + STAGE_DURATION_DAYS.floor_debate);
+  });
+
   it('expediteStage charges PC and jumps immediately to the next stage', () => {
     const bill = LegislationSystem.draftBill(TEMPLATE);
     const pcBefore = useGameStore.getState().politicalCapital;

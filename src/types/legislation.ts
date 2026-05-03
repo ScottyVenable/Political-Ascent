@@ -33,6 +33,18 @@ export interface BillTemplate {
   title: string;
   description: string;
   tags: PolicyTag[];
+  /**
+   * Legal vehicle for the bill. Affects baseline opposition, per-stage PC
+   * cost, and stage durations; see {@link BILL_TYPE_MODIFIERS} in
+   * `src/utils/billType.ts`. Optional for backwards compatibility with the
+   * original 10 templates which all default to `act`.
+   */
+  type?: BillType;
+  /**
+   * One-line stated purpose. Optional for static templates (they derive
+   * purpose from `description`); the drafting wizard always sets it.
+   */
+  purpose?: string;
   /** Budget impact per year (negative = cost, positive = revenue). */
   budgetImpact: number;
   /** Political-capital cost to push through each stage. */
@@ -55,12 +67,38 @@ export interface BillTemplate {
   affectedGroups: string[];
 }
 
+/**
+ * Legal vehicle for a bill — affects opposition, PC cost, and stage durations.
+ * Documented in `docs/LEGISLATION_OVERHAUL_PLAN.md` §3.1.
+ */
+export type BillType =
+  /** Non-binding statement; cheap, low-opposition, limited effect set. */
+  | 'resolution'
+  /** Default. The behaviour the original 10 templates were tuned for. */
+  | 'act'
+  /** Constitutional amendment — high opposition, expensive, slow. */
+  | 'amendment'
+  /** Spending bill — must include at least one fiscal module. */
+  | 'appropriations';
+
 /** A live bill instance — drafts, in-flight, or historical. */
 export interface Bill {
   id: BillId;
   templateId: string;
   title: string;
   description: string;
+  /**
+   * Legal vehicle. Mirrors the `type` field on `BillTemplate`. Optional so
+   * legacy save files (drafted before the overhaul) load without error; the
+   * UI falls back to `'act'` when this is undefined.
+   */
+  type?: BillType;
+  /**
+   * One-line stated purpose written by the player in the drafting wizard.
+   * Surfaces in the bill text preview and may be used in future NPC
+   * dialogue and press-conference copy.
+   */
+  purpose?: string;
   tags: PolicyTag[];
   stage: BillStage;
   sponsor: string; // player id or NPC id

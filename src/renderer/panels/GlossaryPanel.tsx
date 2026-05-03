@@ -365,7 +365,7 @@ function HowToPlayContent(): JSX.Element {
     <>
       <KbSection title="Welcome to Political Ascent">
         <p>
-          You are a politician climbing from local office to the nation's highest seat of power.
+          You are a politician climbing from local office to the nation&apos;s highest seat of power.
           Every decision you make — from drafting legislation to managing your public image — has
           real consequences for the people you govern and the factions you work with.
         </p>
@@ -387,7 +387,7 @@ function HowToPlayContent(): JSX.Element {
       <KbSection title="Time">
         <p>
           The game advances in weeks. Use the controls at the bottom to pause, play, or speed up.
-          Events and legislative progress happen over real time — don't let bills stall in
+          Events and legislative progress happen over real time — don&apos;t let bills stall in
           committee.
         </p>
       </KbSection>
@@ -413,7 +413,7 @@ function HowToPlayContent(): JSX.Element {
           Your approval rating is the average happiness of all voter cohorts. Different cohorts
           care about different issues — improving the economy helps working-class blocs, while
           strong civil liberties legislation helps progressive ones. Open the Population panel to
-          see each cohort's mood in detail.
+          see each cohort&apos;s mood in detail.
         </p>
       </KbSection>
 
@@ -443,10 +443,10 @@ function HistoryContent(): JSX.Element {
 
       <KbSection title="Political Capital in Real Life">
         <p>
-          "Political capital" is a real concept in American politics — the trust, goodwill, and
+          &quot;Political capital&quot; is a real concept in American politics — the trust, goodwill, and
           influence a politician accumulates through electoral wins, favours, and public approval.
-          George W. Bush famously said after his 2004 re-election: "I earned capital in this
-          campaign, political capital, and now I intend to spend it."
+          George W. Bush famously said after his 2004 re-election: &quot;I earned capital in this
+          campaign, political capital, and now I intend to spend it.&quot;
         </p>
       </KbSection>
 
@@ -478,15 +478,15 @@ function TipsContent(): JSX.Element {
         <ul className="list-disc list-inside space-y-1">
           <li>Focus your first few bills on issues that multiple cohorts care about — early wins build momentum.</li>
           <li>Invest skill points in PC generation early; it compounds over the whole run.</li>
-          <li>Don't neglect your working-class approval — it's your largest base and hardest to win back once lost.</li>
+          <li>Don&apos;t neglect your working-class approval — it&apos;s your largest base and hardest to win back once lost.</li>
         </ul>
       </KbSection>
 
       <KbSection title="Legislation Strategy">
         <ul className="list-disc list-inside space-y-1">
-          <li>Check the "passage chance" estimate on each bill before calling a vote.</li>
+          <li>Check the &quot;passage chance&quot; estimate on each bill before calling a vote.</li>
           <li>Co-sponsoring with members who have high-influence committee seats accelerates the process.</li>
-          <li>Use cards like "Floor Whip" and "Call Favour" to swing close votes.</li>
+          <li>Use cards like &quot;Floor Whip&quot; and &quot;Call Favour&quot; to swing close votes.</li>
           <li>Bills that stall in committee cost no AP to abandon — cut losses early.</li>
         </ul>
       </KbSection>
