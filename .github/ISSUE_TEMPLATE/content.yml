@@ -1,0 +1,56 @@
+name: Content
+description: Narrative, dialogue, card flavour, event, news, or scenario authoring
+title: "[CONTENT] "
+labels: ["type:content", "status:needs-triage"]
+body:
+  - type: dropdown
+    id: content-type
+    attributes:
+      label: Content type
+      options:
+        - dialogue node / tree
+        - card (flavour or effect text)
+        - event
+        - news headline
+        - scenario brief
+        - speech fragment / device
+        - quest beat
+        - tooltip / glossary
+        - UI string
+    validations:
+      required: true
+  - type: input
+    id: gdd-ref
+    attributes:
+      label: GDD §12 reference
+      placeholder: "docs/GDD.md §12.5 Dialogue Authoring Guide"
+    validations:
+      required: true
+  - type: input
+    id: locale
+    attributes:
+      label: Locale
+      placeholder: en-US
+    validations:
+      required: true
+  - type: checkboxes
+    id: voice
+    attributes:
+      label: Voice & Tone bible compliance
+      options:
+        - label: I have read `docs/GDD.md §12.1 Tone Bible` and `§12.2 Voice & Style Guide`.
+          required: true
+        - label: Strings avoid party-name endorsements / prescriptive policy stance (per §12.2).
+          required: true
+  - type: input
+    id: schema-target
+    attributes:
+      label: Schema target file
+      description: Where this content will live (path under `src/data/` or `src/renderer/locales/`).
+      placeholder: "src/data/dialogue/<npc>.json"
+    validations:
+      required: true
+  - type: textarea
+    id: body
+    attributes:
+      label: Content draft / outline

@@ -1,21 +1,38 @@
 name: Chore
-description: Tooling, refactor, tests-only, dependency update, CI work.
-title: "chore: <short summary>"
-labels: ["type:chore", "status:triage"]
+description: Tooling, infrastructure, config, or dependency work
+title: "[CHORE] "
+labels: ["type:chore", "status:needs-triage"]
 body:
   - type: textarea
-    id: what
+    id: summary
     attributes:
-      label: What?
+      label: Summary
     validations:
       required: true
-  - type: textarea
-    id: why
+  - type: dropdown
+    id: scope
     attributes:
-      label: Why?
+      label: Scope
+      options:
+        - build / bundler
+        - lint / format
+        - typecheck
+        - test runner
+        - CI
+        - dependency upgrade
+        - tooling script
+        - editor / dev env
+        - docs tooling
+        - other
     validations:
       required: true
-  - type: textarea
+  - type: dropdown
     id: risk
     attributes:
-      label: Risk / blast radius
+      label: Risk
+      options:
+        - Low — no behaviour change
+        - Medium — touches build pipeline or shared config
+        - High — touches CI gates or release plumbing
+    validations:
+      required: true

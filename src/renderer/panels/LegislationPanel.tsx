@@ -17,6 +17,8 @@ import { TermText } from '../components/tooltip';
 import { DraftLegislationScreen } from '../components/DraftLegislationScreen';
 import type { Bill, BillId, BillStage, BillTemplate } from '@/types';
 
+const BLANK_TEMPLATE_ID = 'bill-blank-canvas';
+
 /**
  * LegislationPanel — draft, track, expedite, and vote on bills.
  *
@@ -42,6 +44,7 @@ export function LegislationPanel(): JSX.Element {
   const pc = useGameStore((s) => s.politicalCapital);
   const currentDate = useGameStore((s) => s.currentDate);
   const pushToast = useUIStore((s) => s.pushToast);
+  const congress = useWorldStore((s) => s.congress);
 
   // Today's monotonic day index. Re-derived from `currentDate` on each
   // render so the progress bars advance the moment the clock ticks.
@@ -85,6 +88,27 @@ export function LegislationPanel(): JSX.Element {
         LegislationSystem.estimatePassageChance(b) - LegislationSystem.estimatePassageChance(a),
     );
   }, [templates]);
+
+  const blankTemplate = useMemo(
+    () => rankedTemplates.find((t) => t.id === BLANK_TEMPLATE_ID) ?? null,
+    [rankedTemplates],
+  );
+
+  const starterTemplates = useMemo(
+    () => rankedTemplates.filter((t) => t.id !== BLANK_TEMPLATE_ID),
+    [rankedTemplates],
+  );
+
+  const sponsorLabels = useMemo(() => {
+    const labels = new Map<string, string>();
+    for (const legislator of [...congress.senate, ...congress.house]) {
+      labels.set(
+        legislator.id,
+        `${legislator.chamber === 'senate' ? 'Sen.' : 'Rep.'} ${legislator.name} (${legislator.party}-${legislator.state})`,
+      );
+    }
+    return labels;
+  }, [congress]);
 
   return (
     <div>
@@ -137,15 +161,17 @@ export function LegislationPanel(): JSX.Element {
             <div className="font-semibold truncate text-accent-gold">{pending[0].title}</div>
             <div className="text-xs text-text-secondary mt-0.5">
               Stage: <span className="capitalize">{pending[0].stage.replace('_', ' ')}</span>
-              {pending[0].sponsor === 'player' && (
-                <span className="ml-2 text-accent-gold">&#x2605; Sponsored by you</span>
-              )}
+              <span className="ml-2 text-accent-gold">
+                {sponsorLabel(pending[0].sponsor, sponsorLabels)}
+              </span>
             </div>
           </div>
           <div className="flex gap-3 flex-shrink-0 text-xs">
             <div className="text-center">
               <div className="text-text-muted mb-0.5">Support</div>
-              <div className={`font-mono ${(pending[0].supportVotes ?? 0) >= 50 ? 'text-status-success' : 'text-status-danger'}`}>
+              <div
+                className={`font-mono ${(pending[0].supportVotes ?? 0) >= 50 ? 'text-status-success' : 'text-status-danger'}`}
+              >
                 {pending[0].supportVotes}
               </div>
             </div>
@@ -178,48 +204,80 @@ export function LegislationPanel(): JSX.Element {
       </div>
 
       {tab === 'draft' && (
-        <div className="grid md:grid-cols-2 gap-3">
-          {rankedTemplates.map((t) => {
-            const chance = LegislationSystem.estimatePassageChance(t);
-            const totalDays =
-              (t.stageDurations?.committee ?? STAGE_DURATION_DAYS.committee) +
-              (t.stageDurations?.floor_debate ?? STAGE_DURATION_DAYS.floor_debate) +
-              (t.stageDurations?.vote ?? STAGE_DURATION_DAYS.vote);
-            return (
-              <Card key={t.id} title={t.title} accent="gold">
-                <p className="text-sm text-text-secondary mb-2"><TermText text={t.description} /></p>
-                <div className="text-xs text-text-muted flex flex-wrap gap-2 mb-3">
-                  {t.tags.map((tag) => (
-                    <span key={tag} className="bg-bg-tertiary rounded px-2 py-0.5">
-                      {formatTag(tag)}
+        <div className="space-y-4">
+          {blankTemplate && (
+            <Card title="Blank Bill Canvas" accent="gold">
+              <p className="text-sm text-text-secondary mb-3">
+                Start from a clean slate. Write your own title and policy purpose, then add riders
+                from the module library.
+              </p>
+              <div className="flex items-center gap-3 mb-3 text-xs">
+                <span className="px-2 py-0.5 rounded font-mono bg-bg-tertiary text-text-secondary">
+                  Forecast starts neutral
+                </span>
+                <span className="text-text-muted">Best for original legislation concepts</span>
+              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setDraftTarget(blankTemplate)}
+                data-testid="draft-customize-blank"
+              >
+                Craft custom bill
+              </Button>
+            </Card>
+          )}
+
+          <div className="grid md:grid-cols-2 gap-3">
+            {starterTemplates.map((t) => {
+              const chance = LegislationSystem.estimatePassageChance(t);
+              const totalDays =
+                (t.stageDurations?.committee ?? STAGE_DURATION_DAYS.committee) +
+                (t.stageDurations?.floor_debate ?? STAGE_DURATION_DAYS.floor_debate) +
+                (t.stageDurations?.vote ?? STAGE_DURATION_DAYS.vote);
+              return (
+                <Card key={t.id} title={t.title} accent="gold">
+                  <p className="text-sm text-text-secondary mb-2">
+                    <TermText text={t.description} />
+                  </p>
+                  <div className="text-xs text-text-muted flex flex-wrap gap-2 mb-3">
+                    {t.tags.map((tag) => (
+                      <span key={tag} className="bg-bg-tertiary rounded px-2 py-0.5">
+                        {formatTag(tag)}
+                      </span>
+                    ))}
+                    <span className="ml-auto">Opposition {t.opposition}</span>
+                  </div>
+                  <div className="flex items-center gap-3 mb-3 text-xs">
+                    <span
+                      className={`px-2 py-0.5 rounded font-mono ${chanceToneClass(chance)}`}
+                      title="Estimated passage probability based on current Senate composition, relationships, and opposition."
+                    >
+                      Forecast: {Math.round(chance * 100)}% pass
                     </span>
-                  ))}
-                  <span className="ml-auto">Opposition {t.opposition}</span>
-                </div>
-                <div className="flex items-center gap-3 mb-3 text-xs">
-                  <span
-                    className={`px-2 py-0.5 rounded font-mono ${chanceToneClass(chance)}`}
-                    title="Estimated passage probability based on current Senate composition, relationships, and opposition."
+                    <span className="text-text-muted">~{totalDays} days to vote</span>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setDraftTarget(t)}
+                    data-testid={`draft-customize-${t.id}`}
                   >
-                    Forecast: {Math.round(chance * 100)}% pass
-                  </span>
-                  <span className="text-text-muted">~{totalDays} days to vote</span>
-                </div>
-                <Button variant="primary" size="sm" onClick={() => setDraftTarget(t)} data-testid={`draft-customize-${t.id}`}>
-                  Customize &amp; Draft
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => quickDraft(t)}
-                  className="ml-2"
-                  data-testid={`draft-quick-${t.id}`}
-                >
-                  Quick draft
-                </Button>
-              </Card>
-            );
-          })}
+                    Customize &amp; Draft
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => quickDraft(t)}
+                    className="ml-2"
+                    data-testid={`draft-quick-${t.id}`}
+                  >
+                    Quick draft
+                  </Button>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -236,6 +294,8 @@ export function LegislationPanel(): JSX.Element {
               bill={b}
               today={today}
               pc={pc}
+              sponsorLabel={sponsorLabel(b.sponsor, sponsorLabels)}
+              sponsorIsPlayer={!sponsorLabels.has(b.sponsor)}
               onExpedite={() => expedite(b.id)}
               onVote={() => vote(b.id)}
             />
@@ -287,12 +347,16 @@ function PendingBillCard({
   bill,
   today,
   pc,
+  sponsorLabel,
+  sponsorIsPlayer,
   onExpedite,
   onVote,
 }: {
   bill: Bill;
   today: number;
   pc: number;
+  sponsorLabel: string;
+  sponsorIsPlayer: boolean;
   onExpedite: () => void;
   onVote: () => void;
 }): JSX.Element {
@@ -319,7 +383,24 @@ function PendingBillCard({
 
   return (
     <Card title={bill.title} subtitle={stageLabel(bill.stage)} accent="gold">
-      <p className="text-sm text-text-secondary mb-3"><TermText text={bill.description} /></p>
+      <div className="flex flex-wrap items-center gap-2 mb-2 text-[0.6875rem] uppercase tracking-widest">
+        <span
+          className={
+            'rounded-sm border px-2 py-0.5 font-mono ' +
+            (sponsorIsPlayer
+              ? 'border-accent-gold/60 bg-accent-gold/10 text-accent-gold'
+              : 'border-rule bg-bg-tertiary/50 text-text-secondary')
+          }
+        >
+          {sponsorIsPlayer ? 'Player bill' : 'Congress bill'}
+        </span>
+        <span className="font-mono text-text-muted normal-case tracking-normal">
+          {sponsorLabel}
+        </span>
+      </div>
+      <p className="text-sm text-text-secondary mb-3">
+        <TermText text={bill.description} />
+      </p>
 
       {clocked && totalDays > 0 && (
         <div className="mb-3">
@@ -400,6 +481,11 @@ function stageLabel(stage: BillStage): string {
     default:
       return stage;
   }
+}
+
+/** Resolve a bill sponsor id into compact player-facing text. */
+function sponsorLabel(sponsorId: string, sponsorLabels: ReadonlyMap<string, string>): string {
+  return sponsorLabels.get(sponsorId) ?? 'Sponsored by you';
 }
 
 function TabButton({

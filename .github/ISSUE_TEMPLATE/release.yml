@@ -1,0 +1,61 @@
+name: Release tracking
+description: Per-milestone release tracking issue
+title: "[RELEASE] M? — <code name> — <version>"
+labels: ["type:release", "status:in-progress"]
+body:
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Milestone
+      options:
+        - M1 — Cloakroom (0.2.0-alpha.1)
+        - M2 — Floor Manager (0.3.0-alpha.1)
+        - M3 — Stump (0.4.0-alpha.1)
+        - M4 — Ironclad (0.5.0-alpha.1)
+        - M5 — Lectern (0.6.0-alpha.1)
+        - M6 — Telemetry (0.7.0-alpha.1)
+        - M7 — Second Front (0.8.0-alpha.1)
+        - M8 — Quorum (1.0.0-rc.1)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Target version pin
+      placeholder: "0.X.0-alpha.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: stream
+    attributes:
+      label: Stream
+      options:
+        - development
+        - experimental
+        - stable
+    validations:
+      required: true
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Release readiness checklist (per GDD §13.7)
+      description: Both columns required for stable; dev→exp column required for experimental.
+      options:
+        - label: All §13.1 test layers green on the release commit
+        - label: Determinism gates pass (§13.2 — no `Date.now`, no `Math.random` outside seeded RNG)
+        - label: Save round-trip on the fixture corpus passes (§13.3)
+        - label: Axe scan returns no critical/serious (§13.4)
+        - label: CSP headers active in electron + capacitor builds (§13.5)
+        - label: Performance hard-gates green (§13.6)
+        - label: Per-stream changelog entry written (`docs/changelogs/<stream>/`)
+        - label: `docs/about/CHANGELOG.md` `[Unreleased]` rolled into a versioned heading
+        - label: `package.json` version pin updated
+        - label: Wiki `Release-Notes.md` updated (stable only)
+        - label: GDD §14 risks reviewed; new entries triaged
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope summary
+      description: One-paragraph; cite ROADMAP.md milestone definition.
+    validations:
+      required: true

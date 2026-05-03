@@ -1,0 +1,36 @@
+name: Research
+description: Design research / spike with bounded deliverable
+title: "[RESEARCH] "
+labels: ["type:research", "status:needs-triage"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Research question
+    validations:
+      required: true
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Hypothesis or working assumption
+    validations:
+      required: true
+  - type: input
+    id: timebox
+    attributes:
+      label: Time-box
+      placeholder: "≤ 2 days"
+    validations:
+      required: true
+  - type: input
+    id: deliverable
+    attributes:
+      label: Deliverable path
+      description: Final report location under `docs/research/`.
+      placeholder: "docs/research/<slug>.md"
+    validations:
+      required: true
+  - type: textarea
+    id: success
+    attributes:
+      label: Definition of done

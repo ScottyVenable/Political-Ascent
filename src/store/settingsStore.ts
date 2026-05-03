@@ -26,6 +26,13 @@ export interface SettingsState {
     theme: 'dark' | 'light';
     fontScale: number; // 0.8–1.4
     reduceMotion: boolean;
+    /**
+     * Fractional-digit precision for compact money formatters
+     * (`formatBillionsUSDForDisplay`). `'auto'` lets the formatter pick
+     * a sensible default per magnitude; otherwise forces 0..3 digits.
+     * Surfaced in Settings → Display (todo#58).
+     */
+    numberPrecision: 'auto' | 0 | 1 | 2 | 3;
   };
   accessibility: {
     highContrast: boolean;
@@ -53,10 +60,12 @@ const DEFAULTS: SettingsState = {
     autoPauseOnYearEnd: true,
     autoPauseOnLowAP: true,
     autoPauseOnNegativePoll: false,
-    // 2 seconds — matches the todo#49 requirement.
-    tooltipPinMs: 2000,
+    // 3 seconds — bumped from 2s per todo#26 after playtesting showed
+    // 2s was just shy of comfortable for new players reading nested
+    // term definitions. Slider in Settings still allows 0.5–5s.
+    tooltipPinMs: 3000,
   },
-  display: { theme: 'dark', fontScale: 1.0, reduceMotion: false },
+  display: { theme: 'dark', fontScale: 1.0, reduceMotion: false, numberPrecision: 'auto' },
   accessibility: { highContrast: false, colorblindMode: 'off', dyslexicFont: false },
 };
 

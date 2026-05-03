@@ -5,10 +5,14 @@
       "id": "module-progressive-tax",
       "name": "Progressive Tax Brackets",
       "category": "fiscal",
+      "strategicRole": "pay_for",
       "summary": "Adds higher marginal rates on top earners. Funds the bill, raises opposition from wealth groups, lifts deficit relief.",
       "previewText": "raises marginal income tax on filers earning over $400,000 by three percentage points",
       "oppositionDelta": 8,
       "budgetImpactDelta": 25,
+      "complexity": 10,
+      "publicAppeal": -2,
+      "recommendedTags": ["taxation", "economy"],
       "effects": [
         { "type": "economy", "metric": "deficit", "value": -10 },
         { "type": "group_happiness", "group": "wealthy", "value": -8 }
@@ -18,10 +22,14 @@
       "id": "module-clean-energy-credit",
       "name": "Clean Energy Credit",
       "category": "climate",
+      "strategicRole": "benefit_expansion",
       "summary": "Refundable tax credit for renewable installations. Pleases environmentalists, mild deficit cost.",
       "previewText": "establishes a refundable tax credit covering thirty percent of qualifying solar, wind, and storage installations",
       "oppositionDelta": -3,
       "budgetImpactDelta": -8,
+      "complexity": 7,
+      "publicAppeal": 9,
+      "recommendedTags": ["environment", "infrastructure"],
       "effects": [
         { "type": "group_happiness", "group": "environmentalists", "value": 10 },
         { "type": "economy", "metric": "deficit", "value": 4 }
@@ -44,10 +52,14 @@
       "id": "module-sunset-clause",
       "name": "Five-Year Sunset Clause",
       "category": "procedural",
+      "strategicRole": "oversight",
       "summary": "Bill expires unless reauthorized. Lowers opposition (the cost is bounded), no direct effects.",
       "previewText": "expires five years after enactment unless reauthorized by joint resolution",
       "oppositionDelta": -10,
       "budgetImpactDelta": 0,
+      "complexity": 3,
+      "publicAppeal": 6,
+      "recommendedTags": ["economy", "taxation", "constitutional"],
       "effects": []
     },
     {
@@ -58,9 +70,7 @@
       "previewText": "reserves twenty percent of program disbursements for counties with populations under fifty thousand",
       "oppositionDelta": -5,
       "budgetImpactDelta": -3,
-      "effects": [
-        { "type": "group_happiness", "group": "rural", "value": 6 }
-      ]
+      "effects": [{ "type": "group_happiness", "group": "rural", "value": 6 }]
     },
     {
       "id": "module-strict-enforcement",
@@ -93,8 +103,314 @@
       "previewText": "authorizes supplemental appropriations whenever annualized GDP growth falls below one percent",
       "oppositionDelta": 4,
       "budgetImpactDelta": -15,
+      "effects": [{ "type": "economy", "metric": "deficit", "value": 6 }]
+    },
+    {
+      "id": "module-school-modernization-grants",
+      "name": "School Modernization Grants",
+      "category": "regional",
+      "summary": "Targeted grants for district facilities and teacher retention in underfunded counties.",
+      "previewText": "directs federal grants to school districts with persistent infrastructure deficits and staffing shortages",
+      "oppositionDelta": -2,
+      "budgetImpactDelta": -10,
       "effects": [
-        { "type": "economy", "metric": "deficit", "value": 6 }
+        { "type": "group_happiness", "group": "students", "value": 5 },
+        { "type": "group_happiness", "group": "professionals", "value": 2 }
+      ]
+    },
+    {
+      "id": "module-permitting-reform",
+      "name": "Permitting Reform Fast Track",
+      "category": "procedural",
+      "summary": "Accelerates federal permit timelines with strict agency deadlines.",
+      "previewText": "imposes a one-year decision deadline for covered federal permitting actions",
+      "oppositionDelta": -6,
+      "budgetImpactDelta": 2,
+      "effects": [{ "type": "economy", "metric": "gdpGrowth", "value": 0.12 }]
+    },
+    {
+      "id": "module-public-option-pilot",
+      "name": "Public Option Pilot",
+      "category": "regulatory",
+      "summary": "Creates a state opt-in public insurance pilot with federal backstop funding.",
+      "previewText": "creates a state opt-in public insurance pilot for counties with fewer than two private carriers",
+      "oppositionDelta": 11,
+      "budgetImpactDelta": -18,
+      "effects": [
+        { "type": "group_happiness", "group": "working-class", "value": 4 },
+        { "type": "group_happiness", "group": "retirees", "value": 3 }
+      ]
+    },
+    {
+      "id": "module-domestic-manufacturing-credit",
+      "name": "Domestic Manufacturing Credit",
+      "category": "fiscal",
+      "summary": "Incentivizes domestic supply chain investment in strategic industries.",
+      "previewText": "offers a production tax credit for domestic manufacturing in strategic sectors",
+      "oppositionDelta": -1,
+      "budgetImpactDelta": -12,
+      "effects": [
+        { "type": "economy", "metric": "unemployment", "value": -0.1 },
+        { "type": "group_happiness", "group": "working-class", "value": 3 }
+      ]
+    },
+    {
+      "id": "module-grid-reliability-standard",
+      "name": "Grid Reliability Standard",
+      "category": "climate",
+      "summary": "Sets minimum grid resilience standards and funds storage retrofits.",
+      "previewText": "requires utilities to meet federal reliability standards with phased storage benchmarks",
+      "oppositionDelta": 5,
+      "budgetImpactDelta": -9,
+      "effects": [
+        { "type": "group_happiness", "group": "environmentalists", "value": 5 },
+        { "type": "economy", "metric": "inflation", "value": -0.05 }
+      ]
+    },
+    {
+      "id": "module-labor-apprenticeship-fund",
+      "name": "Labor Apprenticeship Fund",
+      "category": "labor",
+      "summary": "Scales union-employer apprenticeship pipelines for high-demand trades.",
+      "previewText": "appropriates matching funds for certified apprenticeship partnerships in high-demand trades",
+      "oppositionDelta": 3,
+      "budgetImpactDelta": -6,
+      "effects": [
+        { "type": "group_loyalty", "group": "workers", "value": 5 },
+        { "type": "economy", "metric": "unemployment", "value": -0.08 }
+      ]
+    },
+    {
+      "id": "module-transparency-disclosure",
+      "name": "Contract Transparency Disclosure",
+      "category": "procedural",
+      "summary": "Requires public reporting for large contracts and major grant recipients.",
+      "previewText": "mandates quarterly public disclosure of federal contract performance and beneficiary ownership data",
+      "oppositionDelta": 2,
+      "budgetImpactDelta": -1,
+      "effects": [{ "type": "group_happiness", "group": "progressives", "value": 3 }]
+    },
+    {
+      "id": "module-increased-services-funding",
+      "name": "Increased Services Funding",
+      "category": "fiscal",
+      "summary": "Provides additional funding for public services.",
+      "previewText": "allocates increased federal funding for essential public services",
+      "oppositionDelta": 4,
+      "budgetImpactDelta": -15,
+      "effects": [
+        { "type": "group_happiness", "group": "working-class", "value": 4 },
+        { "type": "group_happiness", "group": "progressives", "value": 3 }
+      ]
+    },
+    {
+      "id": "module-student-loan-forgiveness-mild",
+      "name": "Student Loan Forgiveness (Mild)",
+      "category": "fiscal",
+      "strategicRole": "benefit_expansion",
+      "summary": "Forgives a portion of federal student loans for eligible borrowers.",
+      "previewText": "forgives up to $10,000 in federal student loans for eligible borrowers",
+      "oppositionDelta": 6,
+      "budgetImpactDelta": -20,
+      "complexity": 8,
+      "publicAppeal": 8,
+      "recommendedTags": ["education", "economy"],
+      "incompatibleWith": [
+        "module-student-loan-forgiveness-aggressive",
+        "module-student-loan-forgiveness-complete"
+      ],
+      "effects": [
+        { "type": "group_happiness", "group": "students", "value": 3 },
+        { "type": "group_happiness", "group": "progressives", "value": 2 },
+        { "type": "group_happiness", "group": "working-class", "value": 2 },
+        { "type": "group_happiness", "group": "business", "value": -2 }
+      ]
+    },
+    {
+      "id": "module-student-loan-forgiveness-aggressive",
+      "name": "Student Loan Forgiveness (Aggressive)",
+      "category": "fiscal",
+      "strategicRole": "benefit_expansion",
+      "summary": "Forgives a large portion of federal student loans for eligible borrowers.",
+      "previewText": "forgives up to $50,000 in federal student loans for eligible borrowers",
+      "oppositionDelta": 12,
+      "budgetImpactDelta": -50,
+      "complexity": 12,
+      "publicAppeal": 12,
+      "recommendedTags": ["education", "economy"],
+      "incompatibleWith": [
+        "module-student-loan-forgiveness-mild",
+        "module-student-loan-forgiveness-complete"
+      ],
+      "effects": [
+        { "type": "group_happiness", "group": "students", "value": 8 },
+        { "type": "group_happiness", "group": "progressives", "value": 5 },
+        { "type": "group_happiness", "group": "working-class", "value": 4 },
+        { "type": "group_happiness", "group": "business", "value": -5 }
+      ]
+    },
+    {
+      "id": "module-student-loan-forgiveness-complete",
+      "name": "Student Loan Forgiveness (Complete)",
+      "category": "fiscal",
+      "strategicRole": "benefit_expansion",
+      "summary": "Forgives all federal student loans for eligible borrowers.",
+      "previewText": "forgives all federal student loans for eligible borrowers",
+      "oppositionDelta": 20,
+      "budgetImpactDelta": -100,
+      "complexity": 18,
+      "publicAppeal": 15,
+      "recommendedTags": ["education", "economy"],
+      "incompatibleWith": [
+        "module-student-loan-forgiveness-mild",
+        "module-student-loan-forgiveness-aggressive"
+      ],
+      "effects": [
+        { "type": "group_happiness", "group": "students", "value": 10 },
+        { "type": "group_happiness", "group": "progressives", "value": 7 },
+        { "type": "group_happiness", "group": "working-class", "value": 5 },
+        { "type": "group_happiness", "group": "business", "value": -8 }
+      ]
+    },
+    {
+      "id": "module-universal-basic-income",
+      "name": "Universal Basic Income",
+      "category": "fiscal",
+      "strategicRole": "benefit_expansion",
+      "summary": "Provides a guaranteed monthly income to all citizens.",
+      "previewText": "establishes a universal basic income program providing a guaranteed monthly payment to all citizens",
+      "oppositionDelta": 15,
+      "budgetImpactDelta": -200,
+      "complexity": 20,
+      "publicAppeal": 14,
+      "recommendedTags": ["economy", "taxation"],
+      "effects": [
+        { "type": "group_happiness", "group": "working-class", "value": 7 },
+        { "type": "group_happiness", "group": "progressives", "value": 4 },
+        { "type": "group_happiness", "group": "business", "value": -10 },
+        { "type": "economy", "metric": "inflation", "value": 0.1 },
+        { "type": "economy", "metric": "unemployment", "value": 0.1 }
+      ]
+    },
+    {
+      "id": "module-means-tested-phase-in",
+      "name": "Means-Tested Phase-In",
+      "category": "procedural",
+      "strategicRole": "implementation",
+      "summary": "Starts benefits with lower-income households first. Reduces fiscal shock, adds administrative complexity.",
+      "previewText": "phases eligibility by household income over three fiscal years",
+      "oppositionDelta": -4,
+      "budgetImpactDelta": 18,
+      "complexity": 9,
+      "publicAppeal": 4,
+      "recommendedTags": ["economy", "healthcare", "education", "taxation"],
+      "effects": [{ "type": "economy", "metric": "deficit", "value": -8 }]
+    },
+    {
+      "id": "module-state-waiver-lane",
+      "name": "State Waiver Lane",
+      "category": "regional",
+      "strategicRole": "coalition_builder",
+      "summary": "Lets states request tailored implementation plans. Wins federalist votes, risks uneven rollout.",
+      "previewText": "permits states to request implementation waivers that meet federal outcome benchmarks",
+      "oppositionDelta": -7,
+      "budgetImpactDelta": 0,
+      "complexity": 11,
+      "publicAppeal": 5,
+      "recommendedTags": ["healthcare", "education", "infrastructure", "immigration"],
+      "effects": [{ "type": "group_happiness", "group": "rural", "value": 3 }]
+    },
+    {
+      "id": "module-small-business-exemption",
+      "name": "Small Business Exemption",
+      "category": "regulatory",
+      "strategicRole": "carveout",
+      "summary": "Exempts firms under 50 employees from the most expensive compliance duties.",
+      "previewText": "exempts employers with fewer than fifty employees from covered compliance mandates",
+      "oppositionDelta": -6,
+      "budgetImpactDelta": -2,
+      "complexity": 5,
+      "publicAppeal": 3,
+      "recommendedTags": ["economy", "taxation"],
+      "effects": [{ "type": "group_happiness", "group": "business", "value": 5 }]
+    },
+    {
+      "id": "module-data-privacy-guardrails",
+      "name": "Data Privacy Guardrails",
+      "category": "regulatory",
+      "strategicRole": "oversight",
+      "summary": "Limits data collection and adds audit rights for programs handling personal records.",
+      "previewText": "requires data minimization, independent audits, and a private right to request record correction",
+      "oppositionDelta": -2,
+      "budgetImpactDelta": -4,
+      "complexity": 8,
+      "publicAppeal": 7,
+      "recommendedTags": ["civil_rights", "healthcare", "education", "immigration"],
+      "effects": [{ "type": "group_happiness", "group": "professionals", "value": 3 }]
+    },
+    {
+      "id": "module-carbon-border-adjustment",
+      "name": "Carbon Border Adjustment",
+      "category": "climate",
+      "strategicRole": "pay_for",
+      "summary": "Adds fees on high-emission imports. Funds climate programs, provokes trade-sensitive opposition.",
+      "previewText": "levies a border adjustment fee on covered high-emission imports",
+      "oppositionDelta": 7,
+      "budgetImpactDelta": 22,
+      "complexity": 13,
+      "publicAppeal": 1,
+      "recommendedTags": ["environment", "trade", "taxation"],
+      "effects": [
+        { "type": "economy", "metric": "trade", "value": -80 },
+        { "type": "group_happiness", "group": "environmentalists", "value": 6 }
+      ]
+    },
+    {
+      "id": "module-public-private-partnership",
+      "name": "Public-Private Partnership Authority",
+      "category": "procedural",
+      "strategicRole": "implementation",
+      "summary": "Lets agencies partner with private firms for rollout. Speeds delivery but raises oversight concerns.",
+      "previewText": "authorizes competitive public-private partnerships for program delivery and infrastructure buildout",
+      "oppositionDelta": -1,
+      "budgetImpactDelta": 8,
+      "complexity": 10,
+      "publicAppeal": 2,
+      "recommendedTags": ["infrastructure", "economy", "defense"],
+      "effects": [
+        { "type": "group_happiness", "group": "business", "value": 4 },
+        { "type": "economy", "metric": "gdpGrowth", "value": 0.08 }
+      ]
+    },
+    {
+      "id": "module-independent-appeals-board",
+      "name": "Independent Appeals Board",
+      "category": "procedural",
+      "strategicRole": "oversight",
+      "summary": "Creates an appeals process for affected citizens, businesses, or states.",
+      "previewText": "creates an independent appeals board with published decisions and expedited review deadlines",
+      "oppositionDelta": -4,
+      "budgetImpactDelta": -2,
+      "complexity": 7,
+      "publicAppeal": 5,
+      "recommendedTags": ["civil_rights", "criminal_justice", "immigration"],
+      "effects": [{ "type": "group_happiness", "group": "professionals", "value": 2 }]
+    },
+    {
+      "id": "module-rural-workforce-clinics",
+      "name": "Rural Workforce Clinics",
+      "category": "regional",
+      "strategicRole": "benefit_expansion",
+      "summary": "Funds mobile training and service clinics in medically or economically underserved counties.",
+      "previewText": "funds mobile workforce and service clinics in counties designated as economically underserved",
+      "oppositionDelta": -5,
+      "budgetImpactDelta": -11,
+      "complexity": 9,
+      "publicAppeal": 8,
+      "recommendedTags": ["healthcare", "education", "infrastructure", "economy"],
+      "effects": [
+        { "type": "group_happiness", "group": "rural", "value": 6 },
+        { "type": "economy", "metric": "unemployment", "value": -0.06 }
       ]
     }
   ]

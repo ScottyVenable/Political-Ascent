@@ -34,7 +34,9 @@ describe('describeEffect', () => {
 
   it('describes a group happiness effect', () => {
     const eff: Effect = { type: 'group_happiness', group: 'workers', value: 5 };
-    expect(describeEffect(eff)).toBe('+5 happiness for workers');
+    // Cohort ids are humanised via humaniseCohortId (todo#75); 'workers'
+    // has no override so it falls back to Title Case via humaniseId.
+    expect(describeEffect(eff)).toBe('+5 happiness for Workers');
   });
 
   it('describes an economy effect', () => {

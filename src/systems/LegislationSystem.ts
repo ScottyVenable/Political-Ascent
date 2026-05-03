@@ -22,7 +22,7 @@
  *
  * @module systems/LegislationSystem
  */
-import type { Bill, BillTemplate, BillId, BillStage } from '@/types';
+import type { Bill, BillTemplate, BillId, BillStage, Legislator, PolicyTag } from '@/types';
 import { useGameStore } from '@/store/gameStore';
 import { useCharacterStore } from '@/store/characterStore';
 import { useWorldStore } from '@/store/worldStore';
@@ -64,6 +64,11 @@ export const EXPEDITE_PC_COST: Record<'committee' | 'floor_debate' | 'vote', num
 
 /** Ordered stages that have a clock attached. Used for stage transitions. */
 const CLOCKED_STAGES: readonly BillStage[] = ['committee', 'floor_debate', 'vote'] as const;
+
+/** Deterministic cadence for NPC-sponsored draft generation (todo#65 foundation). */
+const NPC_BILL_CHECK_INTERVAL_DAYS = 14;
+/** Soft cap to avoid flooding the legislative queue with AI-sponsored bills. */
+const NPC_PENDING_BILL_CAP = 6;
 
 /** Result shape returned by `expediteStage` — keeps the panel's wiring thin. */
 export interface ExpediteResult {
@@ -173,7 +178,11 @@ function perLegislatorPassChance(args: {
   const relationshipPush = (args.relationship / 100) * 0.2;
   const oppositionDrag = (args.opposition / 100) * 0.4;
   const strategyBoost = (args.strategy / 10) * 0.1;
-  return clamp(0.5 + alignmentBonus + relationshipPush - oppositionDrag + strategyBoost, 0.05, 0.95);
+  return clamp(
+    0.5 + alignmentBonus + relationshipPush - oppositionDrag + strategyBoost,
+    0.05,
+    0.95,
+  );
 }
 
 class LegislationSystemImpl implements LegislationSystemAPI {
@@ -223,6 +232,58 @@ class LegislationSystemImpl implements LegislationSystemAPI {
     };
     useWorldStore.getState().addBill(bill);
     return bill;
+  }
+
+  /**
+   * Opportunistically introduce one NPC-sponsored bill at a fixed cadence.
+   *
+   * This is the first delivery slice for todo#65. It keeps generation
+   * deterministic (seed + day), ties sponsor/template selection to chamber
+   * priorities and macroeconomic sentiment, and intentionally limits output
+   * so player-authored legislation remains the core gameplay loop.
+   */
+  private maybeSpawnNpcBill(today: number): void {
+    const currentDay = useGameStore.getState().currentDate.day;
+    if (currentDay % NPC_BILL_CHECK_INTERVAL_DAYS !== 0) return;
+
+    const world = useWorldStore.getState();
+    if (world.pendingLegislation.length >= NPC_PENDING_BILL_CAP) return;
+    if (world.congress.senate.length === 0) return;
+
+    const candidates = this.templates.filter((template) => template.id !== 'bill-blank-canvas');
+    if (candidates.length === 0) return;
+
+    const rng = new SeededRNG(world.seed + today * 7919 + world.pendingLegislation.length * 101);
+    const sponsor = selectNpcSponsor(world.congress.senate, rng);
+    const sourceTemplate = selectNpcTemplate(candidates, sponsor, world.economy, rng);
+    const template = personalizeNpcTemplate(sourceTemplate, sponsor, rng);
+
+    const committeeDays = durationFor(template, 'committee');
+    const bill: Bill = {
+      id: makeId('bill', rng) as BillId,
+      templateId: template.id,
+      title: template.title,
+      description: template.description,
+      tags: template.tags,
+      stage: 'committee',
+      sponsor: sponsor.id,
+      cosponsors: [],
+      pcInvested: 0,
+      opposition: template.opposition,
+      supportVotes: 0,
+      opposeVotes: 0,
+      createdAt: isoDate(),
+      effects: template.effects,
+      stageEnteredOnDay: today,
+      stageEndsOnDay: today + committeeDays,
+    };
+
+    world.addBill(bill);
+    useUIStore.getState().pushToast({
+      message: `New bill introduced: ${template.title}`,
+      severity: 'info',
+      ttl: 3000,
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -356,6 +417,8 @@ class LegislationSystemImpl implements LegislationSystemAPI {
     const today = toEpochDays(useGameStore.getState().currentDate);
     const pushToast = useUIStore.getState().pushToast;
 
+    this.maybeSpawnNpcBill(today);
+
     // Iterate over a snapshot so `movePending` calls inside resolveVote don't
     // interfere with the loop.
     for (const bill of [...world.pendingLegislation]) {
@@ -478,6 +541,140 @@ function humanStage(stage: BillStage): string {
 function isoDate(): string {
   const d = useGameStore.getState().currentDate;
   return `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
+}
+
+/**
+ * Choose a sponsor from the senate using deterministic weighted sampling.
+ * Personality and leverage approximate "ambition" for the initial system.
+ */
+function selectNpcSponsor(senate: Legislator[], rng: SeededRNG): Legislator {
+  const weighted = senate.map((legislator) => {
+    const ambitionFromPersonality =
+      legislator.personality === 'opportunist'
+        ? 0.8
+        : legislator.personality === 'ideologue'
+          ? 0.6
+          : legislator.personality === 'maverick'
+            ? 0.4
+            : 0.2;
+    const influence = legislator.leverage / 100;
+    const friction = Math.max(0, -legislator.relationship) / 200;
+    return {
+      legislator,
+      weight: 1 + ambitionFromPersonality + influence + friction,
+    };
+  });
+
+  const total = weighted.reduce((sum, entry) => sum + entry.weight, 0);
+  let roll = rng.next() * total;
+  for (const entry of weighted) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.legislator;
+  }
+  return weighted[weighted.length - 1].legislator;
+}
+
+/**
+ * Pick a template aligned with the sponsor priorities and macro conditions.
+ * A small random jitter prevents the same bill from appearing every cycle.
+ */
+function selectNpcTemplate(
+  templates: BillTemplate[],
+  sponsor: Legislator,
+  economy: { gdpGrowth: number; unemployment: number; inflation: number; deficit: number },
+  rng: SeededRNG,
+): BillTemplate {
+  const sentimentTags = deriveSentimentTags(economy);
+  let bestTemplate = templates[0];
+  let bestScore = Number.NEGATIVE_INFINITY;
+
+  for (const template of templates) {
+    const priorityAlignment = template.tags.filter((tag) =>
+      sponsor.priorities.includes(tag),
+    ).length;
+    const sentimentAlignment = template.tags.filter((tag) => sentimentTags.includes(tag)).length;
+    const score =
+      priorityAlignment * 3 +
+      sentimentAlignment * 1.5 +
+      (100 - template.opposition) / 100 +
+      rng.next() * 0.8;
+    if (score > bestScore) {
+      bestScore = score;
+      bestTemplate = template;
+    }
+  }
+
+  return bestTemplate;
+}
+
+/**
+ * Convert a selected template into a sponsor-authored variant. The engine
+ * keeps `templateId` pointing at the source template for duration lookups,
+ * but the live bill's title and description now communicate political origin.
+ */
+function personalizeNpcTemplate(
+  template: BillTemplate,
+  sponsor: Legislator,
+  rng: SeededRNG,
+): BillTemplate {
+  const priority = sponsor.priorities[0] ?? template.tags[0] ?? 'economy';
+  const lastName = sponsor.name.split(' ').at(-1) ?? sponsor.name;
+  const titleVariant = Math.floor(rng.next() * 3);
+  const title =
+    titleVariant === 0
+      ? template.title
+      : titleVariant === 1
+        ? `${sponsor.state} ${humanPolicyTag(priority)} Act`
+        : `${lastName} ${template.title}`;
+
+  return {
+    ...template,
+    title,
+    description: `${template.description} Introduced by ${sponsor.name} (${sponsor.party}-${sponsor.state}) as part of a ${humanPolicyTag(priority).toLowerCase()} agenda.`,
+  };
+}
+
+/**
+ * Convert current macro indicators into a coarse agenda signal so NPC bills
+ * reflect evolving national context instead of fixed scripted ordering.
+ */
+function deriveSentimentTags(economy: {
+  gdpGrowth: number;
+  unemployment: number;
+  inflation: number;
+  deficit: number;
+}): PolicyTag[] {
+  const tags = new Set<PolicyTag>();
+
+  if (economy.gdpGrowth < 1.2) {
+    tags.add('economy');
+    tags.add('infrastructure');
+    tags.add('trade');
+  }
+  if (economy.unemployment > 5.5) {
+    tags.add('economy');
+    tags.add('infrastructure');
+    tags.add('taxation');
+  }
+  if (economy.inflation > 4.0) {
+    tags.add('trade');
+    tags.add('economy');
+  }
+  if (economy.deficit > 2000) {
+    tags.add('taxation');
+    tags.add('constitutional');
+  }
+
+  if (tags.size === 0) tags.add('economy');
+  return [...tags];
+}
+
+/** Lightweight tag humaniser for system-authored bill text. */
+function humanPolicyTag(tag: PolicyTag): string {
+  return tag
+    .split('_')
+    .map((word) => (word.length > 0 ? word[0].toUpperCase() + word.slice(1) : word))
+    .join(' ');
 }
 
 export const LegislationSystem: LegislationSystemAPI = new LegislationSystemImpl();

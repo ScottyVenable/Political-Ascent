@@ -1,0 +1,43 @@
+name: Tech debt
+description: Refactor or cleanup with no user-visible behaviour change
+title: "[TECH-DEBT] "
+labels: ["type:tech-debt", "status:needs-triage"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current state
+    validations:
+      required: true
+  - type: textarea
+    id: target
+    attributes:
+      label: Target state
+    validations:
+      required: true
+  - type: input
+    id: gdd-ref
+    attributes:
+      label: GDD §14 reference
+      description: Link to the architectural inconsistency or risk this addresses.
+      placeholder: "docs/GDD.md §14.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: blast
+    attributes:
+      label: Blast radius
+      options:
+        - Single file
+        - Single module / system
+        - Multiple systems
+        - Cross-cutting (engine + renderer + store)
+        - Save schema affected
+    validations:
+      required: true

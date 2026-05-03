@@ -222,6 +222,12 @@ const ICONS = {
       <path d="M21 21l-6 -6" />
     </>
   ),
+  // Tabler "filter" — funnel. Used by expandable filter controls.
+  filter: (
+    <>
+      <path d="M4 4h16l-6 7v6l-4 3v-9z" />
+    </>
+  ),
   // Tabler "circle" — empty ring. Used to mark incomplete objectives.
   circle: (
     <>

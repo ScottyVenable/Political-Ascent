@@ -1,5 +1,11 @@
 import { useEffect } from 'react';
 import { useScrollLock } from '@/utils/useScrollLock';
+import {
+  humaniseResource,
+  humaniseEconomyMetric,
+  humaniseCohortId,
+  humaniseStat,
+} from '@/utils/humanize';
 import { useUIStore } from '@/store/uiStore';
 import type { VoteResultPayload, CardEffectsPayload } from '@/store/uiStore';
 import type { Effect } from '@/types';
@@ -409,36 +415,22 @@ function VoteResultModal(): JSX.Element | null {
  */
 function describeEffect(e: Effect): { label: string; valueStr: string; positive: boolean | null } {
   switch (e.type) {
-    case 'stat': {
-      const name = e.target.charAt(0).toUpperCase() + e.target.slice(1);
-      return { label: name, valueStr: fmt(e.value), positive: e.value >= 0 };
-    }
-    case 'resource': {
-      const RESOURCE_LABELS: Record<string, string> = {
-        politicalCapital: 'Political Capital',
-        actionPoints: 'Action Points',
-        xp: 'XP',
-      };
-      return { label: RESOURCE_LABELS[e.resource] ?? e.resource, valueStr: fmt(e.value), positive: e.value >= 0 };
-    }
+    case 'stat':
+      // Humanised via STAT_LABEL/humaniseId (todo#75).
+      return { label: humaniseStat(e.target), valueStr: fmt(e.value), positive: e.value >= 0 };
+    case 'resource':
+      // Humanised via RESOURCE_LABEL/humaniseId (todo#75).
+      return { label: humaniseResource(e.resource), valueStr: fmt(e.value), positive: e.value >= 0 };
     case 'group_happiness':
-      return { label: `${e.group} Happiness`, valueStr: fmt(e.value), positive: e.value >= 0 };
+      // Humanised cohort id (todo#75): 'working-class' → 'Working Class'.
+      return { label: `${humaniseCohortId(e.group)} Happiness`, valueStr: fmt(e.value), positive: e.value >= 0 };
     case 'group_loyalty':
-      return { label: `${e.group} Loyalty`, valueStr: fmt(e.value), positive: e.value >= 0 };
+      return { label: `${humaniseCohortId(e.group)} Loyalty`, valueStr: fmt(e.value), positive: e.value >= 0 };
     case 'relationship':
       return { label: `Relationship: ${e.npcId}`, valueStr: fmt(e.value), positive: e.value >= 0 };
-    case 'economy': {
-      const ECONOMY_LABELS: Record<string, string> = {
-        gdpGrowth: 'GDP Growth',
-        unemployment: 'Unemployment',
-        inflation: 'Inflation',
-        debt: 'Debt',
-        deficit: 'Deficit',
-        gini: 'Gini Coefficient',
-        trade: 'Trade Balance',
-      };
-      return { label: ECONOMY_LABELS[e.metric] ?? e.metric, valueStr: fmt(e.value), positive: e.value >= 0 };
-    }
+    case 'economy':
+      // Humanised via ECONOMY_LABEL/humaniseId (todo#75).
+      return { label: humaniseEconomyMetric(e.metric), valueStr: fmt(e.value), positive: e.value >= 0 };
     case 'flag':
       return { label: `Flag: ${e.flag}`, valueStr: String(e.value), positive: null };
     case 'grant_card':

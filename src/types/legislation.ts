@@ -101,6 +101,15 @@ export interface PolicyModule {
   id: string;
   name: string;
   category: 'fiscal' | 'climate' | 'labor' | 'procedural' | 'regional' | 'regulatory';
+  /** Coarse design role used by drafting UI to explain what the rider is for. */
+  strategicRole?:
+    | 'pay_for'
+    | 'benefit_expansion'
+    | 'coalition_builder'
+    | 'oversight'
+    | 'implementation'
+    | 'enforcement'
+    | 'carveout';
   /** Short rationale shown to the player above the toggle. */
   summary: string;
   /**
@@ -112,6 +121,14 @@ export interface PolicyModule {
   oppositionDelta: number;
   /** Adds to the per-year budget impact in $B. */
   budgetImpactDelta: number;
+  /** Legislative drafting complexity added by this rider, usually 1-20. */
+  complexity?: number;
+  /** Public-facing popularity added by this rider. Positive appeal lowers opposition. */
+  publicAppeal?: number;
+  /** Tags where this rider naturally fits; off-agenda riders raise warning text. */
+  recommendedTags?: PolicyTag[];
+  /** Other module ids that cannot be active at the same time. */
+  incompatibleWith?: string[];
   /** Effects appended to the bill on enactment. */
   effects: Effect[];
 }

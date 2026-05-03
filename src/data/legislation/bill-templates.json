@@ -1,5 +1,17 @@
 [
   {
+    "id": "bill-blank-canvas",
+    "title": "Untitled Bill",
+    "description": "Sponsor-defined proposal with no default riders.",
+    "tags": ["constitutional"],
+    "budgetImpact": 0,
+    "pcCost": { "committee": 8, "floor": 12, "vote": 8 },
+    "opposition": 45,
+    "implementationDays": 45,
+    "effects": [{ "type": "flag", "flag": "any-bill-passed", "value": true }],
+    "affectedGroups": []
+  },
+  {
     "id": "bill-working-families-tax-credit",
     "title": "Working Families Tax Credit",
     "description": "Expanded refundable credit for families with combined income under $75k.",

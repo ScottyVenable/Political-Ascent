@@ -10,7 +10,13 @@ import { Icon, type IconName } from '../components/Icon';
 import { IdeologyCompass } from '../components/IdeologyCompass';
 import { ExtendedTooltip, TermText } from '../components/tooltip';
 import type { TooltipContent } from '../components/tooltip';
-import { formatBillionsUSD, describeIdeology } from '@/utils/format';
+import { Sparkline } from '../components/charts';
+import {
+  formatBillionsUSDForDisplay,
+  formatBillionsUSDFull,
+  describeIdeology,
+} from '@/utils/format';
+import { useSettingsStore } from '@/store/settingsStore';
 import type { Bill, BillStage } from '@/types';
 
 /**
@@ -120,6 +126,15 @@ export function DashboardPanel(): JSX.Element {
   }));
 
   const setActivePanel = useUIStore((s) => s.setActivePanel);
+
+  // Money formatting (todo#58):
+  //   - `numberPrecision` from settings drives the compact display.
+  //   - The hover tooltip always shows the full comma-grouped figure so
+  //     the player can read the exact deficit even when the headline is
+  //     compacted to "$1.7T".
+  const numberPrecision = useSettingsStore((s) => s.display.numberPrecision);
+  const deficitDisplay = formatBillionsUSDForDisplay(economy.deficit, numberPrecision);
+  const deficitFull = formatBillionsUSDFull(economy.deficit);
 
   const avgHappiness = useMemo(
     () =>
@@ -240,17 +255,20 @@ export function DashboardPanel(): JSX.Element {
         />
         <Kpi
           label="Deficit"
-          value={formatBillionsUSD(economy.deficit)}
+          value={deficitDisplay}
           trend={economy.deficit > 0 ? 'down' : 'up'}
           tone={economy.deficit > 0 ? 'negative' : 'positive'}
           onClick={() => setActivePanel('economy')}
           testId="kpi-deficit"
-          ariaLabel={`Deficit ${formatBillionsUSD(economy.deficit)}. Open Economy panel.`}
+          ariaLabel={`Deficit ${deficitDisplay}. Open Economy panel.`}
           sparkValues={economy.history.slice(-12).map((h) => h.metrics.deficit)}
           tooltipContent={buildKpiTooltip({
             id: 'deficit',
             label: 'Annual Deficit',
-            currentValue: formatBillionsUSD(economy.deficit),
+            // Show compact + exact: e.g. "$1.7T  ($1,734,000,000,000)".
+            // The exact form lives in parentheses so it doesn't fight the
+            // headline value but is one glance away when the player needs it.
+            currentValue: `${deficitDisplay}  (${deficitFull})`,
             description:
               'Difference between government spending and revenue. Positive values mean the government is spending more than it takes in.',
           })}
@@ -339,73 +357,10 @@ function approvalTone(value: number): Tone {
 }
 
 // ─────────────────────────────────────────────────────────────
-// SPARKLINE — inline SVG mini-chart for KPI tooltips (todo#46)
-// Renders a line graph of up to the last 12 historical values.
-// No axes or ticks — the tooltip header already gives context.
+// KPI sparklines (todo#46) now use the canonical implementation
+// from `components/charts/Sparkline`. Two near-identical local
+// copies (here + EconomyPanel) were unified during todo#66.
 // ─────────────────────────────────────────────────────────────
-
-/**
- * Renders a thin SVG sparkline for `values`. Values are normalised to
- * the visible height so any range reads as a proportional line.
- *
- * @param values - Up to 12 recent data points, oldest first.
- * @param tone   - Drives the line colour using our palette tokens.
- */
-function Sparkline({
-  values,
-  tone,
-}: {
-  values: number[];
-  tone: Tone;
-}): JSX.Element {
-  const w = 160;
-  const h = 40;
-  const pad = 4;
-
-  // Normalise to the drawable area.
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1; // prevent divide-by-zero when all equal
-
-  const pts = values.map((v, i) => {
-    const x = pad + (i / Math.max(values.length - 1, 1)) * (w - pad * 2);
-    // Invert y: SVG origin is top-left, but higher values should appear
-    // higher on the chart.
-    const y = pad + (1 - (v - min) / range) * (h - pad * 2);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-
-  const lineColor =
-    tone === 'positive' ? '#4caf6e' : tone === 'negative' ? '#e05252' : '#8b9ab0';
-
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox={`0 0 ${w} ${h}`}
-      aria-hidden="true"
-      className="overflow-visible"
-    >
-      <polyline
-        points={pts.join(' ')}
-        fill="none"
-        stroke={lineColor}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      {/* Latest value dot */}
-      {pts.length > 0 && (
-        <circle
-          cx={pts[pts.length - 1]!.split(',')[0]}
-          cy={pts[pts.length - 1]!.split(',')[1]}
-          r={3}
-          fill={lineColor}
-        />
-      )}
-    </svg>
-  );
-}
 
 /**
  * Build a simple sparkline-enriched tooltip content object for a KPI metric.

@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Design discussion
+  - name: Discussion / question
     url: https://github.com/ScottyVenable/Political-Ascent/discussions
-    about: Open-ended design / worldbuilding / research conversations belong in Discussions, not Issues.
+    about: Open-ended design questions, ideas, and player feedback belong in Discussions.
+  - name: Security advisory (private)
+    url: https://github.com/ScottyVenable/Political-Ascent/security/advisories/new
+    about: Report critical or high-severity vulnerabilities privately. Do not file public issues.

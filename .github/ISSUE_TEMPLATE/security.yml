@@ -1,0 +1,54 @@
+name: Security
+description: Security finding or hardening request
+title: "[SECURITY] "
+labels: ["type:security", "status:needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > **Critical or high-severity findings:** do **not** disclose details in this public form.
+        > Email the maintainer privately or open a private security advisory at
+        > https://github.com/ScottyVenable/Political-Ascent/security/advisories/new
+        > and use this issue only as a tracking stub once the advisory is filed.
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected surface
+      options:
+        - electron-main
+        - renderer
+        - capacitor (android)
+        - mod-loader
+        - save (read/write/migration)
+        - ipc
+        - ci / build / supply-chain
+        - other
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Informational
+        - Low
+        - Medium
+        - High
+        - Critical
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction (sanitised)
+      description: Steps that demonstrate the issue without weaponising it.
+  - type: textarea
+    id: fix
+    attributes:
+      label: Proposed fix
