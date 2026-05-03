@@ -1,0 +1,728 @@
+{
+  "version": 1,
+  "generated": "2026-05-02",
+  "owner": "Jesse",
+  "repo": "ScottyVenable/Political-Ascent",
+  "project": 9,
+  "defaults": {
+    "stream": "stream:development",
+    "status": "status:needs-triage",
+    "priority": "priority:p2-normal",
+    "milestone": "Unscheduled"
+  },
+  "legacy_label_map": {
+    "priority:P0": "priority:p0-critical",
+    "priority:P1": "priority:p1-high",
+    "priority:P2": "priority:p2-normal",
+    "priority:P3": "priority:p3-low",
+    "status:triage": "status:needs-triage",
+    "status:in-progress": "status:in-progress",
+    "status:in-review": "status:review",
+    "status:done": "status:done",
+    "status:blocked": "status:blocked",
+    "type:ui-regression": "type:bug",
+    "type:polish": "type:feature",
+    "area:character": "system:character",
+    "area:legislation": "system:legislation",
+    "area:congress": "system:congress",
+    "area:cards": "system:cards",
+    "area:quests": "system:quests",
+    "area:economy": "system:economy",
+    "area:skills": null,
+    "area:population": "system:population",
+    "area:dialogue": "system:dialogue",
+    "area:save": "area:save",
+    "area:engine": "area:engine",
+    "area:ui": "area:ui",
+    "area:ci": "area:ci",
+    "area:modding": "area:modding",
+    "area:docs": "area:docs",
+    "area:research": null,
+    "area:settings": null,
+    "area:android": "area:capacitor",
+    "area:other": null
+  },
+  "items": [
+    {
+      "number": 3,
+      "classification": "D",
+      "current_title": "exp--0.1--project-setup",
+      "new_title": "Bootstrap Vite + TypeScript + Playwright scaffold [area:ci]",
+      "labels_add": ["type:chore","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:ci"],
+      "labels_remove": ["priority:P2","status:triage"],
+      "milestone": "Unscheduled",
+      "body_kind": "chore",
+      "body_summary": "Initial project scaffolding (Vite, TS, Tailwind, ESLint, Prettier, Vitest, Playwright). Most acceptance criteria are already satisfied in the repo; flag for triage to confirm and close.",
+      "acceptance": [
+        "Vite + TypeScript project builds clean",
+        "Tailwind, ESLint, Prettier configured",
+        "Vitest unit suite runs green",
+        "Playwright E2E runs green in CI"
+      ],
+      "context_notes": "Phase 0 legacy issue (pre-template). Most or all acceptance items already complete in repo; needs human triage to close.",
+      "out_of_scope": "Anything beyond the original 0.1 scaffold. New tooling additions get their own issues."
+    },
+    {
+      "number": 4,
+      "classification": "D",
+      "current_title": "exp--0.1--core-types",
+      "new_title": "Define core TS types and JSON schemas [area:engine]",
+      "labels_add": ["type:system","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:engine","area:data"],
+      "labels_remove": ["type:feature","priority:P2","status:triage","area:engine"],
+      "milestone": "Unscheduled",
+      "body_kind": "system",
+      "body_summary": "Define core TypeScript types, branded ID types, and JSON schemas plus validation utilities. Phase 0 work; verify completion against current `src/types/` and close.",
+      "acceptance": [
+        "Branded ID types defined",
+        "JSON schemas checked into repo",
+        "Schema validation utilities exported",
+        "Unit tests cover type guards"
+      ]
+    },
+    {
+      "number": 5,
+      "classification": "D",
+      "current_title": "exp--0.1--app-shell",
+      "new_title": "Build app shell with router and global layout [area:renderer]",
+      "labels_add": ["type:feature","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:renderer","area:ui"],
+      "labels_remove": ["priority:P2","status:triage","area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Main app shell with router and global layout. Phase 0; verify against current renderer.",
+      "acceptance": [
+        "Router with top-level routes wired",
+        "Global layout with nav and footer",
+        "Responsive shell passes a11y smoke",
+        "Shell covered by a Playwright test"
+      ]
+    },
+    {
+      "number": 6,
+      "classification": "D",
+      "current_title": "exp--0.1--character-system",
+      "new_title": "Implement character creation, traits, and backgrounds [system:character]",
+      "labels_add": ["type:system","priority:p2-normal","status:done","stream:development","milestone:unscheduled","system:character"],
+      "labels_remove": ["type:feature","priority:P2","status:triage","area:character"],
+      "milestone": "Unscheduled",
+      "body_kind": "system",
+      "body_summary": "Character creation flow, traits, and background system per GDD §4.7.",
+      "acceptance": [
+        "Character creation flow implemented",
+        "Traits applied to starting stats",
+        "Backgrounds selectable with effects",
+        "Persisted in save state"
+      ]
+    },
+    {
+      "number": 7,
+      "classification": "D",
+      "current_title": "exp--0.1--scenario-system",
+      "new_title": "Implement scenario loader and Modern America 2024 [area:engine]",
+      "labels_add": ["type:system","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:engine","area:data"],
+      "labels_remove": ["type:feature","priority:P2","status:triage","area:engine"],
+      "milestone": "Unscheduled",
+      "body_kind": "system",
+      "body_summary": "Scenario loader and the first scenario (Modern America 2024).",
+      "acceptance": [
+        "Scenario loader reads JSON",
+        "Modern America 2024 scenario ships",
+        "Scenario selectable at new game",
+        "Covered by integration tests"
+      ]
+    },
+    {
+      "number": 8,
+      "classification": "D",
+      "current_title": "exp--0.1--time-system",
+      "new_title": "Implement deterministic clock and tick scheduler [system:time]",
+      "labels_add": ["type:system","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:engine","system:time"],
+      "labels_remove": ["type:feature","priority:P2","status:triage","area:engine"],
+      "milestone": "Unscheduled",
+      "body_kind": "system",
+      "body_summary": "Deterministic clock with daily/weekly/monthly tick events per GDD §2.2.",
+      "acceptance": [
+        "Deterministic tick with seed",
+        "Daily/weekly/monthly events fire",
+        "Time controls in UI",
+        "Unit tests verify determinism"
+      ]
+    },
+    {
+      "number": 9,
+      "classification": "D",
+      "current_title": "exp--0.1--action-system",
+      "new_title": "Implement player actions and Political Capital economy [area:engine]",
+      "labels_add": ["type:system","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:engine"],
+      "labels_remove": ["type:feature","priority:P2","status:triage","area:engine"],
+      "milestone": "Unscheduled",
+      "body_kind": "system",
+      "body_summary": "Player action registry and Political Capital cost economy.",
+      "acceptance": [
+        "Action registry with costs",
+        "Political Capital baseline economy balanced",
+        "Action UI with confirmation",
+        "Tests cover cost/reward paths"
+      ]
+    },
+    {
+      "number": 10,
+      "classification": "D",
+      "current_title": "exp--0.1--dashboard",
+      "new_title": "Build primary dashboard with KPIs and headlines [area:renderer]",
+      "labels_add": ["type:feature","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:renderer","area:ui"],
+      "labels_remove": ["priority:P2","status:triage","area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Primary dashboard surface with KPI tiles and headlines feed.",
+      "acceptance": [
+        "KPI tiles render live state",
+        "Headlines feed updates on tick",
+        "Keyboard navigable",
+        "Screenshot baseline captured"
+      ]
+    },
+    {
+      "number": 11,
+      "classification": "D",
+      "current_title": "exp--0.1--population-sim",
+      "new_title": "Implement population cohorts, mood, and radicalism [system:population]",
+      "labels_add": ["type:system","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:engine","system:population"],
+      "labels_remove": ["type:feature","priority:P2","status:triage","area:population"],
+      "milestone": "Unscheduled",
+      "body_kind": "system",
+      "body_summary": "Population cohorts with mood updates and radicalism drift per GDD §4.4.",
+      "acceptance": [
+        "Cohort model implemented",
+        "Mood updates on events",
+        "Radicalism drift over time",
+        "Deterministic and tested"
+      ]
+    },
+    {
+      "number": 12,
+      "classification": "D",
+      "current_title": "exp--0.1--legislation-ui",
+      "new_title": "Build bill drafting and floor vote UI [system:legislation]",
+      "labels_add": ["type:feature","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:renderer","area:ui","system:legislation"],
+      "labels_remove": ["priority:P2","status:triage","area:legislation"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Bill drafting form, committee flow, and floor vote screen per GDD §4.1.",
+      "acceptance": [
+        "Bill drafting form",
+        "Committee flow visualised",
+        "Floor vote screen with tally",
+        "E2E covers full bill path"
+      ]
+    },
+    {
+      "number": 13,
+      "classification": "D",
+      "current_title": "exp--0.1--congress-chamber",
+      "new_title": "Render Congress chamber with whip actions [system:congress]",
+      "labels_add": ["type:feature","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:renderer","area:ui","system:congress"],
+      "labels_remove": ["priority:P2","status:triage","area:congress"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Chamber seating render plus whip actions and member detail pages per GDD §4.2.",
+      "acceptance": [
+        "Chamber seating renders members",
+        "Whip actions available",
+        "Member detail pages",
+        "Performance acceptable at 535 seats"
+      ]
+    },
+    {
+      "number": 14,
+      "classification": "D",
+      "current_title": "exp--0.1--event-system",
+      "new_title": "Implement event engine with conditions and choices [system:events]",
+      "labels_add": ["type:system","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:engine","system:events"],
+      "labels_remove": ["type:feature","priority:P2","status:triage","area:engine"],
+      "milestone": "Unscheduled",
+      "body_kind": "system",
+      "body_summary": "Event engine with condition DSL and choice effects per GDD §4.5.",
+      "acceptance": [
+        "Condition DSL evaluated",
+        "Choices mutate state deterministically",
+        "Authoring schema documented",
+        "Unit tests for sample events"
+      ]
+    },
+    {
+      "number": 15,
+      "classification": "D",
+      "current_title": "exp--0.1--card-system",
+      "new_title": "Implement card deck, draw, play, discard [system:cards]",
+      "labels_add": ["type:system","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:engine","system:cards"],
+      "labels_remove": ["type:feature","priority:P2","status:triage","area:cards"],
+      "milestone": "Unscheduled",
+      "body_kind": "system",
+      "body_summary": "Card deck, hand, and discard piles with draw/play/discard rules per GDD §4.6.",
+      "acceptance": [
+        "Deck, hand, discard piles modeled",
+        "Draw/play/discard rules enforced",
+        "UI for hand and play",
+        "Tests cover edge cases"
+      ]
+    },
+    {
+      "number": 16,
+      "classification": "D",
+      "current_title": "exp--0.1--quest-system",
+      "new_title": "Implement narrative quests with stages and rewards [system:quests]",
+      "labels_add": ["type:system","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:engine","system:quests"],
+      "labels_remove": ["type:feature","priority:P2","status:triage","area:quests"],
+      "milestone": "Unscheduled",
+      "body_kind": "system",
+      "body_summary": "Narrative quests with stages and reward grants per GDD §4.8.",
+      "acceptance": [
+        "Quest stages progress on triggers",
+        "Rewards granted on completion",
+        "Quest log UI",
+        "Authoring schema documented"
+      ]
+    },
+    {
+      "number": 17,
+      "classification": "D",
+      "current_title": "exp--0.1--economy-dashboard",
+      "new_title": "Build economy indicators dashboard [system:economy]",
+      "labels_add": ["type:feature","priority:p2-normal","status:done","stream:development","milestone:unscheduled","area:renderer","area:ui","system:economy"],
+      "labels_remove": ["priority:P2","status:triage","area:economy"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Economic indicators dashboard surface per GDD §4.3.",
+      "acceptance": [
+        "KPI tiles render live state",
+        "Headlines feed updates on tick",
+        "Keyboard navigable",
+        "Screenshot baseline captured"
+      ]
+    },
+    {
+      "number": 18,
+      "classification": "D",
+      "current_title": "exp--0.1--skill-tree",
+      "new_title": "Build skill-tree progression and unlocks [area:renderer]",
+      "labels_add": ["type:feature","priority:p2-normal","status:done","stream:development","milestone:unscheduled","area:renderer","area:ui"],
+      "labels_remove": ["priority:P2","status:triage"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Skill-tree progression with prerequisites and persisted unlocks.",
+      "acceptance": [
+        "Tree data schema defined",
+        "Unlock prerequisites enforced",
+        "UI renders and is navigable",
+        "Persisted in save"
+      ]
+    },
+    {
+      "number": 19,
+      "classification": "D",
+      "current_title": "exp--0.1--save-system",
+      "new_title": "Implement versioned save and load [system:save]",
+      "labels_add": ["type:system","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:save","system:save"],
+      "labels_remove": ["type:feature","priority:P2","status:triage","area:save"],
+      "milestone": "Unscheduled",
+      "body_kind": "system",
+      "body_summary": "Versioned JSON save/load with autosave and migration ladder per GDD §5 / §13.3.",
+      "acceptance": [
+        "Versioned JSON save format",
+        "Load validates and migrates",
+        "Autosave hook on tick",
+        "Tests cover round-trip"
+      ]
+    },
+    {
+      "number": 20,
+      "classification": "D",
+      "current_title": "exp--0.1--achievements",
+      "new_title": "Implement achievement definitions and tracking [system:achievements]",
+      "labels_add": ["type:system","priority:p2-normal","status:done","stream:development","milestone:unscheduled","area:engine","system:achievements"],
+      "labels_remove": ["type:feature","priority:P2","status:triage","area:engine"],
+      "milestone": "Unscheduled",
+      "body_kind": "system",
+      "body_summary": "Achievement definitions and runtime tracking per GDD §4.9.",
+      "acceptance": [
+        "Achievement definitions in data",
+        "Tracker updates on events",
+        "UI list with progress",
+        "Persisted across sessions"
+      ]
+    },
+    {
+      "number": 21,
+      "classification": "D",
+      "current_title": "exp--0.1--polish",
+      "new_title": "Run pre-0.1 polish pass [area:ci]",
+      "labels_add": ["type:chore","priority:p2-normal","status:done","stream:development","milestone:unscheduled","area:ci","area:ui"],
+      "labels_remove": ["type:feature","priority:P2","status:triage","area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "chore",
+      "body_summary": "Pre-0.1 polish: a11y, perf, screenshot regression. Phase 0 close-out tracker.",
+      "acceptance": [
+        "a11y audit issues resolved",
+        "Perf budget met on dashboard",
+        "Screenshot regression pass green",
+        "Release checklist satisfied"
+      ]
+    },
+    {
+      "number": 22,
+      "classification": "D",
+      "current_title": "Initialize GitHub Wiki with core pages",
+      "new_title": "Bootstrap GitHub Wiki with core pages [area:docs]",
+      "labels_add": ["type:docs","priority:p1-high","status:in-progress","stream:development","milestone:unscheduled","area:docs"],
+      "labels_remove": ["priority:P1","status:triage"],
+      "milestone": "Unscheduled",
+      "body_kind": "chore",
+      "body_summary": "Bootstrap the repository wiki with core documentation pages: design pillars, systems overview, contribution flow, glossary.",
+      "acceptance": [
+        "Home page created",
+        "Systems overview page created",
+        "Contribution guide page",
+        "Glossary page"
+      ]
+    },
+    {
+      "number": 23,
+      "classification": "D",
+      "current_title": "Playwright screenshot baseline suite",
+      "new_title": "Establish Playwright screenshot baseline suite [area:ci]",
+      "labels_add": ["type:chore","priority:p1-high","status:needs-triage","stream:development","milestone:unscheduled","area:ci"],
+      "labels_remove": ["priority:P1","status:triage"],
+      "milestone": "Unscheduled",
+      "body_kind": "chore",
+      "body_summary": "Establish a Playwright screenshot baseline suite to catch UI regressions across primary views and themes.",
+      "acceptance": [
+        "Baseline captured for primary views",
+        "CI job runs Playwright snapshots",
+        "Diff artefacts uploaded on failure",
+        "Docs describe update workflow"
+      ]
+    },
+    {
+      "number": 24,
+      "classification": "D",
+      "current_title": "Docs bootstrap: AGENTS.md, ICONS_AND_ASSETS, research folder",
+      "new_title": "Bootstrap AGENTS.md, ICONS_AND_ASSETS, and research/ [area:docs]",
+      "labels_add": ["type:docs","priority:p1-high","status:done","stream:development","milestone:unscheduled","area:docs"],
+      "labels_remove": ["priority:P1","status:triage"],
+      "milestone": "Unscheduled",
+      "body_kind": "chore",
+      "body_summary": "Foundational documentation: AGENTS.md, ICONS_AND_ASSETS.md, and a research/ folder for design notes.",
+      "acceptance": [
+        "AGENTS.md committed",
+        "ICONS_AND_ASSETS.md committed",
+        "research/ folder with README",
+        "Links added to repo README"
+      ]
+    },
+    {
+      "number": 28,
+      "classification": "D",
+      "current_title": "Icon pass: replace ASCII glyphs with gold monochrome SVGs",
+      "new_title": "Replace ASCII glyph icons with gold monochrome SVGs [area:ui]",
+      "labels_add": ["type:feature","priority:p2-normal","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui"],
+      "labels_remove": ["area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Replace sidebar ASCII glyphs and any inline text-symbols with proper SVG icons rendered through a shared `<Icon name=\"...\" />` wrapper. Gold monochrome to match the Bloodborne reference.",
+      "acceptance": [
+        "Sidebar nav uses `<Icon />` SVGs",
+        "All text-symbol icons replaced project-wide",
+        "`<Icon />` component lives in `src/renderer/components/`",
+        "Icon catalogue documented in `docs/guides/ICONS_AND_ASSETS.md`",
+        "No emoji or ASCII-glyph icons remain in shipped UI"
+      ],
+      "context_notes": "Source: docs/research/ui-audit-2026-04.md §5.1 + docs/guides/ICONS_AND_ASSETS.md."
+    },
+    {
+      "number": 29,
+      "classification": "D",
+      "current_title": "Dashboard: next-best-action card for empty-state agency",
+      "new_title": "Add next-best-action card to dashboard [area:renderer]",
+      "labels_add": ["type:feature","priority:p2-normal","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui"],
+      "labels_remove": ["area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Dashboard currently provides no signal about what the player should do next on a fresh scenario turn. Add a 'Priorities' card listing the top 3 actionable items (current quest step, lowest-opposition bill, highest-impact card in hand).",
+      "acceptance": [
+        "New `PrioritiesCard` component on `DashboardPanel`",
+        "Top 3 actionable items computed deterministically",
+        "Card respects keyboard nav and reduced-motion",
+        "Covered by Playwright spec on first-turn fixture"
+      ],
+      "context_notes": "Source: docs/research/ui-audit-2026-04.md §5.2."
+    },
+    {
+      "number": 30,
+      "classification": "D",
+      "current_title": "Congress: hemicycle seat layout",
+      "new_title": "Render Congress hemicycle seat layout [system:congress]",
+      "labels_add": ["type:feature","priority:p2-normal","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui","system:congress"],
+      "labels_remove": ["area:congress","area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Replace the flat wrapped grid in `SeatGrid.tsx` with a proper hemicycle arc for Senate (100 seats) and House (435 seats). Retain hover tooltips and click-to-select. Scale down cleanly under 1024px viewport width.",
+      "acceptance": [
+        "`SeatGrid.tsx` renders a hemicycle arc",
+        "Senate 100 seats and House 435 seats supported",
+        "Hover tooltips and click-to-select preserved",
+        "Layout scales below 1024px viewport width"
+      ],
+      "context_notes": "Source: docs/research/ui-audit-2026-04.md §5.3."
+    },
+    {
+      "number": 31,
+      "classification": "D",
+      "current_title": "Economy: trend sparkline empty-state + longer history seed",
+      "new_title": "Fix economy sparkline empty-state and history seed [system:economy]",
+      "labels_add": ["type:feature","priority:p2-normal","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:data","system:economy"],
+      "labels_remove": ["area:economy","type:polish"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Economy trend panel renders flat lines because only one month of history is seeded and the chart shows `min 2.12 · max 2.12`. Either seed ~12 months of historical data in each scenario's `economy.json`, or render a 'collecting data…' empty state when the series has fewer than 3 distinct points.",
+      "acceptance": [
+        "12 months of seeded history in each scenario's `economy.json`, OR",
+        "Empty-state render when series has < 3 distinct points",
+        "Sparkline min/max no longer collapse on seeded scenarios"
+      ],
+      "context_notes": "Source: docs/research/ui-audit-2026-04.md §5.4."
+    },
+    {
+      "number": 32,
+      "classification": "D",
+      "current_title": "Cards: visual rarity foil for rare/legendary",
+      "new_title": "Add rarity foil treatment to cards [system:cards]",
+      "labels_add": ["type:feature","priority:p3-low","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui","system:cards"],
+      "labels_remove": ["area:cards","type:polish"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Current card rarity is a plain text string. Add a visual treatment: gold corner foil for rare, ornamented border for legendary, default chrome for common/uncommon. Keeps the dark institutional aesthetic.",
+      "acceptance": [
+        "Rare cards render gold corner foil",
+        "Legendary cards render ornamented border",
+        "Common/uncommon retain default chrome",
+        "Visual matches dark institutional aesthetic"
+      ],
+      "context_notes": "Source: docs/research/ui-audit-2026-04.md §5.5."
+    },
+    {
+      "number": 33,
+      "classification": "D",
+      "current_title": "Character creation: ceremonial gold-thumb sliders",
+      "new_title": "Replace native sliders with gold-thumb stat sliders [system:character]",
+      "labels_add": ["type:feature","priority:p3-low","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui","system:character"],
+      "labels_remove": ["area:ui","area:character","type:polish"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Replace native `<input type=range>` with a styled gold-thumb / gold-track slider for the six core stats. Must remain keyboard-accessible and screen-reader-announceable.",
+      "acceptance": [
+        "Six core stat sliders use the new gold-thumb component",
+        "Keyboard navigation parity with native input[type=range]",
+        "Screen reader announces value changes",
+        "Reduced-motion respected"
+      ],
+      "context_notes": "Source: docs/research/ui-audit-2026-04.md §5.6."
+    },
+    {
+      "number": 34,
+      "classification": "D",
+      "current_title": "Population: loyalty scale affordance (-10 / 0 / +10)",
+      "new_title": "Render loyalty as signed scale with midpoint [system:population]",
+      "labels_add": ["type:feature","priority:p3-low","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui","system:population"],
+      "labels_remove": ["area:population","type:polish"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Loyalty currently renders as a raw integer (`Loyalty: 0`). Render against a signed scale (-10 / 0 / +10) with a midpoint indicator so players can tell if a value is good or bad at a glance.",
+      "acceptance": [
+        "Loyalty rendered against signed -10 / 0 / +10 scale",
+        "Midpoint indicator clearly visible",
+        "Raw integer no longer displayed in primary surface"
+      ],
+      "context_notes": "Source: docs/research/ui-audit-2026-04.md §5.7."
+    },
+    {
+      "number": 39,
+      "classification": "D",
+      "current_title": "UI: Dashboard — situation-room redesign",
+      "new_title": "Redesign dashboard as situation room [area:renderer]",
+      "labels_add": ["type:feature","priority:p2-normal","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui"],
+      "labels_remove": ["area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Replace the current four-card generic-metrics dashboard with a 'situation room': a large primary focus area (active bill / pending event / next action), a strip of secondary readouts across the top, and an ambient news scroll along the side.",
+      "acceptance": [
+        "Dashboard has one primary focus card (≈2/3 of viewport)",
+        "Secondary readouts use `text-data-lg` / `text-data-sm` mono scale",
+        "News/events appear as a vertical scroll instead of the 'Latest news' card",
+        "No regressions vs. PR #37 baseline screenshots"
+      ],
+      "context_notes": "Source: docs/UI_GAME_FEEL_PROPOSAL.md §8.2. Deferred from PR #37. Builds on Icon, Card w/ left-bar accent, ResourcePips, typography scale, panel-enter animation."
+    },
+    {
+      "number": 40,
+      "classification": "D",
+      "current_title": "UI: Legislation pipeline — diamond stage-track",
+      "new_title": "Render legislation pipeline as diamond stage-track [system:legislation]",
+      "labels_add": ["type:feature","priority:p2-normal","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui","system:legislation"],
+      "labels_remove": ["area:legislation","area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Render each bill's progression as a horizontal diamond stage-track (Draft → Committee → Floor → Vote → Law) instead of a progress bar. Active stage pulses gold; completed stages filled; upcoming hollow.",
+      "acceptance": [
+        "Bill stage track renders as five diamonds",
+        "Active stage uses gold pulse animation (paused on reduced-motion)",
+        "Completed stages render filled",
+        "Upcoming stages render hollow"
+      ],
+      "context_notes": "Source: docs/UI_GAME_FEEL_PROPOSAL.md §8.3. Builds on `.pa-diamond` utility class shipped in PR #37."
+    },
+    {
+      "number": 41,
+      "classification": "D",
+      "current_title": "UI: Congress — control-panel grid",
+      "new_title": "Redesign Congress as control-panel grid [system:congress]",
+      "labels_add": ["type:feature","priority:p3-low","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui","system:congress"],
+      "labels_remove": ["area:congress","area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Replace the current flat seat grid with a control-panel layout: House and Senate as two distinct plinths, party ratios as filled bars, an individual-legislator drawer that slides open when a seat is clicked.",
+      "acceptance": [
+        "House and Senate render as separate plinths",
+        "Party ratios shown as filled horizontal bars",
+        "Clicking a seat slides open a legislator drawer",
+        "Reduced-motion disables drawer slide animation"
+      ],
+      "context_notes": "Source: docs/UI_GAME_FEEL_PROPOSAL.md §8.4. Builds on Icon, Card, typography scale."
+    },
+    {
+      "number": 42,
+      "classification": "D",
+      "current_title": "UI: Cards as physical objects — hand fan + BottomBar peek",
+      "new_title": "Render hand as fan and add BottomBar peek [system:cards]",
+      "labels_add": ["type:feature","priority:p2-normal","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui","system:cards"],
+      "labels_remove": ["area:cards","area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "The player's hand should read as physical cards (a shallow fan, slight tilt on hover, `animate-card-enter` on draw) rather than a list. The BottomBar's reserved right zone should render a compact horizontal peek of the current hand.",
+      "acceptance": [
+        "`CardsPanel` renders cards in a fan with transform rotation",
+        "Hover raises and straightens a card",
+        "Drawing a new card triggers `animate-card-enter`",
+        "BottomBar right zone renders up to 5 card chips with rarity colour + cost",
+        "Clicking a chip in BottomBar opens the matching card"
+      ],
+      "context_notes": "Source: docs/UI_GAME_FEEL_PROPOSAL.md §8.7. Builds on `animate-card-enter` keyframe and BottomBar reserved right zone."
+    },
+    {
+      "number": 43,
+      "classification": "D",
+      "current_title": "UI: Skills — constellation tree",
+      "new_title": "Render skill tree as constellation [area:renderer]",
+      "labels_add": ["type:feature","priority:p3-low","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui"],
+      "labels_remove": ["area:skills","area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Render the skill tree as a constellation — nodes are diamonds (`.pa-diamond`), links are hairlines in `border-rule` colour, unlocked nodes glow gold.",
+      "acceptance": [
+        "`SkillsPanel` replaces the current text grid with a constellation layout",
+        "Nodes use `.pa-diamond`",
+        "Links use `border-rule` hairline",
+        "Unlocked nodes use `shadow-glow-gold`"
+      ],
+      "context_notes": "Source: docs/UI_GAME_FEEL_PROPOSAL.md §8.8. Builds on `.pa-diamond` and `shadow-glow-gold`."
+    },
+    {
+      "number": 44,
+      "classification": "D",
+      "current_title": "UI: Quests — case-file presentation",
+      "new_title": "Render quests as case-file presentation [system:quests]",
+      "labels_add": ["type:feature","priority:p3-low","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui","system:quests"],
+      "labels_remove": ["area:quests","area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Present each quest as a manila case file — serif title, mono metadata line, a progress meter styled like a red CLASSIFIED / IN PROGRESS stamp, objectives as a checklist with diamond tick-boxes.",
+      "acceptance": [
+        "`QuestsPanel` entries adopt the case-file visual",
+        "Closed quests use a different stamp",
+        "Objectives use diamond tick-boxes"
+      ],
+      "context_notes": "Source: docs/UI_GAME_FEEL_PROPOSAL.md §8.10. Deferred from PR #37."
+    },
+    {
+      "number": 45,
+      "classification": "D",
+      "current_title": "UI: Main-menu atmosphere — newsprint + animated title",
+      "new_title": "Redesign main menu with newsprint atmosphere [area:renderer]",
+      "labels_add": ["type:feature","priority:p3-low","status:needs-triage","stream:development","milestone:m4-ironclad","area:renderer","area:ui"],
+      "labels_remove": ["area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "feature",
+      "body_summary": "Give the main menu real atmosphere — newsprint-style background using existing `.pa-noise`, animated title that settles into place on load, subtle ambient motion (a drifting light across the title, paused on reduced-motion).",
+      "acceptance": [
+        "MainMenu renders newsprint-style background using `.pa-noise`",
+        "Title animates into place on load",
+        "Drifting-light motion respects `prefers-reduced-motion`"
+      ],
+      "context_notes": "Source: docs/UI_GAME_FEEL_PROPOSAL.md §8.1. Deferred from PR #37."
+    },
+    {
+      "number": 107,
+      "classification": "C",
+      "current_title": "Fix Playwright suite startup fixture and reporter configuration",
+      "new_title": "Fix Playwright startup fixture and reporter clash [area:ci]",
+      "labels_add": ["type:bug","priority:p2-normal","status:needs-triage","stream:development","milestone:m4-ironclad","area:ci"],
+      "labels_remove": ["priority:P2","status:triage"],
+      "milestone": "Unscheduled",
+      "body_kind": "bug",
+      "body_summary": "Playwright suite startup fails before app assertions run. `tests/fixtures/a11y-fixture` import is unresolved and the HTML reporter folder clashes with the test artefact root.",
+      "acceptance": [
+        "`tests/fixtures/a11y-fixture` import resolves cleanly",
+        "HTML reporter writes outside the test artefact root (or `playwright.config.ts` is updated to separate them)",
+        "`npx playwright test` boots the full E2E suite without configuration errors"
+      ],
+      "context_notes": "Reproduced on branch `exp--legislative-overhaul`. See snapshot of original report in pre-edit history.",
+      "preserve_original": true
+    },
+    {
+      "number": 108,
+      "classification": "C",
+      "current_title": "Make draft legislation E2E spec work on mobile portrait navigation",
+      "new_title": "Fix draft-legislation E2E on mobile portrait [area:ci]",
+      "labels_add": ["type:bug","priority:p2-normal","status:needs-triage","stream:development","milestone:m4-ironclad","area:ci","system:legislation"],
+      "labels_remove": ["priority:P2","status:triage","type:ui-regression","area:legislation","area:ui"],
+      "milestone": "Unscheduled",
+      "body_kind": "bug",
+      "body_summary": "The focused draft-legislation Playwright spec passes on desktop viewports but times out on the `chromium-pixel-portrait` project before it can reach the Legislation panel. Spec needs to open mobile navigation before selecting Legislation.",
+      "acceptance": [
+        "`tests/e2e/draft-legislation.spec.ts` passes on `chromium-pixel-portrait`",
+        "Spec opens the mobile-nav menu before selecting Legislation",
+        "Desktop projects still pass"
+      ],
+      "context_notes": "Reproduced on `chromium-pixel-portrait`. See snapshot of original report in pre-edit history.",
+      "preserve_original": true
+    },
+    {
+      "number": 119,
+      "classification": "F",
+      "current_title": "[CHORE] Make sure modding system is implemented or at least drafted.",
+      "new_title": "Investigate modding system scope and authoring API [area:modding]",
+      "labels_add": ["type:research","priority:p3-low","status:needs-triage","stream:development","milestone:unscheduled","area:modding"],
+      "labels_remove": ["type:chore"],
+      "milestone": "Unscheduled",
+      "body_kind": "research",
+      "body_summary": "User-filed request to standardise the modding surface and ensure all data is moddable at some point. Needs scoping into design report + sub-issues before any implementation work.",
+      "acceptance": [
+        "Produce `docs/research/modding-system-scope.md` listing data surfaces, file format, load order, and validation contract",
+        "Identify which `src/data/*.json` files are mod-overridable today",
+        "File sub-issues for any implementation gaps"
+      ],
+      "context_notes": "User-reported. Original request preserved verbatim in the body's User-reported quote block.",
+      "preserve_original": true
+    }
+  ]
+}
+
