@@ -1,0 +1,135 @@
+{
+  "$schemaVersion": 1,
+  "id": "committee-chair-pressure",
+  "npcId": "helen-donovan",
+  "voiceTag": "old-guard-survivor",
+  "arcId": "quest-first-bill",
+  "rootNodeId": "open",
+  "resumable": false,
+  "notes": "Committee negotiation beat. Fires when the player's bill stalls in committee. Speaker: Helen Donovan (Committee Chair) — Old Guard Survivor archetype. Purpose: introduce the quid-pro-quo scheduling dynamic; the Chair wants a floor favour in exchange for scheduling the player's bill. Two choice points: (1) how the player reads the Chair's framing — diplomatic / direct / challenge (Integrity ≥ 4 gate, subtext-naming); (2) strategic response to the explicit ask — accept the deal, resist it (Connections ≥ 5 gate), or defer. Branch-specific flags (committee-chair-debt, committee-chair-refused, committee-chair-pending) are observable by downstream committee and scheduling events. No faction effects authored — OQ-1 (faction-standing kind) unresolved per intro-aide-dialogue-notes.md. 'helen-donovan' is a new character not in GDD §12.3.4 named seed list — TODO(vex): Jesse to create wiki entry. 'senator-harlow' is a named placeholder referenced in path-accept — TODO(vex): confirm whether Harlow needs a full NPC entry or can remain a name-drop. See intro-aide-dialogue-notes.md Content wave 3 for open questions.",
+  "nodes": {
+    "open": {
+      "id": "open",
+      "speaker": "helen-donovan",
+      "voiceTag": "old-guard-survivor",
+      "text": "Senator. Sit. I don't have long, and I'd rather not waste what I have.",
+      "autoAdvance": "background"
+    },
+    "background": {
+      "id": "background",
+      "speaker": "helen-donovan",
+      "voiceTag": "old-guard-survivor",
+      "text": "Your bill has been in this committee eleven days. I've read it. My staff has read it. We have notes.",
+      "options": [
+        {
+          "id": "opt-diplomatic",
+          "label": "I imagine some of those notes are actionable.",
+          "nextNodeId": "read-diplomatic"
+        },
+        {
+          "id": "opt-direct",
+          "label": "Tell me what the problems are. I'll address them.",
+          "nextNodeId": "read-direct"
+        },
+        {
+          "id": "opt-challenge",
+          "label": "Your staff has been quiet publicly. This was always going to be a different conversation.",
+          "requirements": [
+            { "kind": "stat", "stat": "integrity", "op": "gte", "value": 4 }
+          ],
+          "failureHint": "Requires Integrity 4. You haven't earned the standing to name what's happening in this room.",
+          "isHidden": false,
+          "nextNodeId": "read-challenge"
+        }
+      ]
+    },
+    "read-diplomatic": {
+      "id": "read-diplomatic",
+      "speaker": "helen-donovan",
+      "voiceTag": "old-guard-survivor",
+      "text": "That's a useful word. Actionable. We'll see if your definition and mine are similar.",
+      "autoAdvance": "leverage"
+    },
+    "read-direct": {
+      "id": "read-direct",
+      "speaker": "helen-donovan",
+      "voiceTag": "old-guard-survivor",
+      "text": "The bill is technically sound. The problem is what scheduling it signals. That's not a technical problem.",
+      "autoAdvance": "leverage"
+    },
+    "read-challenge": {
+      "id": "read-challenge",
+      "speaker": "helen-donovan",
+      "voiceTag": "old-guard-survivor",
+      "text": "Eleven days here and you're reading committee politics. Someone talked to you. Good for them.",
+      "autoAdvance": "leverage"
+    },
+    "leverage": {
+      "id": "leverage",
+      "speaker": "helen-donovan",
+      "voiceTag": "old-guard-survivor",
+      "text": "I have something in front of your bill that needs a friend on the floor. You find me one, I find you a date.",
+      "options": [
+        {
+          "id": "opt-accept",
+          "label": "Tell me who you need. I'll make the call.",
+          "effects": [
+            { "kind": "set-flag", "flag": "committee-chair-debt", "value": true }
+          ],
+          "nextNodeId": "path-accept"
+        },
+        {
+          "id": "opt-resist",
+          "label": "I'm not in the brokering business. The bill stands on its merits.",
+          "requirements": [
+            { "kind": "stat", "stat": "connections", "op": "gte", "value": 5 }
+          ],
+          "failureHint": "Requires Connections 5. You don't have the standing to walk away from this room yet.",
+          "isHidden": false,
+          "effects": [
+            { "kind": "set-flag", "flag": "committee-chair-refused", "value": true }
+          ],
+          "nextNodeId": "path-resist"
+        },
+        {
+          "id": "opt-defer",
+          "label": "Give me forty-eight hours to look at the landscape.",
+          "effects": [
+            { "kind": "set-flag", "flag": "committee-chair-pending", "value": true }
+          ],
+          "nextNodeId": "path-defer"
+        }
+      ]
+    },
+    "path-accept": {
+      "id": "path-accept",
+      "speaker": "helen-donovan",
+      "voiceTag": "old-guard-survivor",
+      "text": "Senator Harlow. Tell him it's a courtesy from my office. He won't need the details.",
+      "autoAdvance": "exit"
+    },
+    "path-resist": {
+      "id": "path-resist",
+      "speaker": "helen-donovan",
+      "voiceTag": "old-guard-survivor",
+      "text": "Then we have nothing to discuss today. The bill stays where it is until the calendar has room.",
+      "autoAdvance": "exit"
+    },
+    "path-defer": {
+      "id": "path-defer",
+      "speaker": "helen-donovan",
+      "voiceTag": "old-guard-survivor",
+      "text": "Forty-eight hours is a weekend. Come back Monday with an answer, not a question.",
+      "autoAdvance": "exit"
+    },
+    "exit": {
+      "id": "exit",
+      "speaker": "narrator",
+      "text": "The Chair's assistant is already at the door before the conversation ends.",
+      "onEnter": [
+        { "kind": "set-flag", "flag": "committee-chair-meeting-complete", "value": true },
+        { "kind": "end-dialogue" }
+      ]
+    }
+  }
+}

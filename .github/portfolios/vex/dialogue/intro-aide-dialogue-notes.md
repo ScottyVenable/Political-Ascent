@@ -290,3 +290,89 @@ Marcus Webb uses `voiceTag: "machine-boss"` as the closest available archetype. 
 ---
 
 - Vex
+
+---
+
+## Content Wave 3 — 2026-05-03
+
+### What was authored
+
+**`committee-chair-pressure.json`** — Helen Donovan (Committee Chair). 10 nodes, 2 choice points.
+
+| Node range | Description |
+|---|---|
+| `open` → `background` | Chair sets the tempo; player's bill has been in committee eleven days |
+| Choice Point 1 (`background`) | How the player reads the subtext: diplomatic acknowledgment (`read-diplomatic`), direct demand for problems (`read-direct`), or subtext-naming (`read-challenge`, Integrity ≥ 4 gate) |
+| `read-*` → `leverage` | Chair converges all three reads to the same proposition: a floor-favour exchange |
+| Choice Point 2 (`leverage`) | Player strategic stance: accept the deal (`path-accept`), refuse it (`path-resist`, Connections ≥ 5 gate), or defer for forty-eight hours (`path-defer`) |
+| `path-*` → `exit` | Chair closes; narrator exit; `committee-chair-meeting-complete` flag set |
+
+**Structural decisions:**
+- No faction effects. Branch-specific flags only (`committee-chair-debt`, `committee-chair-refused`, `committee-chair-pending`).
+- `opt-challenge` gate (Integrity ≥ 4): characterization option — naming the subtext of the meeting. Convergence to `leverage` is identical regardless; this is a tone beat, not an outcome gate.
+- `opt-resist` gate (Connections ≥ 5): strategic option — walking away from the Chair's ask. Higher bar than `opt-challenge` because walking away is a consequential choice, not just a read.
+- `senator-harlow` referenced in `path-accept` as the name the Chair needs on the floor. Placeholder NPC name — open question raised (OQ-W3-C).
+
+---
+
+**`media-scrum-reaction.json`** — Jordan Cross (TV correspondent). 12 nodes, 2 choice points.
+
+| Node range | Description |
+|---|---|
+| `open` | Narrator establishes the scrum; Jordan Cross at the front |
+| `first-question` + Choice Point 1 | Cross asks the post-vote coalition question; player chooses: direct answer, pivot, no comment, or prepared deflection (flag-gated: `media_training_complete`, hidden if fails) |
+| `response-*` → `gotcha-setup` | Cross fires back on all four paths (each tailored to the choice); `gotcha-setup` adds a beat before the sourced accusation |
+| `gotcha` + Choice Point 2 | Cross produces a two-source count figure; player chooses: deny, partial acknowledgment, or own the count with a correction (Integrity ≥ 5 gate) |
+| `exit-hostile` / `exit-mixed` / `exit-clean` → `exit` | Cross closes with three distinct registers; narrator exit; `media-scrum-complete` flag set |
+
+**Structural decisions:**
+- No faction effects. Branch-specific flags (`media-count-denied`, `media-count-partial`, `media-count-confirmed`) plus universal `media-scrum-complete`.
+- `opt-prepared` is `isHidden: true` — not visible-greyed; disappears entirely if the flag is unset. Rationale: "no comment" is already the safe player-facing choice; a visible locked fourth option creates noise in a fast-moving scrum context.
+- `opt-own-it` is `isHidden: false` — visible-greyed if Integrity < 5. Rationale: the player should know this option exists and understand why they can't deliver it cleanly.
+- Count figure in `gotcha` ("down by six") is generic enough to fire across bill types. Not ideology-specific.
+
+---
+
+### Unresolved assumptions (Wave 3)
+
+#### OQ-W3-A — `press-interactions` arcId (coordination with Sol)
+
+`media-scrum-reaction.json` uses `arcId: "press-interactions"` as a placeholder. There is no confirmed press arc in the current quest schema. This tree may fire as a standalone trigger (post-vote event) rather than a named arc beat.
+
+**Question:** Is there a press arc planned for M2, or should press interaction trees carry no arcId and be triggered by the event system directly?
+
+**Blocks shipping:** No — arcId is advisory for quest tracking; tree fires via event trigger regardless.
+
+---
+
+#### OQ-W3-B — Integrity ≥ 5 threshold on `opt-own-it` (balance)
+
+The "own the count" option in `media-scrum-reaction.json` is gated at Integrity ≥ 5. This is an authoring estimate. The stat range for senators at the point this event fires (post-first-vote) is not documented.
+
+**Question:** Is 5 the right Integrity threshold for "correcting the record on camera"? If the Integrity range at mid-game is 1–8 rather than 1–10, a gate of 5 may be too restrictive.
+
+**Blocks shipping:** No — gate degrades gracefully to greyed option.
+
+---
+
+#### OQ-W3-C — `senator-harlow` placeholder NPC (coordination with Jesse)
+
+`committee-chair-pressure.json` path-accept references "Senator Harlow" as the name the Chair needs on the floor. This is a placeholder name.
+
+**Question:** Should Harlow become a named NPC entry (recurring), or is a generic placeholder ("a colleague in the Agriculture caucus") more appropriate for a first-pass authoring beat?
+
+**Blocks shipping:** No — the name-drop is non-functional at runtime; it's a text placeholder.
+
+---
+
+#### OQ-W3-D — `media_training_complete` flag source (coordination with Vex / authoring)
+
+`media-scrum-reaction.json` gates `opt-prepared` on `media_training_complete`. This flag implies an off-screen media training event. No such event is authored yet.
+
+**Question:** Should a `media-training` dialogue beat be authored as a prerequisite event? Or should this flag be set by a background mechanic (e.g., spending AP in the player's schedule)?
+
+**Blocks shipping:** No — hidden option simply never appears until the flag is set; graceful degradation.
+
+---
+
+- Vex
