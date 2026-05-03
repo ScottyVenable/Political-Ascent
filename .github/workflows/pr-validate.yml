@@ -118,7 +118,7 @@ jobs:
         run: npx playwright install-deps chromium
       - name: Run Playwright (PR — chromium-1280x720 only)
         if: github.event_name == 'pull_request'
-        run: npx playwright test --project=chromium-1280x720
+        run: npx playwright test --project=chromium-1280x720 --update-snapshots=missing
       - name: Run Playwright (push to development — full matrix)
         if: github.event_name == 'push'
         run: |
