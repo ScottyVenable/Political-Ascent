@@ -101,7 +101,16 @@ export const dialogueRuntime = DialogueSystem;
 export type DialogueRuntimeId = string;
 
 export interface DialogueRuntimeEffect {
-  kind: 'flag' | 'resource' | 'relationship' | 'ideology';
+  /**
+   * Effect kinds:
+   * - 'flag': key=flagName, value=boolean
+   * - 'resource': key='politicalCapital'|'actionPoints'|'xp', value=number delta
+   * - 'relationship': key=npcId, value=number delta
+   * - 'ideology': key='economic'|'social', value=number delta
+   * - 'faction-standing': key=factionId, value=number delta (clamped [-100,100] by FactionSystem)
+   * - 'end-dialogue': marks the session resolved; key and value are unused
+   */
+  kind: 'flag' | 'resource' | 'relationship' | 'ideology' | 'faction-standing' | 'end-dialogue';
   key: string;
   value: number | boolean | string;
 }
@@ -157,6 +166,8 @@ export function createDialogueInterpreter(hooks: DialogueInterpreterHooks = {}):
     effects: readonly DialogueRuntimeEffect[],
   ): DialogueRuntimeState => {
     let nextFlags = state.flags;
+    // end-dialogue is detected in a first pass so all other effects commit first.
+    let shouldEndDialogue = false;
 
     for (const effect of effects) {
       if (effect.kind === 'flag' && typeof effect.value === 'boolean') {
@@ -164,13 +175,19 @@ export function createDialogueInterpreter(hooks: DialogueInterpreterHooks = {}):
           ...nextFlags,
           [effect.key]: effect.value,
         };
+      } else if (effect.kind === 'end-dialogue') {
+        shouldEndDialogue = true;
       }
+      // 'faction-standing', 'resource', 'relationship', 'ideology' are handled
+      // by the applyEffectsHook (store-aware layer) below.
     }
 
     const nextState: DialogueRuntimeState = {
       ...state,
       flags: nextFlags,
       appliedEffects: [...state.appliedEffects, ...effects],
+      // resolved is set AFTER flags are committed so set-flag always persists.
+      ...(shouldEndDialogue ? { resolved: true } : {}),
     };
 
     if (effects.length > 0) {
