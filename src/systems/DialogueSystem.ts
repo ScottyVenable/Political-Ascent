@@ -107,6 +107,7 @@ export interface DialogueRuntimeNode {
   text: string;
   speakerId?: string;
   onEnterEffects?: DialogueRuntimeEffect[];
+  nextNodeId?: DialogueRuntimeId;
   choices: DialogueRuntimeChoice[];
 }
 
@@ -121,6 +122,8 @@ export interface DialogueRuntimeState {
   currentNodeId: DialogueRuntimeId;
   resolved: boolean;
   visitedNodeIds: DialogueRuntimeId[];
+  flags: Record<string, boolean>;
+  appliedEffects: DialogueRuntimeEffect[];
 }
 
 export interface DialogueInterpreterHooks {
@@ -137,6 +140,34 @@ export function createDialogueInterpreter(hooks: DialogueInterpreterHooks = {}):
   const applyEffectsHook = hooks.applyEffects ?? (() => {});
 
   let tree: DialogueRuntimeTree | null = null;
+
+  const applyRuntimeEffects = (
+    state: DialogueRuntimeState,
+    effects: readonly DialogueRuntimeEffect[],
+  ): DialogueRuntimeState => {
+    let nextFlags = state.flags;
+
+    for (const effect of effects) {
+      if (effect.kind === 'flag' && typeof effect.value === 'boolean') {
+        nextFlags = {
+          ...nextFlags,
+          [effect.key]: effect.value,
+        };
+      }
+    }
+
+    const nextState: DialogueRuntimeState = {
+      ...state,
+      flags: nextFlags,
+      appliedEffects: [...state.appliedEffects, ...effects],
+    };
+
+    if (effects.length > 0) {
+      applyEffectsHook(effects, nextState);
+    }
+
+    return nextState;
+  };
 
   const getNode = (state: DialogueRuntimeState): DialogueRuntimeNode => {
     if (!tree) {
@@ -156,14 +187,38 @@ export function createDialogueInterpreter(hooks: DialogueInterpreterHooks = {}):
     return { ...state, visitedNodeIds: [...state.visitedNodeIds, nodeId] };
   };
 
+  const transitionToNode = (
+    state: DialogueRuntimeState,
+    nextNodeId: DialogueRuntimeId,
+    preNodeEffects: readonly DialogueRuntimeEffect[] = [],
+  ): DialogueRuntimeState => {
+    let nextState = state;
+
+    if (preNodeEffects.length > 0) {
+      nextState = applyRuntimeEffects(nextState, preNodeEffects);
+    }
+
+    nextState = markVisited({ ...nextState, currentNodeId: nextNodeId }, nextNodeId);
+    const nextNode = getNode(nextState);
+
+    if (nextNode.onEnterEffects?.length) {
+      // TODO(OQ): confirm onEnter ordering relative to branching side-effects and telemetry.
+      nextState = applyRuntimeEffects(nextState, nextNode.onEnterEffects);
+    }
+
+    return nextState;
+  };
+
   return {
     loadTree(nextTree) {
       tree = nextTree;
-      const initial: DialogueRuntimeState = {
+      let initial: DialogueRuntimeState = {
         treeId: nextTree.id,
         currentNodeId: nextTree.startNodeId,
         resolved: false,
         visitedNodeIds: [nextTree.startNodeId],
+        flags: {},
+        appliedEffects: [],
       };
 
       const startNode = nextTree.nodes[nextTree.startNodeId];
@@ -173,7 +228,7 @@ export function createDialogueInterpreter(hooks: DialogueInterpreterHooks = {}):
       // TODO(OQ): finalize speaker resolution order (node speaker, scene speaker, fallback narrator).
       if (startNode.onEnterEffects?.length) {
         // TODO(OQ): confirm onEnter ordering relative to UI reveal and VO playback.
-        applyEffectsHook(startNode.onEnterEffects, initial);
+        initial = applyRuntimeEffects(initial, startNode.onEnterEffects);
       }
       return initial;
     },
@@ -182,6 +237,9 @@ export function createDialogueInterpreter(hooks: DialogueInterpreterHooks = {}):
       const node = getNode(state);
       if (node.choices.length > 0) {
         return state;
+      }
+      if (node.nextNodeId) {
+        return transitionToNode(state, node.nextNodeId);
       }
       return { ...state, resolved: true };
     },
@@ -193,22 +251,15 @@ export function createDialogueInterpreter(hooks: DialogueInterpreterHooks = {}):
         throw new Error(`Unknown dialogue choice: ${choiceId}`);
       }
 
-      if (choice.effects?.length) {
-        // TODO(OQ): lock ideology drift breakdown (short-term mood vs long-term worldview deltas).
-        applyEffectsHook(choice.effects, state);
-      }
-
       if (!choice.nextNodeId) {
-        return { ...state, resolved: true };
+        const resolvedState = choice.effects?.length
+          ? applyRuntimeEffects(state, choice.effects)
+          : state;
+        return { ...resolvedState, resolved: true };
       }
 
-      const nextState = markVisited({ ...state, currentNodeId: choice.nextNodeId }, choice.nextNodeId);
-      const nextNode = getNode(nextState);
-      if (nextNode.onEnterEffects?.length) {
-        // TODO(OQ): confirm onEnter ordering relative to branching side-effects and telemetry.
-        applyEffectsHook(nextNode.onEnterEffects, nextState);
-      }
-      return nextState;
+      // TODO(OQ): lock ideology drift breakdown (short-term mood vs long-term worldview deltas).
+      return transitionToNode(state, choice.nextNodeId, choice.effects ?? []);
     },
   };
 }

@@ -37,6 +37,31 @@ function clampStanding(value: number): number {
   return Math.max(MIN_STANDING, Math.min(MAX_STANDING, Math.round(value)));
 }
 
+export function createDefaultFactionStandings(
+  factions: readonly FactionDefinition[],
+  existing: FactionStandings = {},
+): FactionStandings {
+  const nextStandings: FactionStandings = { ...existing };
+
+  for (const faction of factions) {
+    if (nextStandings[faction.id] === undefined) {
+      nextStandings[faction.id] = 0;
+    }
+  }
+
+  return nextStandings;
+}
+
+export function getBillOutcomeStandingDeltas(input: BillOutcomeInput): FactionStandings {
+  if (!input.sponsorFactionId) {
+    return {};
+  }
+
+  return {
+    [input.sponsorFactionId]: input.passed ? 2 : -2,
+  };
+}
+
 class FactionSystemImpl implements FactionSystemAPI {
   private state: FactionSystemState = {
     factions: {},
@@ -45,18 +70,14 @@ class FactionSystemImpl implements FactionSystemAPI {
 
   registerFactions(factions: readonly FactionDefinition[]): void {
     const nextFactions: Record<FactionId, FactionDefinition> = { ...this.state.factions };
-    const nextStandings: FactionStandings = { ...this.state.standings };
 
     for (const faction of factions) {
       nextFactions[faction.id] = faction;
-      if (nextStandings[faction.id] === undefined) {
-        nextStandings[faction.id] = 0;
-      }
     }
 
     this.state = {
       factions: nextFactions,
-      standings: nextStandings,
+      standings: createDefaultFactionStandings(factions, this.state.standings),
     };
   }
 
@@ -78,20 +99,14 @@ class FactionSystemImpl implements FactionSystemAPI {
   }
 
   applyBillOutcome(input: BillOutcomeInput): void {
-    // Scaffold hook for M2 policy fallout plumbing.
-    // Input is fully wired so future implementations can branch on pass/fail + tags.
     void input.billId;
-    void input.passed;
     void input.tags;
 
-    if (!input.sponsorFactionId) {
-      return;
+    const deltas = getBillOutcomeStandingDeltas(input);
+    for (const [factionId, delta] of Object.entries(deltas)) {
+      const current = this.state.standings[factionId] ?? 0;
+      this.setStanding(factionId, current + delta);
     }
-
-    const current = this.state.standings[input.sponsorFactionId] ?? 0;
-    // Minimal real behavior: sponsor faction reacts to outcome polarity.
-    const delta = input.passed ? 2 : -2;
-    this.setStanding(input.sponsorFactionId, current + delta);
   }
 }
 
