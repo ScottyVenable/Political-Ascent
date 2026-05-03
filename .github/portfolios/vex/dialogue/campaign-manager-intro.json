@@ -1,0 +1,145 @@
+{
+  "$schemaVersion": 1,
+  "id": "campaign-manager-intro",
+  "npcId": "marcus-webb",
+  "voiceTag": "machine-boss",
+  "arcId": "quest-first-bill",
+  "rootNodeId": "open",
+  "resumable": false,
+  "notes": "M2 Intro beat. Marcus Webb — the player's campaign manager — delivers his first operational report. Where Petra Solis reads the player, Marcus reads the board. Tone: transactional, data-driven, no sentimentality. Purpose: establish Marcus's voice, introduce the Corporate Lobby as an early-game pressure vector, and hand off the briefing document that unlocks Marcus's recurring advice mechanic. Diamond structure (converge at faction-warning, branch at warning-detail). No ideology-drift effects authored — OQ-2 pending Sol; flag effects only. Faction ID 'corporate-lobby' is an authoring placeholder pending Nova's FactionSystem spec. voiceTag 'machine-boss' is the closest available archetype; Marcus is not a Whip but runs the same transactional register — TODO(vex/OQ-E): confirm whether a dedicated 'campaign-fixer' voiceTag is warranted or whether 'machine-boss' covers this character class. Player choice at open-b is characterization (no mechanical delta); player choice at warning-detail is strategic positioning (flag-observable by future Corporate Lobby events). New character: Marcus Webb not in GDD §12.3.4 named seed list — TODO(vex): Jesse to create wiki entry."
+  ,
+  "nodes": {
+    "open": {
+      "id": "open",
+      "speaker": "marcus-webb",
+      "voiceTag": "machine-boss",
+      "text": "Senator {pc.name}. Marcus Webb. Before you ask — no, I don't do congratulations.",
+      "autoAdvance": "open-b"
+    },
+    "open-b": {
+      "id": "open-b",
+      "speaker": "marcus-webb",
+      "voiceTag": "machine-boss",
+      "text": "You came in at forty-one percent favorable, thirty-seven unfavorable, twenty-two undecided. That's your baseline. Everything I do is about the twenty-two.",
+      "options": [
+        {
+          "id": "opt-numbers",
+          "label": "Forty-one to start is workable. What's the path to fifty?",
+          "nextNodeId": "response-numbers"
+        },
+        {
+          "id": "opt-vision",
+          "label": "I didn't run on polling averages.",
+          "nextNodeId": "response-vision"
+        },
+        {
+          "id": "opt-test",
+          "label": "You've already run the scenarios. You're reciting from memory.",
+          "requirements": [
+            { "kind": "stat", "stat": "strategy", "op": "gte", "value": 3 }
+          ],
+          "failureHint": "Requires Strategy 3. You haven't learned to read a briefing room yet.",
+          "isHidden": false,
+          "nextNodeId": "response-test"
+        }
+      ]
+    },
+    "response-numbers": {
+      "id": "response-numbers",
+      "speaker": "marcus-webb",
+      "voiceTag": "machine-boss",
+      "text": "Good. You understand the problem. The path is legislation that moves, not legislation that impresses.",
+      "autoAdvance": "faction-warning"
+    },
+    "response-vision": {
+      "id": "response-vision",
+      "speaker": "marcus-webb",
+      "voiceTag": "machine-boss",
+      "text": "Vision speeches are for donors. The chamber runs on schedules and favors. We can revisit vision after you have fifty-one votes.",
+      "autoAdvance": "faction-warning"
+    },
+    "response-test": {
+      "id": "response-test",
+      "speaker": "marcus-webb",
+      "voiceTag": "machine-boss",
+      "text": "Four scenarios. You came in on a Wednesday, so I had an extra day. The comfortable read is a problem you don't have yet.",
+      "autoAdvance": "faction-warning"
+    },
+    "faction-warning": {
+      "id": "faction-warning",
+      "speaker": "marcus-webb",
+      "voiceTag": "machine-boss",
+      "text": "There's one variable that isn't in the polling and will consume your first six months if you ignore it.",
+      "autoAdvance": "warning-detail"
+    },
+    "warning-detail": {
+      "id": "warning-detail",
+      "speaker": "marcus-webb",
+      "voiceTag": "machine-boss",
+      "text": "The Corporate Lobby. They don't want to own you — they want optionality. They'll be in your office by end of week with a modest ask. It won't feel like a test. It is.",
+      "options": [
+        {
+          "id": "opt-fight",
+          "label": "I'm not taking industry meetings in my first month.",
+          "effects": [
+            { "kind": "set-flag", "flag": "webb-lobby-stance", "value": "closed" }
+          ],
+          "nextNodeId": "response-fight"
+        },
+        {
+          "id": "opt-avoid",
+          "label": "I can defer and keep the door open.",
+          "effects": [
+            { "kind": "set-flag", "flag": "webb-lobby-stance", "value": "deferred" }
+          ],
+          "nextNodeId": "response-avoid"
+        },
+        {
+          "id": "opt-leverage",
+          "label": "If they want optionality, they can pay for it.",
+          "effects": [
+            { "kind": "set-flag", "flag": "webb-lobby-stance", "value": "leverage" }
+          ],
+          "nextNodeId": "response-leverage"
+        }
+      ]
+    },
+    "response-fight": {
+      "id": "response-fight",
+      "speaker": "marcus-webb",
+      "voiceTag": "machine-boss",
+      "text": "They'll note the closed door and file it. Don't be surprised when their money goes to your primary challenger instead. Might still be the right call.",
+      "autoAdvance": "briefing"
+    },
+    "response-avoid": {
+      "id": "response-avoid",
+      "speaker": "marcus-webb",
+      "voiceTag": "machine-boss",
+      "text": "Deferring is a signal too. They'll read it as soft. Take the meeting when it comes — just make them talk first.",
+      "autoAdvance": "briefing"
+    },
+    "response-leverage": {
+      "id": "response-leverage",
+      "speaker": "marcus-webb",
+      "voiceTag": "machine-boss",
+      "text": "Now you're thinking like a manager. Don't say that out loud again until you know the room.",
+      "autoAdvance": "briefing"
+    },
+    "briefing": {
+      "id": "briefing",
+      "speaker": "marcus-webb",
+      "voiceTag": "machine-boss",
+      "text": "I put together a briefing document. Faction breakdown, committee calendar, your first three months mapped against the legislative clock. Read it before tomorrow.",
+      "onEnter": [
+        { "kind": "set-flag", "flag": "marcus_intro_complete", "value": true }
+      ],
+      "autoAdvance": "exit"
+    },
+    "exit": {
+      "id": "exit",
+      "speaker": "narrator",
+      "text": "Webb sets a folder on the desk and leaves without waiting for a response.",
+      "onEnter": [{ "kind": "end-dialogue" }]
+    }
+  }
+}
