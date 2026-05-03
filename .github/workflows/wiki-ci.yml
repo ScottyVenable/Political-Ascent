@@ -31,7 +31,7 @@ jobs:
       missing: ${{ steps.run.outputs.missing }}
       orphans: ${{ steps.run.outputs.orphans }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
@@ -128,13 +128,13 @@ jobs:
 
       - name: Sticky PR comment
         if: github.event_name == 'pull_request' && always()
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         continue-on-error: true
         with:
           header: wiki-ci
           message: |
             <!-- wiki-ci -->
-            **Wiki CI** ([spec](.github/wiki-ci-spec.md))
+            **Wiki CI** ([spec](.github/specs/wiki-ci-spec.md))
             - Broken intra-wiki links: **${{ steps.run.outputs.broken }}**
             - Pages missing GDD status block: **${{ steps.run.outputs.missing }}**
             - Orphan pages (warning only): **${{ steps.run.outputs.orphans }}**

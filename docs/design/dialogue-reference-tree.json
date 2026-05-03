@@ -1,0 +1,122 @@
+{
+  "$schemaVersion": 1,
+  "id": "bipartisan-opening",
+  "npcId": "ray-nguyen",
+  "voiceTag": "coalition-broker",
+  "arcId": "infrastructure-renewal",
+  "rootNodeId": "scan",
+  "resumable": true,
+  "notes": "Canonical authoring reference for wiki Authoring-Dialogue.md. Archetype: Coalition Broker (Ray Nguyen, NV Independent). Arc beat: Escalation — player recruits Nguyen to broker cross-party support for the infrastructure bill. Demonstrates: text-variant array with faction-standing condition, rng:pick token for opening variation, compound any-of condition (trait OR npc-relationship), isHidden option with costs, bill-stage gate, two convergent branches, update-relationship + set-flag effects. NPC line lengths at price-reveal (26 words) and broker-engage (21 words) are at the upper budget — acceptable for list-making register per §12.5.3 flavour-line allowance.",
+  "nodes": {
+    "scan": {
+      "id": "scan",
+      "speaker": "npc",
+      "voiceTag": "coalition-broker",
+      "text": [
+        {
+          "when": { "kind": "faction-standing", "factionId": "reform-bloc", "op": "gte", "value": 15 },
+          "text": "You've been working the Reform Bloc. {rng:pick:That's useful.|I noticed.|That's one room. We need three.}"
+        },
+        {
+          "text": "{rng:pick:Who's a no on your bill? Have you asked them why?|Walk me through the holdouts. Not the votes — the reasons.|I've been watching your coalition. You're two senators short and you know it.}"
+        }
+      ],
+      "options": [
+        {
+          "id": "name-holdouts",
+          "label": "Birch and Okonkwo. One's a wall, one's a door.",
+          "requirements": [
+            { "kind": "stat", "stat": "strategy", "op": "gte", "value": 4 }
+          ],
+          "failureHint": "Requires Strategy 4. You haven't mapped the chamber yet.",
+          "nextNodeId": "broker-engage"
+        },
+        {
+          "id": "leverage-play",
+          "label": "I can make it worth your while.",
+          "requirements": [
+            {
+              "kind": "any",
+              "of": [
+                { "kind": "trait", "traitId": "dealmaker" },
+                { "kind": "npc-relationship", "npcId": "ray-nguyen", "op": "gte", "value": 5 }
+              ]
+            }
+          ],
+          "isHidden": true,
+          "costs": { "pc": 15 },
+          "effects": [
+            { "kind": "set-flag", "flag": "nguyen-leverage-opened", "value": true },
+            { "kind": "update-relationship", "npcId": "ray-nguyen", "delta": 3 }
+          ],
+          "nextNodeId": "broker-engage"
+        },
+        {
+          "id": "ask-price",
+          "label": "What does it take to get you in the room?",
+          "nextNodeId": "price-reveal"
+        }
+      ]
+    },
+    "price-reveal": {
+      "id": "price-reveal",
+      "speaker": "npc",
+      "voiceTag": "coalition-broker",
+      "text": "I don't have a price. I have a list. Birch wants the harbour rider dropped. Okonkwo wants a fiscal note. Give me something to work with.",
+      "options": [
+        {
+          "id": "concede-harbour",
+          "label": "The harbour rider goes. What does the fiscal note look like?",
+          "requirements": [
+            { "kind": "bill-stage", "billRef": "current", "stage": "committee" }
+          ],
+          "failureHint": "The bill has left committee. That rider cannot be stripped now.",
+          "effects": [
+            { "kind": "set-flag", "flag": "harbour-rider-conceded", "value": true }
+          ],
+          "nextNodeId": "broker-engage"
+        },
+        {
+          "id": "hold-rider",
+          "label": "The harbour rider stays. Find me another way.",
+          "effects": [
+            { "kind": "update-relationship", "npcId": "ray-nguyen", "delta": -2 }
+          ],
+          "nextNodeId": "exit-cold"
+        }
+      ]
+    },
+    "broker-engage": {
+      "id": "broker-engage",
+      "speaker": "npc",
+      "voiceTag": "coalition-broker",
+      "text": "All right. I'll put people in the room. I'm not promising votes — I'm promising a conversation. You close it.",
+      "options": [
+        {
+          "id": "accept-terms",
+          "label": "A conversation is all I need.",
+          "effects": [
+            { "kind": "update-relationship", "npcId": "ray-nguyen", "delta": 5 },
+            { "kind": "set-flag", "flag": "nguyen-brokering", "value": true },
+            { "kind": "advance-quest", "questId": "infrastructure-renewal", "stage": "coalition-building" },
+            { "kind": "push-news", "template": "nguyen-brokering-started" }
+          ],
+          "nextNodeId": "exit"
+        }
+      ]
+    },
+    "exit-cold": {
+      "id": "exit-cold",
+      "speaker": "npc",
+      "voiceTag": "coalition-broker",
+      "text": "Come back when you've got room to move. I don't broker dead ends.",
+      "autoAdvance": "exit"
+    },
+    "exit": {
+      "id": "exit",
+      "speaker": "narrator",
+      "text": "The door closes.",
+      "onEnter": [{ "kind": "end-dialogue" }]
+    }
+  }
+}
