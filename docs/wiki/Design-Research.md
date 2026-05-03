@@ -1,5 +1,9 @@
 # Design Research
 
+> **GDD reference:** N/A (research reference page)
+> **Implementation status:** N/A
+> **Last reviewed:** 2026-05-02 (Vex, GDD v0.4-DRAFT)
+
 We study titles that solve problems adjacent to ours. Full write-ups
 live under
 [`docs/research/`](https://github.com/ScottyVenable/Political-Ascent/tree/development/docs/research).

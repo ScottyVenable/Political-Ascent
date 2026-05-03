@@ -1,5 +1,9 @@
 # Contributing
 
+> **GDD reference:** N/A (process page)
+> **Implementation status:** N/A
+> **Last reviewed:** 2026-05-02 (Vex, GDD v0.4-DRAFT)
+
 Full contributor workflow is in
 [`docs/guides/CONTRIBUTING.md`](https://github.com/ScottyVenable/Political-Ascent/blob/development/docs/guides/CONTRIBUTING.md).
 This page is the high-level version.
