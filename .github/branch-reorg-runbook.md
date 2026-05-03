@@ -2,6 +2,10 @@
 
 Owner: **Sol** (authored 2026-05-02). Executor: **the user** (Scotty).
 
+> **Status: Path A executed 2026-05-03.** All destructive operations below
+> have been completed. This document is retained as historical reference.
+> See "Execution log" appendix at the bottom for what actually happened.
+
 This runbook covers the destructive operations that move the repository from
 the legacy default branch (`experimental`) to the new three-branch model
 (`development` / `alpha` / `stable`). Sol intentionally did **not** execute
@@ -263,3 +267,56 @@ Sol did **not** execute:
 - Force pushes on any shared ref.
 - Branch protection rules.
 - Re-tipping of `alpha` / `stable`.
+
+
+---
+
+## Execution log (Path A, 2026-05-03)
+
+Executor: Sol (with explicit user authorisation for destructive operations).
+
+1. **Default branch swap** — done by user via web UI before Sol ran. No
+   automatic PR retargeting was prompted; Sol retargeted manually.
+2. **PR retargets**:
+   - #112 `copilot/optimize-ui-for-mobile` (mobile UX) → retargeted to
+     `development`.
+   - #113 `copilot/expand-playwright-tests-for-ui` (Playwright suite
+     expansion) → retargeted to `development`.
+   - #48 `copilot/optimize-mobile-layout` (older draft, conflicting) →
+     closed as superseded by #112.
+3. **PR #115 squash-merged** at `78f6df6` (Phase 1–4 docs/tracking +
+   `f5a4e62` F-01 P0 fix). Source branch `exp--legislative-overhaul`
+   deleted automatically.
+4. **PR #117 merged** (merge commit at `5bcf078`) — folded the 4 missing
+   experimental code commits (#106, #109, #110, #111) into `development`.
+   Conflicts resolved per policy: `.github/` + `docs/` took
+   `development`; `src/` + `tests/` took `experimental`.
+5. **Retipped** `alpha` and `stable` from `9a51ec3` → `5bcf078`
+   (force-with-lease, both had no consumers).
+6. **Deleted** `origin/experimental`.
+7. **Deleted legacy branches**: 12 `copilot/*`/`claude/*`/`exp--*`
+   branches + `release` (renamed to `legacy/release` first to preserve
+   the `v0.1.1-alpha.3` tag pointer). Dependabot PR #116 head and the
+   two retargeted `copilot/*` PR heads were intentionally preserved.
+   `copilot/optimize-mobile-layout` was preserved per close comment on
+   #48 for possible cherry-pick until #112 lands.
+8. **Branch protection** applied via `gh api PUT
+   /repos/.../branches/<name>/protection`:
+   - `development`: PR required, no force-push, no deletion, dismiss
+     stale reviews. `required_approving_review_count: 0` (sole-maintainer
+     repo). No status checks (CI doesn't exist yet — Phase 6).
+   - `alpha` / `stable`: same as `development` plus
+     `required_linear_history: true` and
+     `required_conversation_resolution: true`.
+9. **Local cleanup** — `git remote set-head origin -a` repointed
+   `origin/HEAD` to `development`. Stale local branches deleted.
+
+### Pending user action
+
+- Phase 6 CI: when `pr-validate` / `a11y-scan` / `security-scan`
+  workflows are real, re-PUT branch protection with
+  `required_status_checks.contexts` populated.
+- Decide whether to enable signed commits on `alpha` / `stable`.
+- 25 Dependabot vulnerabilities surfaced during pushes (10 high, 11 mod,
+  4 low) — handle via PR #116 + follow-ups.
+- `copilot/optimize-mobile-layout` can be deleted once #112 merges.
