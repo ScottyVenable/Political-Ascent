@@ -33,7 +33,7 @@ jobs:
       tag: ${{ steps.resolve.outputs.tag }}
       prerelease: ${{ steps.resolve.outputs.prerelease }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Resolve tag
@@ -73,7 +73,7 @@ jobs:
     needs: validate-tag
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.validate-tag.outputs.tag }}
       - uses: actions/setup-node@v6
@@ -98,7 +98,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.validate-tag.outputs.tag }}
       - uses: actions/setup-node@v6
@@ -144,7 +144,7 @@ jobs:
       ANDROID_PLATFORM: 'android-34'
       ANDROID_BUILD_TOOLS: '34.0.0'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.validate-tag.outputs.tag }}
       - uses: actions/setup-node@v6
@@ -202,7 +202,7 @@ jobs:
     outputs:
       body-path: release-body.md
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.validate-tag.outputs.tag }}
       - name: Extract changelog entry
